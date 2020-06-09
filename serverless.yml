@@ -1,0 +1,44 @@
+service: portal-catalog
+plugins:
+  - serverless-domain-manager
+  - serverless-pseudo-parameters
+  - serverless-offline
+
+package:
+  excludeDevDependencies: false
+  exclude:
+    - "**/*"
+  individually: true
+
+custom:
+  environment: ${file(environments.yml):${self:provider.stage}}
+  customDomain:
+    domainName: ${self:custom.environment.domain}
+    basePath: portal-catalog
+    endpointType: ${self:custom.environment.endpointType}
+    certificateArn: 'arn:aws:acm:${self:provider.region}:#{AWS::AccountId}:certificate/c0d72c6f-8984-49f9-b036-511596f7ab55'
+    createRoute53Record: false
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  deploymentBucket: leo-cli-publishbucket-19e80lsbylz0f
+  stage: ${opt:stage, 'test'}
+  environment:
+    AUTH_USER_TABLE: ${self:custom.environment.authUserTable}
+    ENVIRONMENT: ${self:provider.stage}
+  region: ${opt:region, 'us-east-1'}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:GetItem
+      Resource: "arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.environment.authUserTable}"
+    - Effect: "Allow"
+      Action:
+        - secretsmanager:GetSecretValue
+        - secretsmanager:UpdateSecretValue
+      Resource:
+        - "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:catalog-editor-google-api*"
+
+functions:
+  - ${file(./api/generate-category-spreadsheet/serverless.yml)}

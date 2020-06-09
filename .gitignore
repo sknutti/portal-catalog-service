@@ -1,0 +1,11 @@
+node_modules/
+*.sublime-workspace
+.DS_Store
+*.swp
+dist
+build
+.serverless
+.idea
+/_cache
+.vscode
+coverage

@@ -1,0 +1,14 @@
+test:
+  domain: test-micro.dsco.io
+  endpointType: regional
+  authUserTable: TestAuth-LeoAuthUser-OZ7R6RHZIPDY
+
+staging:
+  domain: staging-micro.dsco.io
+  endpointType: edge
+  authUserTable: StagingAuth-LeoAuthUser-1IVNIRH40AURC
+
+prod:
+  domain: micro.dsco.io
+  endpointType: edge
+  authUserTable: ProdAuth-LeoAuthUser-SD8EQDNF542U

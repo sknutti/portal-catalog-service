@@ -1,0 +1,41 @@
+POST http://localhost:3000/spreadsheet
+Content-Type: application/json
+
+{
+  "attributes": [
+    {
+      "name": "sku",
+      "requiredType": "required",
+      "dataType": "string"
+    },
+    {
+      "name": "title",
+      "requiredType": "required",
+      "dataType": "string"
+    },
+    {
+      "name": "brand",
+      "requiredType": "required",
+      "dataType": "enum",
+      "secondaryDataType": "string",
+      "possibleValues": ["Samsung", "Sony", "LG"]
+    },
+    {
+      "name": "Weight",
+      "requiredType": "recommended",
+      "dataType": "float"
+    },
+    {
+      "name": "smart_tv",
+      "requiredType": "recommended",
+      "dataType": "boolean"
+    },
+    {
+      "name": "num_hdmi_ports",
+      "requiredType": "optional",
+      "dataType": "integer"
+    }
+  ]
+}
+
+###

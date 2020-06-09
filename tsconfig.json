@@ -1,0 +1,30 @@
+/**
+ * This is the global tsconfig file.  It compiles all tests, apis, and the webpack config
+ *
+ * The tsconfig.lib.json file is responsible for building the npm api library
+ * The tsconfig.artifact.json file is used with the artifact itself
+ */
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2018",
+    "module": "umd",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "isolatedModules": true,
+    "outDir": "build",
+    "typeRoots": ["node_modules/@types"],
+    "incremental": true,
+    "allowJs": true,
+    "lib": [
+      "es2015"
+    ]
+  },
+  "include": [
+    "api/**/*.ts",
+    "webpack.config.ts"
+  ]
+}

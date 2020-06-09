@@ -1,0 +1,13 @@
+generate-category-spreadsheet:
+  handler: api/generate-category-spreadsheet/generate-category-spreadsheet.generateCategorySpreadsheet
+  memorySize: 256
+  timeout: 30
+  environment:
+    ENVIRONMENT: ${opt:stage, 'test'}
+  events:
+    - http:
+        path: spreadsheet
+        method: post
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam
