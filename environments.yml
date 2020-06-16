@@ -2,13 +2,34 @@ test:
   domain: test-micro.dsco.io
   endpointType: regional
   authUserTable: TestAuth-LeoAuthUser-OZ7R6RHZIPDY
+  gearman-vpc:
+    securityGroupIds:
+      - 'sg-5e885f22'
+    subnetIds:
+      - 'subnet-457a0368'
+      - 'subnet-e9a28da0'
+      - 'subnet-a24433f9'
 
 staging:
   domain: staging-micro.dsco.io
   endpointType: edge
   authUserTable: StagingAuth-LeoAuthUser-1IVNIRH40AURC
+  gearman-vpc:
+    securityGroupIds:
+      - 'sg-34dcaa41'
+    subnetIds:
+      - 'subnet-48288767'
+      - 'subnet-7a14b127'
 
 prod:
   domain: micro.dsco.io
   endpointType: edge
   authUserTable: ProdAuth-LeoAuthUser-SD8EQDNF542U
+  gearman-vpc:
+    securityGroupIds:
+      - 'sg-1694056c'
+    subnetIds:
+      - 'subnet-0f027c22'
+      - 'subnet-28d1fd61'
+      - 'subnet-bf11e5e4'
+      - 'subnet-ec30d9d0'

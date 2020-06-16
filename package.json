@@ -16,11 +16,14 @@
   "license": "ISC",
   "dependencies": {
     "@dsco/aws-auth": "^1.0.12",
-    "@dsco/service-utils": "0.0.16",
-    "@dsco/ts-models": "^1.0.69",
+    "@dsco/gearman-apis": "file:../dsco-gearman-apis/build",
+    "@dsco/service-utils": "0.0.17",
+    "@dsco/ts-models": "file:../dsco-ts-models/build",
     "aws-sdk": "^2.692.0",
     "axios": "^0.19.2",
-    "googleapis": "^52.1.0"
+    "crypto-js": "^3.1.9-1",
+    "googleapis": "^52.1.0",
+    "node-gearman": "^0.2.2"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.53",

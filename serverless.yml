@@ -36,9 +36,15 @@ provider:
     - Effect: "Allow"
       Action:
         - secretsmanager:GetSecretValue
-        - secretsmanager:UpdateSecretValue
+        - secretsmanager:PutSecretValue
       Resource:
         - "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:catalog-editor-google-api*"
+    - Effect: "Allow"
+      Action:
+        - execute-api:Invoke
+      Resource:
+        - "arn:aws:execute-api:${self:provider.region}:#{AWS::AccountId}:*/*/*/*"
 
 functions:
   - ${file(./api/generate-category-spreadsheet/serverless.yml)}
+  - ${file(./api/publish-category-spreadsheet/serverless.yml)}

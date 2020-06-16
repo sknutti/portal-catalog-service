@@ -25,6 +25,7 @@
   },
   "include": [
     "api/**/*.ts",
+    "lib/**/*.ts",
     "webpack.config.ts"
   ]
 }

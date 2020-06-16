@@ -1,3 +1,4 @@
+### Generate Spreadsheet
 POST http://localhost:3000/spreadsheet
 Content-Type: application/json
 
@@ -6,34 +7,46 @@ Content-Type: application/json
     {
       "name": "sku",
       "requiredType": "required",
-      "dataType": "string"
-    },
-    {
-      "name": "title",
-      "requiredType": "required",
-      "dataType": "string"
+      "dataType": "string",
+      "dsco": true
     },
     {
       "name": "brand",
       "requiredType": "required",
       "dataType": "enum",
       "secondaryDataType": "string",
-      "possibleValues": ["Samsung", "Sony", "LG"]
+      "possibleValues": [
+        "Samsung",
+        "Sony",
+        "123"
+      ]
+    }
+  ]
+}
+
+### Publish Spreadsheet
+POST http://localhost:3000/spreadsheet/publish
+Content-Type: application/json
+
+{
+  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1P5jpEM6SPMTMSOxm9tvuFmjVjdK5zzUY-U_CZK5GJJk/edit?rm=minimal#gid=0",
+  "attributes": [
+    {
+      "name": "sku",
+      "requiredType": "required",
+      "dataType": "string",
+      "dsco": true
     },
     {
-      "name": "Weight",
-      "requiredType": "recommended",
-      "dataType": "float"
-    },
-    {
-      "name": "smart_tv",
-      "requiredType": "recommended",
-      "dataType": "boolean"
-    },
-    {
-      "name": "num_hdmi_ports",
-      "requiredType": "optional",
-      "dataType": "integer"
+      "name": "brand",
+      "requiredType": "required",
+      "dataType": "enum",
+      "secondaryDataType": "string",
+      "possibleValues": [
+        "Samsung",
+        "Sony",
+        "123"
+      ]
     }
   ]
 }

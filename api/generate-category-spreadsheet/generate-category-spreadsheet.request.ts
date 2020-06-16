@@ -4,11 +4,12 @@ export interface GetCategorySpreadsheetResponse extends DsResponse {
 	url: string;
 }
 export interface GenerateCategorySpreadsheetRequestBody {
-    attributes: AttributionCategoryAttribute[];
+    retailerId: number;
+    attrPath: string;
 }
 
 export class GenerateCategorySpreadsheetRequest extends DsRequest<GenerateCategorySpreadsheetRequestBody, GetCategorySpreadsheetResponse, DsError> {
-	constructor(env: DscoEnv, public attributes: AttributionCategoryAttribute[]) {
-        super('POST', '/portal-category/spreadsheet', DsRequest.getHost(env, 'micro'), {attributes});
+	constructor(env: DscoEnv, public retailerId: number, public attrPath: string) {
+        super('POST', '/portal-catalog/spreadsheet', DsRequest.getHost(env, 'micro'), {retailerId, attrPath});
     }
 }
