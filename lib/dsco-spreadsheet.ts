@@ -1,19 +1,23 @@
-import { AttributeRequiredType, XrayActionSeverity } from '@dsco/ts-models';
+import { XrayActionSeverity } from '@dsco/ts-models';
 import { drive_v3, sheets_v4 } from 'googleapis';
+import { DscoColumn } from './dsco-column';
 import Drive = drive_v3.Drive;
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$Color = sheets_v4.Schema$Color;
+import Schema$DataValidationRule = sheets_v4.Schema$DataValidationRule;
 import Schema$RowData = sheets_v4.Schema$RowData;
 import Schema$Spreadsheet = sheets_v4.Schema$Spreadsheet;
 import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensionPropertiesRequest;
 import Sheets = sheets_v4.Sheets;
-import Schema$DataValidationRule = sheets_v4.Schema$DataValidationRule;
 
-const DEFAULT_COLUMN_WIDTH = 100;
 const dropdownSheetName = 'PickListData';
 
 export class DscoSpreadsheet {
+    static generateUrl(spreadsheetId: string): string {
+        return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?rm=minimal`;
+    }
+
     columns: Record<XrayActionSeverity | 'none', DscoColumn[]> = {
         [XrayActionSeverity.error]: [],
         [XrayActionSeverity.warn]: [],
@@ -36,7 +40,7 @@ export class DscoSpreadsheet {
     }
 
     /**
-     * Creates the spreadsheet, returning the link to the sheet.
+     * Creates the spreadsheet, returning the spreadsheet id.
      */
     async createSpreadsheet(sheets: Sheets, drive: Drive): Promise<string> {
         const response = await sheets.spreadsheets.create({
@@ -70,7 +74,7 @@ export class DscoSpreadsheet {
             }
         });
 
-        return `https://docs.google.com/spreadsheets/d/${fileId}/edit?rm=minimal`;
+        return fileId;
     }
 
     /**
@@ -150,7 +154,7 @@ export class DscoSpreadsheet {
         if (format === 'integer' || format === 'number') {
             const hasMin = min !== undefined;
             const hasMax = max !== undefined;
-            let validation: Schema$DataValidationRule | undefined;
+            let validation: Schema$DataValidationRule;
 
             if (hasMin || hasMax) {
                 validation = {
@@ -159,12 +163,27 @@ export class DscoSpreadsheet {
                         values: [min, max].filter((it): it is number => it !== undefined).map(num => ({
                             userEnteredValue: num.toString(10)
                         }))
-                    }
+                    },
+                    strict: true,
+                    showCustomUi: true,
+                    inputMessage: hasMax && hasMin ?
+                      `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} between ${min} and ${max}` :
+                (hasMin ? `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} no less than ${min}` :
+                  `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} no greater than ${max}`)
+                };
+            } else {
+                validation = {
+                    condition: {
+                        type: 'CUSTOM_FORMULA',
+                        values: [{userEnteredValue: '=ISNUMBER(INDIRECT("RC", false))'}]
+                    },
+                    strict: true,
+                    inputMessage: `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'}`
                 };
             }
 
             this.dataRow.push({
-                userEnteredFormat: {numberFormat: {pattern: '#,##0', type: 'NUMBER'}},
+                userEnteredFormat: {numberFormat: {pattern: format === 'integer' ? '#,##0' : '#,##0.00', type: 'NUMBER'}},
                 dataValidation: validation
             });
         } else if (format === 'string') {
@@ -189,21 +208,18 @@ export class DscoSpreadsheet {
                     inputMessage:  regexMessage
                 } : undefined
             });
-        } else if (format === 'date-time') {
-            this.dataRow.push({userEnteredFormat: {numberFormat: {type: 'DATE_TIME'}}});
-        } else if (format === 'date') {
-            console.error('IN FUTURE', dateInFuture);
-
+        } else if (format === 'date' || format === 'date-time') {
             this.dataRow.push({
                 dataValidation: {
                     condition: {
                         type: dateInFuture ? 'DATE_AFTER' : 'DATE_IS_VALID',
-                        values: dateInFuture ? [{relativeDate: new Date().toISOString()}] : undefined
+                        values: dateInFuture ? [{userEnteredValue: '=TODAY()'}] : undefined
                     },
                     strict: true,
-                    showCustomUi: true
+                    showCustomUi: true,
+                    inputMessage: dateInFuture ? `${col.name} must be a future date.` : `${col.name} must be a valid ${format === 'date' ? 'date' : 'date & time'}.`
                 },
-                userEnteredFormat: {numberFormat: {type: 'DATE'}}
+                userEnteredFormat: {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME'}}
             });
         } else if (format === 'time') {
             this.dataRow.push({userEnteredFormat: {numberFormat: {type: 'TIME'}}});
@@ -217,7 +233,7 @@ export class DscoSpreadsheet {
             });
         } else if (format === 'enum') {
             this.pickListRows.push({
-                values: enumVals?.map(value => {
+                values: Array.from(enumVals || []).map(value => {
                     return {
                         userEnteredValue: {
                             stringValue: `${value}`.replace(/^([+=])/, '\'$1')
@@ -237,6 +253,15 @@ export class DscoSpreadsheet {
                     showCustomUi: true
                 }
             });
+        } else if (format === 'uri' || format === 'email') {
+            this.dataRow.push({
+                dataValidation: {
+                    condition: {type: format === 'email' ? 'TEXT_IS_EMAIL' : 'TEXT_IS_URL'},
+                    strict: true,
+                    showCustomUi: true,
+                    inputMessage: `${col.name} must be ${format === 'email' ? 'an email' : 'a URL'}.`
+                }
+            });
         } else { // TODO: Validate array: =AND(ARRAYFORMULA(ISNUMBER(SPLIT(G5, ",", TRUE, TRUE))))
             this.dataRow.push({});
         }
@@ -246,7 +271,7 @@ export class DscoSpreadsheet {
 
     private resizeColumnIfNecessary(col: DscoColumn): void {
         const width = col.colWidth();
-        if (width > DEFAULT_COLUMN_WIDTH) {
+        if (width > DscoColumn.DEFAULT_COLUMN_WIDTH) {
             const prev = this.dimensionUpdates[this.dimensionUpdates.length - 1];
 
             if (prev && prev.range!.endIndex === this.parsedColIdx) {
@@ -298,33 +323,6 @@ export class DscoSpreadsheet {
 
 }
 
-export class DscoColumn {
-    validation: DscoColValidation = {
-        required: 'none'
-    };
-
-    constructor(
-      public name: string,
-    ) {
-    }
-
-    private guessPixelSize(): number {
-        let total = 0;
-        for (const char of this.name) {
-            if (char === char.toUpperCase()) {
-                total += 10;
-            } else {
-                total += 8;
-            }
-        }
-        return total;
-    }
-
-    public colWidth(): number {
-        return this.guessPixelSize() > DEFAULT_COLUMN_WIDTH ? 160 : DEFAULT_COLUMN_WIDTH;
-    }
-}
-
 function getColorForRequired(status: XrayActionSeverity, light = false): Schema$Color {
     switch (status) {
         case XrayActionSeverity.error:
@@ -346,19 +344,4 @@ function getColorForRequired(status: XrayActionSeverity, light = false): Schema$
                 blue: light ? 0.97 : 0.8784314
             };
     }
-}
-
-export interface DscoColValidation {
-    format?: 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum';
-    enumVals?: Array<string | number>;
-    min?: number;
-    max?: number;
-    minLength?: number;
-    maxLength?: number;
-    match?: string; // regex
-    dontMatch?: string[]; // regex
-    regexMessage?: string;
-    required: XrayActionSeverity | 'none';
-    arrayType?: 'string' | 'integer' | 'number';
-    dateInFuture?: boolean;
 }

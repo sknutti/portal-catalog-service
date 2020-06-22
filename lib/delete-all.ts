@@ -5,8 +5,9 @@ import Drive = drive_v3.Drive;
 export async function deleteAllSheets(sheets: Sheets, drive: Drive): Promise<void> {
     const sheetsToDelete = await listSheets(drive);
 
-    for (const sheet of sheetsToDelete) {
-        console.warn(`Deleting sheet: ${  sheet.name}`);
+    for (let i = 0; i < sheetsToDelete.length; i++) {
+        const sheet = sheetsToDelete[i];
+        console.warn(`Deleting sheet ${i + 1}/${sheetsToDelete.length}: ${  sheet.name}`);
         await removeSheet(sheets, drive, sheet.id);
     }
     console.warn('Deleted all sheets!');

@@ -1,54 +1,21 @@
 ### Generate Spreadsheet
 POST http://localhost:3000/spreadsheet
 Content-Type: application/json
+cognito-identity-id: us-east-1:79fea512-29f8-411c-8a20-d48d76726c39 #Logged in as Mike's Stuff
 
 {
-  "attributes": [
-    {
-      "name": "sku",
-      "requiredType": "required",
-      "dataType": "string",
-      "dsco": true
-    },
-    {
-      "name": "brand",
-      "requiredType": "required",
-      "dataType": "enum",
-      "secondaryDataType": "string",
-      "possibleValues": [
-        "Samsung",
-        "Sony",
-        "123"
-      ]
-    }
-  ]
+  "retailerId": 1000000001,
+  "categoryPath": "Clothing||Pants"
 }
 
 ### Publish Spreadsheet
 POST http://localhost:3000/spreadsheet/publish
 Content-Type: application/json
+cognito-identity-id: us-east-1:79fea512-29f8-411c-8a20-d48d76726c39 #Logged in as Mike's Stuff
 
 {
-  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1P5jpEM6SPMTMSOxm9tvuFmjVjdK5zzUY-U_CZK5GJJk/edit?rm=minimal#gid=0",
-  "attributes": [
-    {
-      "name": "sku",
-      "requiredType": "required",
-      "dataType": "string",
-      "dsco": true
-    },
-    {
-      "name": "brand",
-      "requiredType": "required",
-      "dataType": "enum",
-      "secondaryDataType": "string",
-      "possibleValues": [
-        "Samsung",
-        "Sony",
-        "123"
-      ]
-    }
-  ]
+  "retailerId": 1000000001,
+  "categoryPath": "Clothing||Pants"
 }
 
 ###

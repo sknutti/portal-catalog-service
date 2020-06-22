@@ -12,6 +12,7 @@ package:
 
 custom:
   environment: ${file(environments.yml):${self:provider.stage}}
+  spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
   customDomain:
     domainName: ${self:custom.environment.domain}
     basePath: portal-catalog
@@ -27,12 +28,21 @@ provider:
   environment:
     AUTH_USER_TABLE: ${self:custom.environment.authUserTable}
     ENVIRONMENT: ${self:provider.stage}
+    SPREADSHEET_TABLE: ${self:custom.spreadsheetTable}
   region: ${opt:region, 'us-east-1'}
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - dynamodb:GetItem
       Resource: "arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.environment.authUserTable}"
+    - Effect: "Allow"
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+        - dynamodb:Query
+      Resource:
+        - Fn::GetAtt: [PortalCatalogSpreadsheetTable, Arn]
     - Effect: "Allow"
       Action:
         - secretsmanager:GetSecretValue
@@ -48,3 +58,24 @@ provider:
 functions:
   - ${file(./api/generate-category-spreadsheet/serverless.yml)}
   - ${file(./api/publish-category-spreadsheet/serverless.yml)}
+
+resources:
+  Resources:
+    PortalCatalogSpreadsheetTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.spreadsheetTable}
+        AttributeDefinitions:
+          - AttributeName: supplierId
+            AttributeType: S
+          - AttributeName: fullPath
+            AttributeType: S
+        KeySchema:
+          - AttributeName: supplierId
+            KeyType: HASH
+          - AttributeName: fullPath
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
