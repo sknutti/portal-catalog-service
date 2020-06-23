@@ -1,6 +1,7 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
 import { drive_v3, sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
+import { prepareValueForSpreadsheet } from './google-api-utils';
 import Drive = drive_v3.Drive;
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
 import Schema$CellData = sheets_v4.Schema$CellData;
@@ -141,7 +142,7 @@ export class DscoSpreadsheet {
         this.resizeColumnIfNecessary(col);
 
         this.headerRow.push({
-            userEnteredValue: {stringValue: col.name.replace(/^([+=])/, '\'$1')},
+            userEnteredValue: {stringValue: prepareValueForSpreadsheet(col.name)},
             userEnteredFormat: {
                 textFormat: {
                     fontFamily: 'Arial',
@@ -164,7 +165,6 @@ export class DscoSpreadsheet {
                             userEnteredValue: num.toString(10)
                         }))
                     },
-                    strict: true,
                     showCustomUi: true,
                     inputMessage: hasMax && hasMin ?
                       `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} between ${min} and ${max}` :
@@ -177,7 +177,6 @@ export class DscoSpreadsheet {
                         type: 'CUSTOM_FORMULA',
                         values: [{userEnteredValue: '=ISNUMBER(INDIRECT("RC", false))'}]
                     },
-                    strict: true,
                     inputMessage: `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'}`
                 };
             }
@@ -204,7 +203,6 @@ export class DscoSpreadsheet {
                         type: 'CUSTOM_FORMULA',
                         values: [{userEnteredValue: `=AND(${validations.join(',')})`}]
                     },
-                    strict: false,
                     inputMessage:  regexMessage
                 } : undefined
             });
@@ -215,7 +213,6 @@ export class DscoSpreadsheet {
                         type: dateInFuture ? 'DATE_AFTER' : 'DATE_IS_VALID',
                         values: dateInFuture ? [{userEnteredValue: '=TODAY()'}] : undefined
                     },
-                    strict: true,
                     showCustomUi: true,
                     inputMessage: dateInFuture ? `${col.name} must be a future date.` : `${col.name} must be a valid ${format === 'date' ? 'date' : 'date & time'}.`
                 },
@@ -236,7 +233,7 @@ export class DscoSpreadsheet {
                 values: Array.from(enumVals || []).map(value => {
                     return {
                         userEnteredValue: {
-                            stringValue: `${value}`.replace(/^([+=])/, '\'$1')
+                            stringValue: prepareValueForSpreadsheet(`${value}`)
                         }
                     };
                 })
@@ -249,7 +246,6 @@ export class DscoSpreadsheet {
                         type: 'ONE_OF_RANGE',
                         values: [{userEnteredValue: `=${dropdownSheetName}!${rowNum}:${rowNum}`}]
                     },
-                    strict: true,
                     showCustomUi: true
                 }
             });
@@ -257,7 +253,6 @@ export class DscoSpreadsheet {
             this.dataRow.push({
                 dataValidation: {
                     condition: {type: format === 'email' ? 'TEXT_IS_EMAIL' : 'TEXT_IS_URL'},
-                    strict: true,
                     showCustomUi: true,
                     inputMessage: `${col.name} must be ${format === 'email' ? 'an email' : 'a URL'}.`
                 }

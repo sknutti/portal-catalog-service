@@ -1,4 +1,4 @@
-import { DscoEnv, DsError, DsRequest, DsResponse, ValidationMessage } from '@dsco/ts-models';
+import { DscoEnv, DsError, DsRequest, DsResponse, ValidationMessage, XrayActionSeverity } from '@dsco/ts-models';
 
 export interface PublishCategorySpreadsheetRequestBody {
     retailerId: number;
@@ -6,7 +6,12 @@ export interface PublishCategorySpreadsheetRequestBody {
 }
 
 export interface PublishCategorySpreadsheetResponse extends DsResponse {
-    validationMessages: ValidationMessage[];
+    rowMessages: { [row: number]: SpreadsheetRowMessage[] };
+}
+
+export interface SpreadsheetRowMessage extends Partial<ValidationMessage> {
+    message: string;
+    messageType: XrayActionSeverity;
 }
 
 export class PublishCategorySpreadsheetRequest extends DsRequest<PublishCategorySpreadsheetRequestBody, PublishCategorySpreadsheetResponse, DsError> {

@@ -62,3 +62,11 @@ export function getColumnName(idx: number): string {
 export function toGoogleSheetsDate(date: Date): string {
     return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
 }
+
+export function prepareValueForSpreadsheet(value: string): string {
+    return value.replace(/^([+=])/, '\'$1');
+}
+
+export function parseValueFromSpreadsheet(value: string): string {
+    return value.replace(/^'([+=])/, '$1');
+}

@@ -1,5 +1,6 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import {
+    DscoEnv,
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
@@ -40,20 +41,22 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
     return spreadsheet;
 }
 
+const env = process.env.ENVIRONMENT! as DscoEnv;
+
 /**
  * Generates column data using dsco's simple rules.
  */
 export async function generateSpreadsheetCols(supplierId: number, retailerId: number, categoryPath: string): Promise<DscoColumn[] | UnexpectedError> {
     const [catalogRulesResp, allRulesResp] = await Promise.all([
         axiosRequest(
-          new GetPipelineCatalogRulesRequest('test', [categoryPath], retailerId.toString(10)),
-          'test',
+          new GetPipelineCatalogRulesRequest(env, [categoryPath], retailerId.toString(10)),
+          env,
           AWS.config.credentials as Credentials,
           process.env.AWS_REGION!
         ),
         axiosRequest(
-          new GetPipelineRulesRequest('test'),
-          'test',
+          new GetPipelineRulesRequest(env),
+          env,
           AWS.config.credentials as Credentials,
           process.env.AWS_REGION!
         )

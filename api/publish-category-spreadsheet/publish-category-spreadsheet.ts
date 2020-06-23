@@ -1,21 +1,28 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import {
-    Catalog, CatalogImage, DsError,
+    Catalog,
+    CatalogImage,
     MissingRequiredFieldError,
     UnauthorizedError,
-    UnexpectedError, ValidationMessage,
+    UnexpectedError,
     XrayActionSeverity
 } from '@dsco/ts-models';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from '../../lib/dsco-column';
 import { generateSpreadsheetCols } from '../../lib/generate-spreadsheet';
-import { prepareGoogleApis } from '../../lib/google-api-utils';
+import { parseValueFromSpreadsheet, prepareGoogleApis } from '../../lib/google-api-utils';
 import { SpreadsheetDynamoTable } from '../../lib/spreadsheet-dynamo-table';
-import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
-import Schema$Sheet = sheets_v4.Schema$Sheet;
+import { PublishCategorySpreadsheetRequest, SpreadsheetRowMessage } from './publish-category-spreadsheet.request';
 
 const spreadsheetDynamoTable = new SpreadsheetDynamoTable();
+
+const gearmanActionSuccess: Set<string> = new Set([
+    'SAVED',
+    'CREATED',
+    'UPDATED',
+    'SUCCESS',
+]);
 
 export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetRequest>(async event => {
     if (!event.body.retailerId) {
@@ -54,9 +61,18 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
         return colsOrErr;
     }
 
-    const catalogs = generateCatalogsFromSpreadsheet(resp.data.sheets![0], colsOrErr, user.accountId, event.body.retailerId, event.body.categoryPath);
+    const rowMessages: Record<number, SpreadsheetRowMessage[]> = {};
+    const addRowMessage = (row: number, message: SpreadsheetRowMessage) => {
+        let messages = rowMessages[row];
+        if (!messages) {
+            messages = rowMessages[row] = [];
+        }
+        messages.push(message);
+    };
 
-    const responses: Array<ResolveExceptionGearmanApiResponse | DsError> = await Promise.all(catalogs.map(catalog => {
+    const catalogs = generateCatalogsFromSpreadsheet(resp.data.sheets![0], colsOrErr, user.accountId, event.body.retailerId, event.body.categoryPath, addRowMessage);
+
+    const responses: Array<ResolveExceptionGearmanApiResponse> = await Promise.all(catalogs.map(catalog => {
         return new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
             caller: {
                 account_id: user.accountId!.toString(10),
@@ -66,24 +82,35 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
         }).submit();
     }));
 
-    let validationMessages: ValidationMessage[] = [];
-
+    let rowNum = 2; // row 1 is the header
     for (const response of responses) {
-        const messages = (response as any).validation_messages;
-        if (messages?.length) {
-            validationMessages = validationMessages.concat(messages);
-        }
-    }
+        const successfullySaved = gearmanActionSuccess.has(response.action);
 
-    // TODO: REmove ' from start of cells
+        let hasErrorMessage = false;
+
+        for (const msg of response.validation_messages || []) {
+            addRowMessage(rowNum, msg);
+            hasErrorMessage = hasErrorMessage || msg.messageType === XrayActionSeverity.error;
+        }
+
+        if (!successfullySaved && !hasErrorMessage) {
+            const messages = response.messages?.length ? response.messages : ['Unable to save item.'];
+
+            for (const message of messages) {
+                addRowMessage(rowNum, {message, messageType: XrayActionSeverity.error});
+            }
+        }
+
+        rowNum++;
+    }
 
     return {
         success: true,
-        validationMessages
+        rowMessages
     };
 });
 
-function generateCatalogsFromSpreadsheet(sheet: Schema$Sheet, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string): Catalog[] {
+function generateCatalogsFromSpreadsheet(sheet: sheets_v4.Schema$Sheet, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string, addRowMessage: (row: number, message: SpreadsheetRowMessage) => void): Catalog[] {
     const result: Catalog[] = [];
 
     const attributeNames: Record<number, string | undefined | null> = {};
@@ -101,7 +128,7 @@ function generateCatalogsFromSpreadsheet(sheet: Schema$Sheet, cols: DscoColumn[]
             const cell = cells[cellNum];
 
             if (rowNum === 0) {
-                attributeNames[cellNum] = cell.formattedValue;
+                attributeNames[cellNum] = parseValueFromSpreadsheet(cell.formattedValue || '');
                 continue;
             }
 
@@ -115,7 +142,18 @@ function generateCatalogsFromSpreadsheet(sheet: Schema$Sheet, cols: DscoColumn[]
         }
 
         if (saveObject) {
-            result.push(validateAndCreateCatalog(parsedRow, cols, supplierId, retailerId, categoryPath));
+            try {
+                result.push(validateAndCreateCatalog(parsedRow, cols, supplierId, retailerId, categoryPath));
+            } catch(e) {
+                if (typeof e === 'string') { // Intentionally thrown, should be shown to user
+                    addRowMessage(rowNum + 1, {
+                        message: e,
+                        messageType: XrayActionSeverity.error,
+                    });
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
