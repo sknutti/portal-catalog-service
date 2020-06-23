@@ -178,13 +178,13 @@ function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supp
     for (const col of cols) {
         if (!(col.name in parsedRow.values)) {
             if (col.validation.required === XrayActionSeverity.error) {
-                throw new Error(`Missing required field on row ${parsedRow.rowNum}: ${col.name}`);
+                throw `Missing required field: ${col.name}`;
             }
 
             continue;
         }
 
-        const coerced = coerceValue(parsedRow.values[col.name], col, parsedRow.rowNum);
+        const coerced = coerceValue(parsedRow.values[col.name], col);
 
         if (col.isCore) {
             (catalog as any)[col.name] = coerced;
@@ -213,7 +213,7 @@ function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supp
     return catalog;
 }
 
-function coerceValue(value: string, col: DscoColumn, rowNum: number): string | number | boolean | Date | Array<string | number>  {
+function coerceValue(value: string, col: DscoColumn): string | number | boolean | Date | Array<string | number>  {
     switch (col.validation.format) {
         case 'string':
         case 'email':
@@ -223,13 +223,13 @@ function coerceValue(value: string, col: DscoColumn, rowNum: number): string | n
         case 'integer':
             const int = +value;
             if (!Number.isInteger(int)) {
-                throw `Invalid integer on row ${rowNum}: ${value}`;
+                throw `Invalid number provided for ${col.name}: ${value}`;
             }
             return int;
         case 'number':
             const float = +value;
             if (isNaN(float)) {
-                throw `Invalid integer on row ${rowNum}: ${value}`;
+                throw `Invalid number provided for ${col.name}: ${value}`;
             }
             return float;
         case 'enum':
@@ -239,12 +239,12 @@ function coerceValue(value: string, col: DscoColumn, rowNum: number): string | n
             } else if (col.validation.enumVals?.has(value)) {
                 return value;
             } else {
-                throw `Invalid Enum on row ${rowNum}: ${value}`;
+                throw `Invalid Enum provided for ${col.name}: ${value}`;
             }
         case 'boolean':
             const bool = value === 'TRUE';
             if (!bool && value !== 'FALSE') {
-                throw `Invalid Bool on row ${rowNum}: ${value}`;
+                throw `Invalid Bool provided for ${col.name}: ${value}`;
             }
             return bool;
         case 'array':
@@ -255,7 +255,7 @@ function coerceValue(value: string, col: DscoColumn, rowNum: number): string | n
             console.error('Got date value: ', value);
             const date = new Date(value);
             if (isNaN(date.getTime())) {
-                throw `Invalid date on row ${rowNum}: ${value}`;
+                throw `Invalid date provided for ${col.name}: ${value}`;
             }
             return date;
         default:
