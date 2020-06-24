@@ -2,13 +2,28 @@
 Contains a set of catalog-related apis designed to be called directly from the portal.
 
 ## Notes On Auth
-This service uses an oauth refresh token to programmatically access `dsco.catalog.editor@dsco.io` 
-using the Google Sheets and Google Drive apis.
+**This service uses an oauth refresh token to programmatically access `dsco.catalog.editor@dsco.io` 
+using the Google Sheets and Google Drive apis.**
 
-If this refresh token expires (changed password, inactive for 6 months), follow the instructions here
-to obtain a new one: https://stackoverflow.com/questions/19766912/how-do-i-authorise-an-app-web-or-installed-without-user-intervention
+**If this refresh token expires (changed password, inactive for 6 months), follow these instructions to obtain a new one:**
 
-Then update [https://console.aws.amazon.com/secretsmanager/home?region=us-east-1#/secret?name=catalog-editor-google-api](this refresh token in AWS secrets manager).
+1. Note the `clientId`, `clientSecret`, and `scopes` from [this AWS secret](https://console.aws.amazon.com/secretsmanager/home?region=us-east-1#/secret?name=catalog-editor-google-api). 
+2. Go to [The Google Oauth Playground](https://developers.google.com/oauthplayground/)
+3. In Settings (Click the Gear Icon), Set
+    -   OAuth flow: Server-side
+    -   Access type: Offline
+    -   Use your own OAuth credentials: TICK
+    -   Client Id and Client Secret: from step 1
+4. In the "Select and Authorize APIs" section add the `scopes` from step 1.
+5. Click Authorize APIs. You will be prompted to choose your Google account.
+    - Log in as `dsco.catalog.editor@dsco.io`
+    - The password is in LastPass and can be shared with you via Aidan, Brett, or Bruce
+6. In the "Exchange authorization code for tokens" section, click the button "Exchange authorization code for tokens"
+7. Copy the Refresh Token and Access Token fields and save them as `refreshToken` and `accessToken` in the  [same AWS secret from step 1](https://console.aws.amazon.com/secretsmanager/home?region=us-east-1#/secret?name=catalog-editor-google-api). 
+    - If changing permissions, don't forget to copy the `scope` value over to the `scopes` secret value.
+
+More info can be found [here](https://stackoverflow.com/questions/19766912/how-do-i-authorise-an-app-web-or-installed-without-user-intervention).
+
 
 ## Usage
 Each api exports a request object that can be used to query the api.
@@ -36,11 +51,11 @@ To set which user is logged in, head on over to `webpack.config.ts` and you'll n
 process.env.SLS_COGNITO_IDENTITY_ID value.  To get an identity value for a specific account and 
 user...
 
-1) Go to Dsco internal tools
-1) Log in as the account that you want into the Dsco portal
-1) Open up a javascript console in the browser
-1) Type this in and hit enter: `AWS.config.credentials.identityId`
-1) You will now see the identity ID of the logged in user in that account
+1. Go to Dsco internal tools
+2. Log in as the account that you want into the Dsco portal
+3. Open up a javascript console in the browser
+4. Type this in and hit enter: `AWS.config.credentials.identityId`
+5. You will now see the identity ID of the logged in user in that account
 
 ## Running Tests
 The jest unit test runner is used for the tests. Run `npm test` to run all tests.
