@@ -21,10 +21,17 @@
     "allowJs": true,
     "lib": [
       "es2015"
-    ]
+    ],
+    "paths": {
+      "@api": ["./api"],
+      "@api/*": ["./api/*"],
+      "@bot/*": ["./bot/*"],
+      "@lib/*": ["./lib/*"]
+    }
   },
   "include": [
     "api/**/*.ts",
+    "bot/**/*.ts",
     "lib/**/*.ts",
     "webpack.config.ts"
   ]

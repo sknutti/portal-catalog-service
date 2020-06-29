@@ -1,2 +1,2 @@
-export * from './generate-category-spreadsheet/generate-category-spreadsheet.request';
-export * from './publish-category-spreadsheet/publish-category-spreadsheet.request';
+export * from './category-spreadsheet/category-spreadsheet.request';
+export * from './catalog-spreadsheet-websocket-events';

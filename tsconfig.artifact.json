@@ -5,6 +5,6 @@
     "target": "es2018",
     "module": "esnext"
   },
-  "include": ["api/**/*.ts"],
-  "exclude": ["api/**/*.test.ts"]
+  "include": ["api/**/*.ts", "bot/**/*.ts"],
+  "exclude": ["api/**/*.test.ts", "bot/**/*.test.ts"]
 }

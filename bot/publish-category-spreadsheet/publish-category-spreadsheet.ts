@@ -1,19 +1,19 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { apiWrapper, getUser } from '@dsco/service-utils';
-import {
-    Catalog,
-    CatalogImage,
-    MissingRequiredFieldError,
-    UnauthorizedError,
-    UnexpectedError,
-    XrayActionSeverity
-} from '@dsco/ts-models';
+import { Catalog, CatalogImage, UnexpectedError, XrayActionSeverity } from '@dsco/ts-models';
 import { sheets_v4 } from 'googleapis';
-import { DscoColumn } from '../../lib/dsco-column';
-import { generateSpreadsheetCols } from '../../lib/generate-spreadsheet';
-import { parseValueFromSpreadsheet, prepareGoogleApis } from '../../lib/google-api-utils';
-import { SpreadsheetDynamoTable } from '../../lib/spreadsheet-dynamo-table';
-import { PublishCategorySpreadsheetRequest, SpreadsheetRowMessage } from './publish-category-spreadsheet.request';
+import { SpreadsheetRowMessage } from '@api';
+import { DscoColumn } from '@lib/dsco-column';
+import { generateSpreadsheetCols } from '@lib/generate-spreadsheet';
+import { parseValueFromSpreadsheet, prepareGoogleApis } from '@lib/google-api-utils';
+import { sendWebsocketEvent } from '@lib/send-websocket-event';
+import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
+
+export interface PublishCategorySpreadsheetEvent {
+    supplierId: number;
+    retailerId: number;
+    userId: number;
+    categoryPath: string;
+}
 
 const spreadsheetDynamoTable = new SpreadsheetDynamoTable();
 
@@ -24,24 +24,19 @@ const gearmanActionSuccess: Set<string> = new Set([
     'SUCCESS',
 ]);
 
-export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetRequest>(async event => {
-    if (!event.body.retailerId) {
-        return new MissingRequiredFieldError('retailerId');
-    }
-    if (!event.body.categoryPath) {
-        return new MissingRequiredFieldError('categoryPath');
-    }
+const VALIDATING_PROGRESS_START_PCT = 0.66;
 
-    const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
+export async function publishCategorySpreadsheet({categoryPath, retailerId, supplierId, userId}: PublishCategorySpreadsheetEvent): Promise<void> {
+    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
+        categoryPath,
+        progress: 0,
+        message: 'Loading spreadsheet...'
+    }, supplierId);
 
-    // Must be logged in
-    if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {
-        return new UnauthorizedError();
-    }
-
-    const savedSheet = await spreadsheetDynamoTable.getItem(user.accountId, event.body.retailerId, event.body.categoryPath);
+    const savedSheet = await spreadsheetDynamoTable.getItem(supplierId, retailerId, categoryPath);
     if (!savedSheet) {
-        return new UnexpectedError('No spreadsheet found for given params.', JSON.stringify(event.body));
+        // TODO: Handle all of these unexpected errors
+        throw new UnexpectedError('No spreadsheet found for given params.', JSON.stringify({categoryPath, retailerId, supplierId}));
     }
 
     const {sheets, cleanupGoogleApis} = await prepareGoogleApis();
@@ -55,10 +50,22 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 
     await cleanupGoogleApis();
 
-    const colsOrErr = await generateSpreadsheetCols(user.accountId, event.body.retailerId, event.body.categoryPath);
+    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
+        categoryPath,
+        progress: 0.2,
+        message: 'Loading Dsco schema & attribution data...'
+    }, supplierId);
+
+    const colsOrErr = await generateSpreadsheetCols(supplierId, retailerId, categoryPath);
+
+    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
+        categoryPath,
+        progress: 0.45,
+        message: 'Parsing spreadsheet...'
+    }, supplierId);
 
     if (!Array.isArray(colsOrErr)) {
-        return colsOrErr;
+        throw colsOrErr;
     }
 
     const rowMessages: Record<number, SpreadsheetRowMessage[]> = {};
@@ -70,17 +77,15 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
         messages.push(message);
     };
 
-    const catalogs = generateCatalogsFromSpreadsheet(resp.data.sheets![0], colsOrErr, user.accountId, event.body.retailerId, event.body.categoryPath, addRowMessage);
+    const catalogs = generateCatalogsFromSpreadsheet(resp.data.sheets![0], colsOrErr, supplierId, retailerId, categoryPath, addRowMessage);
 
-    const responses: Array<ResolveExceptionGearmanApiResponse> = await Promise.all(catalogs.map(catalog => {
-        return new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
-            caller: {
-                account_id: user.accountId!.toString(10),
-                user_id: user.userId.toString(10)
-            },
-            params: catalog.toSnakeCase()
-        }).submit();
-    }));
+    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
+        categoryPath,
+        progress: VALIDATING_PROGRESS_START_PCT,
+        message: 'Validating & saving rows...'
+    }, supplierId);
+
+    const responses = await Promise.all(resolveCatalogsWithProgress(catalogs, userId, supplierId, categoryPath));
 
     let rowNum = 2; // row 1 is the header
     for (const response of responses) {
@@ -104,11 +109,43 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
         rowNum++;
     }
 
-    return {
-        success: true,
+    await sendWebsocketEvent('publishCatalogSpreadsheetSuccess', {
+        categoryPath,
         rowMessages
-    };
-});
+    }, supplierId);
+}
+
+function resolveCatalogsWithProgress(catalogs: Catalog[], userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
+    const total = catalogs.length;
+    let current = 0;
+
+    let lastSendTime = 0;
+    const THROTTLE_TIME = 300;
+
+    return catalogs.map(async catalog => {
+        const response = await new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
+            caller: {
+                account_id: supplierId!.toString(10),
+                user_id: userId.toString(10)
+            },
+            params: catalog.toSnakeCase()
+        }).submit();
+
+        current++;
+
+        const now = Date.now();
+        if (now - lastSendTime > THROTTLE_TIME) {
+            lastSendTime = now;
+            await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
+                categoryPath,
+                progress: VALIDATING_PROGRESS_START_PCT + ((1 - VALIDATING_PROGRESS_START_PCT) * (current / total)),
+                message: `Validating & saving rows ${current}/${total}...`
+            }, supplierId);
+        }
+
+        return response;
+    });
+}
 
 function generateCatalogsFromSpreadsheet(sheet: sheets_v4.Schema$Sheet, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string, addRowMessage: (row: number, message: SpreadsheetRowMessage) => void): Catalog[] {
     const result: Catalog[] = [];

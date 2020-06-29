@@ -1,5 +1,6 @@
 import { ServerlessArtifactWebpackPlugin } from '@dsco/service-utils';
 import { resolve } from 'path';
+import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import { Configuration, NormalModuleReplacementPlugin } from 'webpack';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -7,17 +8,20 @@ import { Configuration, NormalModuleReplacementPlugin } from 'webpack';
 
 process.env.GEARMAN_HOST = 'gearman.test';
 process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
+process.env.LEO_LOCAL = 'true';
 
 module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
     const isLocal = env?.local;
-    const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml');
+    const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
+        layersProvidedDependencies: ['leo-sdk', 'leo-streams', 'leo-config']
+    });
 
     return {
         entry: serverlessArtifactPlugin.entry,
         devtool: 'source-map',
         target: 'node',
         mode: isLocal ? 'development' : 'production',
-        externals: ['aws-sdk'],
+        externals: ['aws-sdk', 'leo-sdk', 'leo-streams', 'leo-config'],
         module: {
             rules: [
                 // {
@@ -44,7 +48,12 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             ]
         },
         resolve: {
-            extensions: ['.ts', '.js', '.tsx']
+            extensions: ['.ts', '.js', '.tsx'],
+            plugins: [
+                new TsconfigPathsPlugin({
+                    configFile: './tsconfig.json',
+                })
+            ]
         },
         output: {
             // Filename: "index.js",
@@ -53,8 +62,6 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
         },
         plugins: [
             serverlessArtifactPlugin,
-            // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
-            new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js')),
             // new StatsWriterPlugin({
             //     stats: {
             //         all: true

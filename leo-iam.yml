@@ -1,0 +1,22 @@
+kinesis:
+  Effect: "Allow"
+  Action:
+    - kinesis:PutRecords
+    - kinesis:PutRecord
+  Resource:
+    - "${self:custom.environment.kinesisArn}"
+firehose:
+  Effect: "Allow"
+  Action:
+    - firehose:PutRecordBatch
+    - firehose:PutRecord
+  Resource:
+    - "${self:custom.environment.firehoseArn}"
+s3:
+  Effect: "Allow"
+  Action:
+    - s3:PutObject
+    - s3:GetObject
+    - s3:ListBucket
+  Resource:
+    - "${self:custom.environment.s3Arn}"

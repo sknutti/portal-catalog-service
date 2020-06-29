@@ -1,0 +1,8 @@
+# If you change this lambda name, update the root serverless.yml
+publish-category-spreadsheet:
+  handler: bot/publish-category-spreadsheet/publish-category-spreadsheet.publishCategorySpreadsheet
+  memorySize: 1024
+  timeout: 240
+  vpc: ${self:custom.environment.gearman-vpc}
+  layers:
+    - ${cf:layer-leo-${self:provider.stage}.LeoLambdaLayerQualifiedArn}

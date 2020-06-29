@@ -14,6 +14,8 @@ import { DscoSpreadsheet } from './dsco-spreadsheet';
 import { GetPipelineCatalogRulesRequest } from './get-pipeline-catalog-rules.request';
 import { GetPipelineRulesRequest } from './get-pipeline-rules.request';
 
+const env = process.env.ENVIRONMENT! as DscoEnv;
+
 /**
  * Generates a spreadsheet with column data pulled from the simple rules.
  */
@@ -23,7 +25,7 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
         return colsOrErr;
     }
 
-    const spreadsheet = new DscoSpreadsheet(`${supplierId}||${retailerId}||${categoryPath}`);
+    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`);
 
     spreadsheet.addColumn(new DscoColumn('image_1_name', {
         required: XrayActionSeverity.warn,
@@ -40,8 +42,6 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
 
     return spreadsheet;
 }
-
-const env = process.env.ENVIRONMENT! as DscoEnv;
 
 /**
  * Generates column data using dsco's simple rules.

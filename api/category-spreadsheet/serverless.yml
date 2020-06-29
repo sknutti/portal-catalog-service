@@ -1,0 +1,20 @@
+category-spreadsheet:
+  handler: api/category-spreadsheet/category-spreadsheet.categorySpreadsheet
+  memorySize: 256
+  timeout: 30
+  environment:
+    GENERATE_BOT_NAME: ${self:custom.generateSpreadsheetBotName}
+    PUBLISH_BOT_NAME: ${self:custom.publishSpreadsheetBotName}
+  events:
+    - http:
+        path: spreadsheet
+        method: post
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam
+    - http:
+        path: spreadsheet/publish
+        method: post
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam

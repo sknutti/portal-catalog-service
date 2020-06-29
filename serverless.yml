@@ -13,6 +13,8 @@ package:
 custom:
   environment: ${file(environments.yml):${self:provider.stage}}
   spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
+  generateSpreadsheetBotName: ${self:service}-${self:provider.stage}-generate-category-spreadsheet
+  publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet
   customDomain:
     domainName: ${self:custom.environment.domain}
     basePath: portal-catalog
@@ -29,6 +31,7 @@ provider:
     AUTH_USER_TABLE: ${self:custom.environment.authUserTable}
     ENVIRONMENT: ${self:provider.stage}
     SPREADSHEET_TABLE: ${self:custom.spreadsheetTable}
+    LEO_ENVIRONMENT: ${self:provider.stage}
   region: ${opt:region, 'us-east-1'}
   iamRoleStatements:
     - Effect: "Allow"
@@ -52,12 +55,23 @@ provider:
     - Effect: "Allow"
       Action:
         - execute-api:Invoke
-      Resource:
+      Resource: # TODO: this could be more restrictive!
         - "arn:aws:execute-api:${self:provider.region}:#{AWS::AccountId}:*/*/*/*"
+    - Effect: "Allow"
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.generateSpreadsheetBotName}"
+        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
+    - ${file(./leo-iam.yml):kinesis}
+    - ${file(./leo-iam.yml):firehose}
+    - ${file(./leo-iam.yml):s3}
+
 
 functions:
-  - ${file(./api/generate-category-spreadsheet/serverless.yml)}
-  - ${file(./api/publish-category-spreadsheet/serverless.yml)}
+  - ${file(./api/category-spreadsheet/serverless.yml)}
+  - ${file(./bot/generate-category-spreadsheet/serverless.yml)}
+  - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
 
 resources:
   Resources:

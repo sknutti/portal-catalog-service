@@ -2,6 +2,9 @@ test:
   domain: test-micro.dsco.io
   endpointType: regional
   authUserTable: TestAuth-LeoAuthUser-OZ7R6RHZIPDY
+  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/TestBus-LeoKinesisStream-*
+  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/TestBus-LeoFirehoseStream-*
+  s3Arn: arn:aws:s3:::testbus-leos3-*/*
   gearman-vpc:
     securityGroupIds:
       - 'sg-5e885f22'
@@ -14,6 +17,9 @@ staging:
   domain: staging-micro.dsco.io
   endpointType: edge
   authUserTable: StagingAuth-LeoAuthUser-1IVNIRH40AURC
+  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/StagingBus-LeoKinesisStream-*
+  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/StagingBus-LeoFirehoseStream-*
+  s3Arn: arn:aws:s3:::stagingbus-leos3-*/*
   gearman-vpc:
     securityGroupIds:
       - 'sg-34dcaa41'
@@ -25,6 +31,9 @@ prod:
   domain: micro.dsco.io
   endpointType: edge
   authUserTable: ProdAuth-LeoAuthUser-SD8EQDNF542U
+  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/ProdBus-LeoKinesisStream-*
+  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/ProdBus-LeoFirehoseStream-*
+  s3Arn: arn:aws:s3:::prodbus-leos3-*/*
   gearman-vpc:
     securityGroupIds:
       - 'sg-1694056c'
