@@ -12,7 +12,7 @@ import Schema$Spreadsheet = sheets_v4.Schema$Spreadsheet;
 import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensionPropertiesRequest;
 import Sheets = sheets_v4.Sheets;
 
-const dropdownSheetName = 'PickListData';
+const validationSheetName = 'ValidationData';
 
 export class DscoSpreadsheet {
     static generateUrl(spreadsheetId: string): string {
@@ -29,15 +29,32 @@ export class DscoSpreadsheet {
     private parsedColIdx = 0;
     // These updates are sent after the spreadsheet is created to resize the sheet.
     private dimensionUpdates: Schema$UpdateDimensionPropertiesRequest[] = [];
-    private headerRow: Schema$CellData[] = [];
-    private dataRow: Schema$CellData[] = [];
-    private pickListRows: Schema$RowData[] = [];
+
+    private userDataRows: Schema$RowData[] = [
+        {values: []} // The header row
+    ]
+    private headerRow: Schema$CellData[] = this.userDataRows[0].values!;
+
+
+    private validationDataRows: Schema$RowData[] = [
+        {values: []} // The validation row
+    ];
+    private validationRow: Schema$CellData[] = this.validationDataRows[0].values!;
+
+    private rowData: Record<string, string>[] = [];
 
     constructor(public spreadsheetName: string) {
     }
 
     addColumn(col: DscoColumn): void {
         this.columns[col.validation.required].push(col);
+    }
+
+    /**
+     * Should be a map from column name to cell value.
+     */
+    addRowData(row: Record<string, string>): void {
+        this.rowData.push(row);
     }
 
     /**
@@ -81,47 +98,44 @@ export class DscoSpreadsheet {
     /**
      * Builds the spreadsheet, preparing it to send
      */
-    private build(numRows = 100): Schema$Spreadsheet {
+    private build(): Schema$Spreadsheet {
         this.parsedColIdx = 0;
+
+        const numRowsToBuild = Math.max(100, this.rowData.length + 50);
+
         for (const col of this.columns.error) {
-            this.parseCol(col);
+            this.parseCol(col, numRowsToBuild);
         }
         for (const col of this.columns.warn) {
-            this.parseCol(col);
+            this.parseCol(col, numRowsToBuild);
         }
         for (const col of this.columns.info) {
-            this.parseCol(col);
+            this.parseCol(col, numRowsToBuild);
         }
         for (const col of this.columns.none) {
-            this.parseCol(col);
-        }
-
-        const rowData: Schema$RowData[] = [{values: this.headerRow}];
-
-        for (let i = 0; i < (numRows - 1); i++) {
-            rowData.push({values: this.dataRow});
+            this.parseCol(col, numRowsToBuild);
         }
 
         return {
             sheets: [
                 {
-                    data: [{rowData}],
+                    data: [{rowData: this.userDataRows}],
                     properties: {
-                        gridProperties: {rowCount: numRows},
+                        gridProperties: {rowCount: numRowsToBuild},
                         title: 'Catalog Data',
                         sheetId: 0
                     }
                 },
                 {
-                    data: [{rowData: this.pickListRows}],
+                    data: [{rowData: this.validationDataRows}],
                     properties: {
-                        title: dropdownSheetName,
+                        title: validationSheetName,
                         sheetId: 1,
                         hidden: true
                     },
                     protectedRanges: [
                         {
-                            description: 'Pick List Data',
+                            description: 'Validation Data',
                             range: {
                                 sheetId: 1
                             },
@@ -138,99 +152,13 @@ export class DscoSpreadsheet {
         };
     }
 
-    private parseCol(col: DscoColumn): void {
+    private parseCol(col: DscoColumn, numRowsToBuild: number): void {
         this.resizeColumnIfNecessary(col);
 
-        this.headerRow.push({
-            userEnteredValue: {stringValue: prepareValueForSpreadsheet(col.name)},
-            userEnteredFormat: {
-                textFormat: {
-                    fontFamily: 'Arial',
-                    bold: true
-                }
-            }
-        });
-
-        const {format, min, max, dontMatch, match, regexMessage, minLength, maxLength, arrayType, enumVals, dateInFuture} = col.validation;
-        if (format === 'integer' || format === 'number') {
-            const hasMin = min !== undefined;
-            const hasMax = max !== undefined;
-            let validation: Schema$DataValidationRule;
-
-            if (hasMin || hasMax) {
-                validation = {
-                    condition: {
-                        type: hasMin && hasMax ? 'NUMBER_BETWEEN' : (hasMin ? 'NUMBER_GREATER_THAN_EQ' : 'NUMBER_LESS_THAN_EQ'),
-                        values: [min, max].filter((it): it is number => it !== undefined).map(num => ({
-                            userEnteredValue: num.toString(10)
-                        }))
-                    },
-                    showCustomUi: true,
-                    inputMessage: hasMax && hasMin ?
-                      `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} between ${min} and ${max}` :
-                (hasMin ? `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} no less than ${min}` :
-                  `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'} no greater than ${max}`)
-                };
-            } else {
-                validation = {
-                    condition: {
-                        type: 'CUSTOM_FORMULA',
-                        values: [{userEnteredValue: '=ISNUMBER(INDIRECT("RC", false))'}]
-                    },
-                    inputMessage: `${col.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'}`
-                };
-            }
-
-            this.dataRow.push({
-                userEnteredFormat: {numberFormat: {pattern: format === 'integer' ? '#,##0' : '#,##0.00', type: 'NUMBER'}},
-                dataValidation: validation
-            });
-        } else if (format === 'string') {
-            const validations: string[] = [];
-            if (match) {
-                validations.push(`REGEXMATCH(TO_TEXT(INDIRECT("RC", false)), "${match}")`);
-            }
-            if (dontMatch) {
-                for (const regex of dontMatch) {
-                    validations.push(`NOT(REGEXMATCH(TO_TEXT(INDIRECT("RC", false)), "${regex}"))`);
-                }
-            }
-
-            this.dataRow.push({
-                userEnteredFormat: {numberFormat: {type: 'TEXT'}},
-                dataValidation: validations.length ? {
-                    condition: {
-                        type: 'CUSTOM_FORMULA',
-                        values: [{userEnteredValue: `=AND(${validations.join(',')})`}]
-                    },
-                    inputMessage:  regexMessage
-                } : undefined
-            });
-        } else if (format === 'date' || format === 'date-time') {
-            this.dataRow.push({
-                dataValidation: {
-                    condition: {
-                        type: dateInFuture ? 'DATE_AFTER' : 'DATE_IS_VALID',
-                        values: dateInFuture ? [{userEnteredValue: '=TODAY()'}] : undefined
-                    },
-                    showCustomUi: true,
-                    inputMessage: dateInFuture ? `${col.name} must be a future date.` : `${col.name} must be a valid ${format === 'date' ? 'date' : 'date & time'}.`
-                },
-                userEnteredFormat: {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME'}}
-            });
-        } else if (format === 'time') {
-            this.dataRow.push({userEnteredFormat: {numberFormat: {type: 'TIME'}}});
-        } else if (format === 'boolean') {
-            this.dataRow.push({
-                dataValidation: {
-                    condition: {type: 'BOOLEAN'},
-                    showCustomUi: true,
-                    strict: true
-                }
-            });
-        } else if (format === 'enum') {
-            this.pickListRows.push({
-                values: Array.from(enumVals || []).map(value => {
+        // Adds the enum values to the spreadsheet, returns the saved range.
+        const addEnumVals = (vals: Array<string | number>) => {
+            const rowNum = this.validationDataRows.push({
+                values: vals.map(value => {
                     return {
                         userEnteredValue: {
                             stringValue: prepareValueForSpreadsheet(`${value}`)
@@ -239,26 +167,23 @@ export class DscoSpreadsheet {
                 })
             });
 
-            const rowNum = this.pickListRows.length;
-            this.dataRow.push({
-                dataValidation: {
-                    condition: {
-                        type: 'ONE_OF_RANGE',
-                        values: [{userEnteredValue: `=${dropdownSheetName}!${rowNum}:${rowNum}`}]
-                    },
-                    showCustomUi: true
-                }
-            });
-        } else if (format === 'uri' || format === 'email') {
-            this.dataRow.push({
-                dataValidation: {
-                    condition: {type: format === 'email' ? 'TEXT_IS_EMAIL' : 'TEXT_IS_URL'},
-                    showCustomUi: true,
-                    inputMessage: `${col.name} must be ${format === 'email' ? 'an email' : 'a URL'}.`
-                }
-            });
-        } else { // TODO: Validate array: =AND(ARRAYFORMULA(ISNUMBER(SPLIT(G5, ",", TRUE, TRUE))))
-            this.dataRow.push({});
+            return `${validationSheetName}!${rowNum}:${rowNum}`;
+        };
+
+        this.headerRow.push(col.generateHeaderCell());
+        this.validationRow.push(col.generateDataCell('', addEnumVals));
+
+        // We start at 1 because the first userDataRow is the header row.
+        for (let i = 1; i < numRowsToBuild; i++) {
+            let row = this.userDataRows[i];
+            if (!row) {
+                row = this.userDataRows[i] = {
+                    values: []
+                };
+            }
+
+            const value = this.rowData[i - 1]?.[col.name] || '';
+            row.values!.push(col.generateDataCell(value, addEnumVals));
         }
 
         this.parsedColIdx++;

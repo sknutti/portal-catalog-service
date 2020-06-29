@@ -9,6 +9,10 @@ const leo = require('leo-sdk');
 const ls = require('leo-streams');
 
 export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(type: K, data: CatalogSpreadsheetWebsocketEvents[K], accountId: number): Promise<void> {
+    if (process.env.ENVIRONMENT === 'test') {
+        console.log(`Sending websocket message: ${type}`, data);
+    }
+
     await pushEventToLeo('portalCategoryBotId', {
         type: 'catalogBroadcastNotification',
         accountId,

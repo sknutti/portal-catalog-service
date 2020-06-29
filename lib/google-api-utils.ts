@@ -1,7 +1,8 @@
 import { SecretsManagerHelper } from '@dsco/service-utils';
-import { drive_v3, google, sheets_v4 } from 'googleapis';
+import { drive_v3, google, script_v1, sheets_v4 } from 'googleapis';
 import Drive = drive_v3.Drive;
 import Sheets = sheets_v4.Sheets;
+import Script = script_v1.Script;
 
 interface GoogleSecret {
     accessToken: string;
@@ -16,6 +17,7 @@ const secretHelper = new SecretsManagerHelper<GoogleSecret>('catalog-editor-goog
 export async function prepareGoogleApis(): Promise<{
     drive: Drive,
     sheets: Sheets,
+    script: Script
     cleanupGoogleApis: () => Promise<void>
 }> {
     const {accessToken, refreshToken, clientId, clientSecret} = await secretHelper.getValue();
@@ -36,6 +38,7 @@ export async function prepareGoogleApis(): Promise<{
     return {
         sheets: google.sheets({version: 'v4', auth: oauthClient}),
         drive: google.drive({version: 'v3', auth: oauthClient}),
+        script: google.script({version: 'v1', auth: oauthClient}),
         cleanupGoogleApis: async () => {
             if (updateAccessTokenPromise) {
                 console.log('Saving generated access token');

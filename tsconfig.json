@@ -14,7 +14,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "isolatedModules": true,
+    "isolatedModules": false,
     "outDir": "build",
     "typeRoots": ["node_modules/@types"],
     "incremental": true,
@@ -32,6 +32,7 @@
   "include": [
     "api/**/*.ts",
     "bot/**/*.ts",
+    "app-script.ts",
     "lib/**/*.ts",
     "webpack.config.ts"
   ]

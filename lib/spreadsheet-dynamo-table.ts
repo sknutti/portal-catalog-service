@@ -7,7 +7,7 @@ export class SpreadsheetDynamoTable {
     async getItem(supplierId: number, retailerId: number, categoryPath: string): Promise<SpreadsheetRecord | undefined> {
         const resp = await this.ddb.getItem({
             TableName: this.tableName,
-            AttributesToGet: ['spreadsheetId'],
+            AttributesToGet: ['spreadsheetId', 'scriptId'],
             Key: {
                 supplierId: {
                     S: supplierId.toString(10)
@@ -65,7 +65,8 @@ export class SpreadsheetDynamoTable {
             supplierId: partial.supplierId || +map.supplierId.S!,
             retailerId: partial.retailerId || extracted!.retailerId,
             categoryPath: partial.categoryPath || extracted!.categoryPath,
-            spreadsheetId: partial.spreadsheetId || map.spreadsheetId.S!
+            spreadsheetId: partial.spreadsheetId || map.spreadsheetId.S!,
+            scriptId: partial.scriptId || map.scriptId.S!
         };
     }
 }
@@ -75,4 +76,5 @@ export interface SpreadsheetRecord {
     retailerId: number;
     categoryPath: string;
     spreadsheetId: string;
+    scriptId: string;
 }

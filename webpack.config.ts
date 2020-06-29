@@ -38,6 +38,13 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
                 //     ]
                 // },
                 {
+                    test: /app-script\.ts/,
+                    use: [
+                        {loader: 'ts-loader', options: {configFile: 'tsconfig.app-script.json'}},
+                        {loader: 'raw-loader'}
+                    ],
+                },
+                {
                     test: /\.tsx?$/,
                     loader: 'ts-loader',
                     options: {

@@ -29,7 +29,7 @@ const VALIDATING_PROGRESS_START_PCT = 0.66;
 export async function publishCategorySpreadsheet({categoryPath, retailerId, supplierId, userId}: PublishCategorySpreadsheetEvent): Promise<void> {
     await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
         categoryPath,
-        progress: 0,
+        progress: 0.2,
         message: 'Loading spreadsheet...'
     }, supplierId);
 
