@@ -27,11 +27,11 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
 
     const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`);
 
-    spreadsheet.addColumn(new DscoColumn('image_1_name', {
+    spreadsheet.addColumn(new DscoColumn('image_1_name', 'core', {
         required: XrayActionSeverity.warn,
         format: 'string',
     }));
-    spreadsheet.addColumn(new DscoColumn('image_1_url', {
+    spreadsheet.addColumn(new DscoColumn('image_1_url', 'core', {
         required: XrayActionSeverity.warn,
         format: 'uri',
     }));
@@ -68,18 +68,37 @@ export async function generateSpreadsheetCols(supplierId: number, retailerId: nu
         return allRulesResp.data;
     }
 
-    const cols: Record<string, DscoColumn> = {};
+    const allCols: DscoColumn[] = [];
+    const cols = {
+        core: {} as Record<string, DscoColumn>,
+        extended: {} as Record<string, DscoColumn>
+    };
+    const ensureCol = (name: string, rule: PipelineRule): DscoColumn => {
+        const type = rule.attrType === 'custom' ? 'extended' : 'core';
+
+        let result = cols[type][name];
+        if (!result) {
+            result = cols[type][name] = new DscoColumn(name, type, {
+                // Custom attributes should default to info, not none
+                required: type === 'extended' ? XrayActionSeverity.info : 'none'
+            });
+            allCols.push(result);
+        }
+
+        return result;
+    };
+
     for (const dscoRule of allRulesResp.data.dsco || []) {
         if (dscoRule.objectType === 'catalog') {
-            parsePipelineRule(dscoRule, cols);
+            parsePipelineRule(dscoRule, ensureCol);
         }
     }
 
     for (const rule of catalogRulesResp.data.rules) {
-        parsePipelineRule(rule, cols);
+        parsePipelineRule(rule, ensureCol);
     }
 
-    return Object.values(cols);
+    return allCols;
 }
 
 /**
@@ -93,32 +112,13 @@ const SKIPPED_COLS = new Set(['item_id', 'supplier_id', '__supplier_name', 'trad
 /**
  * Parses the pipeline rule, creating a column for it if necessary
  */
-function parsePipelineRule(rule: PipelineRule, cols: Record<string, DscoColumn>): void {
+function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: PipelineRule) => DscoColumn): void {
     if (typeof rule.field === 'string' && SKIPPED_COLS.has(rule.field)) {
         return;
     }
 
-    function ensureCol(field: string): DscoColumn {
-        let result = cols[field];
-        if (!result) {
-            result = cols[field] = new DscoColumn(field);
-        }
-
-        if (rule.attrType === 'custom') {
-            result.isExtended = true;
-
-            if (result.validation.required === 'none') { // Custom attributes should default to info, not none
-                result.validation.required = XrayActionSeverity.info;
-            }
-        } else {
-            result.isCore = true;
-        }
-
-        return result;
-    }
-
     function setValidation<K extends keyof DscoColValidation>(field: string, key: K, value: DscoColValidation[K]): void {
-        const col = ensureCol(field);
+        const col = ensureCol(field, rule);
         // Don't widen enums to strings
         if (key === 'format' && col.validation.format === 'enum' && value === 'string') {
             return;
@@ -139,7 +139,7 @@ function parsePipelineRule(rule: PipelineRule, cols: Record<string, DscoColumn>)
             setValidation(field, 'required', rule.severity);
         }
     } else if (rule.type === 'enum_match' || rule.type === 'catalog_enum_match') {
-        const col = ensureCol(rule.field);
+        const col = ensureCol(rule.field, rule);
         col.validation.format = 'enum';
         col.validation.enumVals = new Set(rule.values);
     } else if (rule.type === 'format' || rule.type === 'catalog_format') {
@@ -168,7 +168,7 @@ function parsePipelineRule(rule: PipelineRule, cols: Record<string, DscoColumn>)
                 break;
             }
             case PipelineRulePrimaryDataType.ARRAY: {
-                const col = ensureCol(rule.field);
+                const col = ensureCol(rule.field, rule);
                 col.validation.format = 'array';
                 col.validation.arrayType = rule.arrayDataType;
                 break;
@@ -176,19 +176,19 @@ function parsePipelineRule(rule: PipelineRule, cols: Record<string, DscoColumn>)
             default: return;
         }
     } else if (rule.type === 'range' && rule.severity !== XrayActionSeverity.info) {
-        const col = ensureCol(rule.field);
+        const col = ensureCol(rule.field, rule);
         col.validation.min = rule.min;
         col.validation.max = rule.max;
     } else if ((rule.type === 'length_range' || rule.type === 'catalog_length_range') && rule.severity !== XrayActionSeverity.info) {
-        const col = ensureCol(rule.field);
+        const col = ensureCol(rule.field, rule);
         col.validation.minLength = rule.minLength;
         col.validation.maxLength = rule.maxLength;
     } else if ((rule.type === 'pattern_match' || rule.type === 'catalog_pattern_match') && rule.severity !== XrayActionSeverity.info) {
-        const col = ensureCol(rule.field);
+        const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.regexMessage = rule.description || rule.message;
     }  else if ((rule.type === 'multi_pattern' || rule.type === 'catalog_multi_pattern') && rule.severity !== XrayActionSeverity.info) {
-        const col = ensureCol(rule.field);
+        const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.dontMatch = rule.notPatterns;
         col.validation.regexMessage = rule.description || rule.message;

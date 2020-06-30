@@ -8,16 +8,30 @@ import Schema$DataValidationRule = sheets_v4.Schema$DataValidationRule;
 export class DscoColumn {
     static readonly DEFAULT_COLUMN_WIDTH = 100;
 
-    // Both of these can be true
-    public isExtended = false;
-    public isCore = false;
+    /**
+     * The colon and space here are intentionally breaking the extended attributes requirements for field names.
+     * This ensures name collisions can't happen.
+     */
+    static readonly DSCO_PREFIX = 'Dsco: ';
 
     private dataValidation?: Schema$DataValidationRule;
     private format?: Schema$CellFormat;
     private generatedValidationYet = false;
 
+
+    get name(): string {
+        return this.shouldHaveDscoPrefix ? DscoColumn.DSCO_PREFIX + this.fieldName : this.fieldName;
+    }
+
+    /**
+     If there are both core and extended rules for the same name, this should be set to true.
+     The name will have the Dsco: prefix added.
+    */
+    shouldHaveDscoPrefix = false;
+
     constructor(
-      public name: string,
+      public fieldName: string,
+      public type: 'core' | 'extended',
       public validation: DscoColValidation = {
           required: 'none'
       }

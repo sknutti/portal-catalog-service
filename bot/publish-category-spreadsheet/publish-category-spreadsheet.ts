@@ -223,11 +223,10 @@ function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supp
 
         const coerced = coerceValue(parsedRow.values[col.name], col);
 
-        if (col.isCore) {
-            (catalog as any)[col.name] = coerced;
-        }
-        if (col.isExtended) {
-            extended[col.name] = coerced;
+        if (col.type === 'core') {
+            (catalog as any)[col.fieldName] = coerced;
+        } else {
+            extended[col.fieldName] = coerced;
         }
     }
 
