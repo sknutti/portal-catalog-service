@@ -21,6 +21,7 @@ module.exports = {
         quotes: ['error', 'single', {avoidEscape: true}],
         'prefer-template': ['error'],
         'quote-props': ['error', 'as-needed'],
-        'no-case-declarations': 'off'
+        'no-case-declarations': 'off',
+        '@typescript-eslint/no-explicit-any': 'off'
     },
 };

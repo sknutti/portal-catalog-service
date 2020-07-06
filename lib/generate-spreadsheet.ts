@@ -25,16 +25,7 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
         return colsOrErr;
     }
 
-    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`);
-
-    spreadsheet.addColumn(new DscoColumn('image_1_name', 'core', {
-        required: XrayActionSeverity.warn,
-        format: 'string',
-    }));
-    spreadsheet.addColumn(new DscoColumn('image_1_url', 'core', {
-        required: XrayActionSeverity.warn,
-        format: 'uri',
-    }));
+    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`, retailerId);
 
     for (const colName in colsOrErr) {
         spreadsheet.addColumn(colsOrErr[colName]);

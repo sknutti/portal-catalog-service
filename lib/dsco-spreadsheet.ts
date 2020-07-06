@@ -1,12 +1,11 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
+import { CoreCatalog } from '@lib/core-catalog';
 import { drive_v3, sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
-import { prepareValueForSpreadsheet } from './google-api-utils';
 import Drive = drive_v3.Drive;
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$Color = sheets_v4.Schema$Color;
-import Schema$DataValidationRule = sheets_v4.Schema$DataValidationRule;
 import Schema$RowData = sheets_v4.Schema$RowData;
 import Schema$Spreadsheet = sheets_v4.Schema$Spreadsheet;
 import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensionPropertiesRequest;
@@ -14,25 +13,33 @@ import Sheets = sheets_v4.Sheets;
 
 const validationSheetName = 'ValidationData';
 
-export class DscoSpreadsheet {
+export class DscoSpreadsheet implements Iterable<DscoColumn> {
+    static readonly PUBLISHED_COL_NAME = 'Published to Dsco';
+
     static generateUrl(spreadsheetId: string): string {
         return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?rm=minimal`;
     }
 
     columns: Record<XrayActionSeverity | 'none', DscoColumn[]> = {
-        [XrayActionSeverity.error]: [],
+        [XrayActionSeverity.error]: [
+            new DscoColumn(DscoSpreadsheet.PUBLISHED_COL_NAME, 'transient', {
+                format: 'boolean',
+                required: XrayActionSeverity.error
+            })
+        ],
         [XrayActionSeverity.warn]: [],
         [XrayActionSeverity.info]: [],
         none: []
     };
 
-    private parsedColIdx = 0;
+    private numImageCols = 0;
+
     // These updates are sent after the spreadsheet is created to resize the sheet.
     private dimensionUpdates: Schema$UpdateDimensionPropertiesRequest[] = [];
 
     private userDataRows: Schema$RowData[] = [
         {values: []} // The header row
-    ]
+    ];
     private headerRow: Schema$CellData[] = this.userDataRows[0].values!;
 
 
@@ -41,9 +48,17 @@ export class DscoSpreadsheet {
     ];
     private validationRow: Schema$CellData[] = this.validationDataRows[0].values!;
 
-    private rowData: Record<string, string>[] = [];
+    private rowData: DscoCatalogRow[] = [];
 
-    constructor(public spreadsheetName: string) {
+    * [Symbol.iterator](): IterableIterator<DscoColumn> {
+        yield* this.columns.error;
+        yield* this.columns.warn;
+        yield* this.columns.info;
+        yield* this.columns.none;
+    }
+
+    constructor(public spreadsheetName: string, private retailerId: number) {
+        this.addImageColumns();
     }
 
     addColumn(col: DscoColumn): void {
@@ -51,10 +66,14 @@ export class DscoSpreadsheet {
     }
 
     /**
-     * Should be a map from column name to cell value.
+     * Should be called before adding columns, as this ensures the image columns are added before the other columns
      */
-    addRowData(row: Record<string, string>): void {
-        this.rowData.push(row);
+    addCatalogRow(rowData: DscoCatalogRow): void {
+        this.rowData.push(rowData);
+
+        while (this.numImageCols < (rowData.catalog.images?.length ?? 0)) {
+            this.addImageColumns();
+        }
     }
 
     /**
@@ -78,7 +97,7 @@ export class DscoSpreadsheet {
                     responseIncludeGridData: false,
                     requests: [
                         ...bandedRanges.map(bandedRange => ({addBanding: {bandedRange}})),
-                        ...this.dimensionUpdates.map(dimension => ({updateDimensionProperties: dimension})),
+                        ...this.dimensionUpdates.map(dimension => ({updateDimensionProperties: dimension}))
                     ]
                 }
             });
@@ -99,21 +118,12 @@ export class DscoSpreadsheet {
      * Builds the spreadsheet, preparing it to send
      */
     private build(): Schema$Spreadsheet {
-        this.parsedColIdx = 0;
-
         const numRowsToBuild = Math.max(100, this.rowData.length + 50);
 
-        for (const col of this.columns.error) {
-            this.parseCol(col, numRowsToBuild);
-        }
-        for (const col of this.columns.warn) {
-            this.parseCol(col, numRowsToBuild);
-        }
-        for (const col of this.columns.info) {
-            this.parseCol(col, numRowsToBuild);
-        }
-        for (const col of this.columns.none) {
-            this.parseCol(col, numRowsToBuild);
+        let parsedColIdx = 0;
+        for (const col of this) {
+            this.parseCol(col, numRowsToBuild, parsedColIdx);
+            parsedColIdx++;
         }
 
         return {
@@ -121,7 +131,10 @@ export class DscoSpreadsheet {
                 {
                     data: [{rowData: this.userDataRows}],
                     properties: {
-                        gridProperties: {rowCount: numRowsToBuild},
+                        gridProperties: {
+                            rowCount: numRowsToBuild,
+                            frozenRowCount: 1
+                        },
                         title: 'Catalog Data',
                         sheetId: 0
                     }
@@ -152,8 +165,8 @@ export class DscoSpreadsheet {
         };
     }
 
-    private parseCol(col: DscoColumn, numRowsToBuild: number): void {
-        this.resizeColumnIfNecessary(col);
+    private parseCol(col: DscoColumn, numRowsToBuild: number, parsedColIdx: number): void {
+        this.resizeColumnIfNecessary(col, parsedColIdx);
 
         // Adds the enum values to the spreadsheet, returns the saved range.
         const addEnumVals = (vals: Array<string | number>) => {
@@ -161,8 +174,9 @@ export class DscoSpreadsheet {
                 values: vals.map(value => {
                     return {
                         userEnteredValue: {
-                            stringValue: prepareValueForSpreadsheet(`${value}`)
-                        }
+                            stringValue: `${value}`
+                        },
+                        userEnteredFormat: {numberFormat: {type: 'TEXT'}}
                     };
                 })
             });
@@ -171,7 +185,7 @@ export class DscoSpreadsheet {
         };
 
         this.headerRow.push(col.generateHeaderCell());
-        this.validationRow.push(col.generateDataCell('', addEnumVals));
+        this.validationRow.push(col.generateDataCell(undefined, this.retailerId, addEnumVals));
 
         // We start at 1 because the first userDataRow is the header row.
         for (let i = 1; i < numRowsToBuild; i++) {
@@ -182,25 +196,22 @@ export class DscoSpreadsheet {
                 };
             }
 
-            const value = this.rowData[i - 1]?.[col.name] || '';
-            row.values!.push(col.generateDataCell(value, addEnumVals));
+            row.values!.push(col.generateDataCell(this.rowData[i - 1], this.retailerId, addEnumVals));
         }
-
-        this.parsedColIdx++;
     }
 
-    private resizeColumnIfNecessary(col: DscoColumn): void {
+    private resizeColumnIfNecessary(col: DscoColumn, parsedColIdx: number): void {
         const width = col.colWidth();
         if (width > DscoColumn.DEFAULT_COLUMN_WIDTH) {
             const prev = this.dimensionUpdates[this.dimensionUpdates.length - 1];
 
-            if (prev && prev.range!.endIndex === this.parsedColIdx) {
+            if (prev && prev.range!.endIndex === parsedColIdx) {
                 prev.range!.endIndex++;
             } else {
                 this.dimensionUpdates.push({
                     range: {
-                        startIndex: this.parsedColIdx,
-                        endIndex: this.parsedColIdx + 1,
+                        startIndex: parsedColIdx,
+                        endIndex: parsedColIdx + 1,
                         dimension: 'COLUMNS',
                         sheetId: 0
                     },
@@ -241,6 +252,19 @@ export class DscoSpreadsheet {
         return result;
     }
 
+    private addImageColumns() {
+        this.numImageCols++;
+
+        this.addColumn(new DscoColumn(`image_${this.numImageCols}_name`, 'transient', {
+            required: XrayActionSeverity.warn,
+            format: 'string'
+        }));
+
+        this.addColumn(new DscoColumn(`image_${this.numImageCols}_url`, 'transient', {
+            required: XrayActionSeverity.warn,
+            format: 'uri'
+        }));
+    }
 }
 
 function getColorForRequired(status: XrayActionSeverity, light = false): Schema$Color {
@@ -264,4 +288,9 @@ function getColorForRequired(status: XrayActionSeverity, light = false): Schema$
                 blue: light ? 0.97 : 0.8784314
             };
     }
+}
+
+export interface DscoCatalogRow {
+    catalog: CoreCatalog;
+    published: boolean;
 }

@@ -73,3 +73,27 @@ export function prepareValueForSpreadsheet(value: string): string {
 export function parseValueFromSpreadsheet(value: string): string {
     return value.replace(/^'([+=])/, '$1');
 }
+
+
+/**
+ * @see https://developers.google.com/sheets/api/reference/rest/v4/DateTimeRenderOption#ENUM_VALUES.SERIAL_NUMBER
+ */
+export class SerialDate {
+    private static START_TIME = new Date(1899, 11, 30).getTime();
+    private static MS_IN_DAY = 1000 * 60 * 60 * 24;
+
+    static toJSDate(serialDate: number): Date {
+        return new Date(SerialDate.START_TIME + (serialDate * SerialDate.MS_IN_DAY));
+    }
+
+    static fromJSDate(date: Date): number {
+        const time = date.getTime();
+
+        return (time - SerialDate.START_TIME) / SerialDate.MS_IN_DAY;
+    }
+
+    static fromTime(time: string): number {
+        const ms = new Date(`2020-12-31 ${time}`).getTime() - new Date('2020-12-31 00:00').getTime();
+        return ms / SerialDate.MS_IN_DAY;
+    }
+}

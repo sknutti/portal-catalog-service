@@ -5,6 +5,6 @@
     "target": "es2018",
     "module": "esnext"
   },
-  "include": ["api/**/*.ts", "bot/**/*.ts", "app-script.ts"],
+  "include": ["bot/generate-category-spreadsheet/**/*.ts"],
   "exclude": ["api/**/*.test.ts", "bot/**/*.test.ts"]
 }

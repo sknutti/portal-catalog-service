@@ -1,10 +1,17 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { prepareValueForSpreadsheet } from '@lib/google-api-utils';
+import { DscoCatalogRow, DscoSpreadsheet } from '@lib/dsco-spreadsheet';
+import { prepareValueForSpreadsheet, SerialDate } from '@lib/google-api-utils';
+import { CoreCatalog } from '@lib/core-catalog';
 import { sheets_v4 } from 'googleapis';
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$CellFormat = sheets_v4.Schema$CellFormat;
 import Schema$DataValidationRule = sheets_v4.Schema$DataValidationRule;
+import Schema$ExtendedValue = sheets_v4.Schema$ExtendedValue;
 
+/**
+ * Represents a single column in the spreadsheet.
+ * Contains validation information, and can be used to extract data from catalog
+ */
 export class DscoColumn {
     static readonly DEFAULT_COLUMN_WIDTH = 100;
 
@@ -24,6 +31,26 @@ export class DscoColumn {
     }
 
     /**
+     * If this is an image col, returns the info for that col.
+     */
+    get imageColInfo(): {type: 'name' | 'reference', imgIdx: number} | false {
+        if (this._imageColInfo || this._imageColInfo === false) {
+            return this._imageColInfo;
+        }
+
+        const match = this.fieldName.match(/image_(\d+)_(name|url)/);
+        if (match && match.length >= 3) {
+            return this._imageColInfo = {
+                imgIdx: +match[1] - 1,
+                type: match[2] === 'name' ? 'name' : 'reference'
+            };
+        } else {
+            return this._imageColInfo = false;
+        }
+    }
+    private _imageColInfo?: {type: 'name' | 'reference', imgIdx: number} | false;
+
+    /**
      If there are both core and extended rules for the same name, this should be set to true.
      The name will have the Dsco: prefix added.
     */
@@ -31,7 +58,7 @@ export class DscoColumn {
 
     constructor(
       public fieldName: string,
-      public type: 'core' | 'extended',
+      public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
       public validation: DscoColValidation = {
           required: 'none'
       }
@@ -60,21 +87,60 @@ export class DscoColumn {
 
     /**
      * Generates a data cell for the spreadsheet with the given value, as well as the correct validation
-     * @param value
+     * @param rowData
+     * @param retailerId
      * @param addEnumVals A callback telling the spreadsheet to add these enum values to the spreadsheet.  It returns the range that holds the enum values.
      */
-    generateDataCell(value: string | boolean | number, addEnumVals: (vals: Array<string | number>) => string): Schema$CellData {
+    generateDataCell(rowData: DscoCatalogRow | undefined, retailerId: number, addEnumVals: (vals: Array<string | number>) => string): Schema$CellData {
         this.generateValidationData(addEnumVals);
 
         return {
-            userEnteredValue: {
-                stringValue: typeof value === 'string' ? value : undefined,
-                boolValue: typeof value === 'boolean' ? value : undefined,
-                numberValue: typeof value === 'number' ? value : undefined
-            },
+            userEnteredValue: rowData ? this.makeExtendedValue(rowData, retailerId) : undefined,
             dataValidation: this.dataValidation,
             userEnteredFormat: this.format
         };
+    }
+
+    /**
+     * Extracts the value from the DscoCatalogRow, returning a google spreadsheet ExtendedValue
+     */
+    private makeExtendedValue(rowData: DscoCatalogRow, retailerId: number): Schema$ExtendedValue | undefined {
+        let data: any;
+        if (this.type === 'core') {
+            data = rowData.catalog[this.fieldName];
+        } else if (this.type === 'extended') {
+            data = rowData.catalog.extended_attributes?.[retailerId]?.[this.fieldName];
+        } else if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
+            data = rowData.published;
+        } else if (this.imageColInfo) {
+            data = rowData.catalog.images?.[this.imageColInfo.imgIdx]?.[this.imageColInfo.type];
+        }
+
+        if (data === null || data === undefined) {
+            return undefined;
+        }
+
+        switch (this.validation.format) {
+            case 'date':
+            case 'date-time':
+                return {numberValue: SerialDate.fromJSDate(data instanceof Date ? data : new Date(data))};
+            case 'time':
+                return {numberValue: SerialDate.fromTime(data)};
+            case 'array':
+                return {stringValue: (data || []).join(', ')};
+            case 'boolean':
+                return {boolValue: !!data};
+            case 'integer':
+            case 'number':
+                return {numberValue: +data};
+            case 'string':
+            case 'uri':
+            case 'email':
+            case 'enum':
+                return {stringValue: `${data}`};
+            case undefined:
+                return undefined;
+        }
     }
 
     private guessPixelSize(): number {
@@ -170,7 +236,7 @@ export class DscoColumn {
             };
             this.format = {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME'}};
         } else if (format === 'time') {
-            this.format = {numberFormat: {type: 'TIME'}};
+            this.format = {numberFormat: {type: 'TIME', pattern: 'h":"mm" "am/pm'}};
         } else if (format === 'boolean') {
             this.dataValidation = {
                 condition: {type: 'BOOLEAN'},
@@ -181,6 +247,7 @@ export class DscoColumn {
             const range = addEnumVals(Array.from(enumVals || []));
 
 
+            this.format = {numberFormat: {type: 'TEXT'}};
             this.dataValidation = {
                 condition: {
                     type: 'ONE_OF_RANGE',
@@ -191,6 +258,7 @@ export class DscoColumn {
                 inputMessage: `${this.name} must be one of the allowed values.`
             };
         } else if (format === 'uri' || format === 'email') {
+            this.format = {numberFormat: {type: 'TEXT'}};
             this.dataValidation = {
                 condition: {type: format === 'email' ? 'TEXT_IS_EMAIL' : 'TEXT_IS_URL'},
                 showCustomUi: true,

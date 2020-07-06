@@ -1,3 +1,4 @@
+import { catalogItemSearch } from '@lib/catalog-item-search';
 import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
 import { generateScriptProjectForSheet } from '@lib/generate-script-project-for-sheet';
 import { generateSpreadsheet } from '@lib/generate-spreadsheet';
@@ -33,13 +34,34 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
     await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
         categoryPath,
         progress: 0.25,
+        message: 'Loading existing items...'
+    }, supplierId);
+    const spreadsheetPromise = generateSpreadsheet(supplierId, retailerId, categoryPath);
+    const catalogItemsPromise = catalogItemSearch(supplierId, retailerId, categoryPath);
+
+    // We use race to give a progress update
+    await Promise.race([spreadsheetPromise, catalogItemsPromise]);
+    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
+        categoryPath,
+        progress: 0.53,
         message: 'Loading Dsco schema & attribution data...'
     }, supplierId);
-    const spreadsheetOrError = await generateSpreadsheet(supplierId, retailerId, categoryPath);
+
+    const [spreadsheetOrError, catalogItems] = await Promise.all([spreadsheetPromise, catalogItemsPromise]);
 
     if (!(spreadsheetOrError instanceof DscoSpreadsheet)) {
         // TODO: Handle this
         throw spreadsheetOrError;
+    }
+
+    for (const catalog of catalogItems) {
+        if (catalog.images?.length) {
+            console.error(catalog);
+        }
+        spreadsheetOrError.addCatalogRow({
+            catalog,
+            published: true
+        });
     }
 
     await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {

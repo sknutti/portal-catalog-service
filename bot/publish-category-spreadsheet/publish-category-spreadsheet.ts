@@ -1,12 +1,13 @@
-import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { Catalog, CatalogImage, UnexpectedError, XrayActionSeverity } from '@dsco/ts-models';
-import { sheets_v4 } from 'googleapis';
 import { SpreadsheetRowMessage } from '@api';
+import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
+import { CatalogImage, UnexpectedError, XrayActionSeverity } from '@dsco/ts-models';
 import { DscoColumn } from '@lib/dsco-column';
 import { generateSpreadsheetCols } from '@lib/generate-spreadsheet';
 import { parseValueFromSpreadsheet, prepareGoogleApis } from '@lib/google-api-utils';
+import { CoreCatalog } from '@lib/core-catalog';
 import { sendWebsocketEvent } from '@lib/send-websocket-event';
 import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
+import { sheets_v4 } from 'googleapis';
 
 export interface PublishCategorySpreadsheetEvent {
     supplierId: number;
@@ -115,7 +116,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     }, supplierId);
 }
 
-function resolveCatalogsWithProgress(catalogs: Catalog[], userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
+function resolveCatalogsWithProgress(catalogs: CoreCatalog[], userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
     const total = catalogs.length;
     let current = 0;
 
@@ -128,7 +129,7 @@ function resolveCatalogsWithProgress(catalogs: Catalog[], userId: number, suppli
                 account_id: supplierId!.toString(10),
                 user_id: userId.toString(10)
             },
-            params: catalog.toSnakeCase()
+            params: catalog
         }).submit();
 
         current++;
@@ -147,8 +148,8 @@ function resolveCatalogsWithProgress(catalogs: Catalog[], userId: number, suppli
     });
 }
 
-function generateCatalogsFromSpreadsheet(sheet: sheets_v4.Schema$Sheet, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string, addRowMessage: (row: number, message: SpreadsheetRowMessage) => void): Catalog[] {
-    const result: Catalog[] = [];
+function generateCatalogsFromSpreadsheet(sheet: sheets_v4.Schema$Sheet, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string, addRowMessage: (row: number, message: SpreadsheetRowMessage) => void): CoreCatalog[] {
+    const result: CoreCatalog[] = [];
 
     const attributeNames: Record<number, string | undefined | null> = {};
 
@@ -197,20 +198,21 @@ function generateCatalogsFromSpreadsheet(sheet: sheets_v4.Schema$Sheet, cols: Ds
     return result;
 }
 
-function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string): Catalog {
+function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supplierId: number, retailerId: number, categoryPath: string): CoreCatalog {
     const extended: Record<string, any> = {};
     const images: CatalogImage[] = [];
 
-    const catalog = new Catalog({
-        supplierId: supplierId.toString(10),
+    const catalog: CoreCatalog = {
+        supplier_id: supplierId,
         categories: {
             [retailerId]: [categoryPath]
         },
-        extendedAttributes: {
+        extended_attributes: {
             [retailerId]: extended
         },
+        toSnakeCase: undefined,
         images
-    });
+    };
 
     for (const col of cols) {
         if (!(col.name in parsedRow.values)) {
@@ -224,8 +226,8 @@ function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supp
         const coerced = coerceValue(parsedRow.values[col.name], col);
 
         if (col.type === 'core') {
-            (catalog as any)[col.fieldName] = coerced;
-        } else {
+            catalog[col.fieldName] = coerced;
+        } else if (col.type === 'extended') {
             extended[col.fieldName] = coerced;
         }
     }

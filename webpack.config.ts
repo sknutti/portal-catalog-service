@@ -21,7 +21,9 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
         devtool: 'source-map',
         target: 'node',
         mode: isLocal ? 'development' : 'production',
-        externals: ['aws-sdk', 'leo-sdk', 'leo-streams', 'leo-config'],
+        // aws-sdk is provided by aws, saslprep and mongodb-client-encryption are optional and unused.
+        // leo stuff comes from layers.
+        externals: ['aws-sdk', 'saslprep', 'mongodb-client-encryption', 'leo-sdk', 'leo-streams', 'leo-config'],
         module: {
             rules: [
                 // {
@@ -73,7 +75,9 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             //     stats: {
             //         all: true
             //     }
-            // })
+            // }),
+            // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
+            new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js'))
         ]
     };
 };
