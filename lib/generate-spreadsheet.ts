@@ -93,18 +93,10 @@ export async function generateSpreadsheetCols(supplierId: number, retailerId: nu
 }
 
 /**
- * These are columns that we don't want to show up in the final spreadsheet
- */
-const SKIPPED_COLS = new Set(['item_id', 'supplier_id', '__supplier_name', 'trading_partner_id',
-    'trading_partner_name', '__create_date', 'last_update_date', 'dsco_last_product_status_update_date',
-    'dsco_last_cost_update_date', 'attributes[]/name', 'attributes[]/value', 'product_images[]/name', 'product_images[]/reference',
-    'images[]/name', 'images[]/reference', 'extended_attributes']);
-
-/**
  * Parses the pipeline rule, creating a column for it if necessary
  */
 function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: PipelineRule) => DscoColumn): void {
-    if (typeof rule.field === 'string' && SKIPPED_COLS.has(rule.field)) {
+    if (typeof rule.field === 'string' && shouldSkipCol(rule.field)) {
         return;
     }
 
@@ -123,7 +115,7 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
 
     if (rule.type === 'required' || rule.type === 'catalog_required') {
         for (const field of rule.field) {
-            if (SKIPPED_COLS.has(field)) {
+            if (shouldSkipCol(field)) {
                 return;
             }
 
@@ -186,4 +178,18 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
     } else if (rule.type === 'date_in_future' && rule.severity !== XrayActionSeverity.info) {
         setValidation(rule.field, 'dateInFuture', true);
     }
+}
+
+/**
+ * These are columns that we don't want to show up in the final spreadsheet
+ */
+const SKIPPED_COLS = new Set(['item_id', 'supplier_id', 'trading_partner_id',
+    'trading_partner_name', 'last_update_date', 'dsco_last_product_status_update_date',
+    'dsco_last_cost_update_date', 'extended_attributes']);
+
+function shouldSkipCol(name: string): boolean {
+    // Skip fields starting in two underscores: __create_date
+    // Skip fields with array or object access: attributes[]/name | attributes.name
+
+    return SKIPPED_COLS.has(name) || name.startsWith('__') || /\[]|\.|\//.test(name);
 }

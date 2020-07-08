@@ -1,5 +1,6 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { SPREADSHEET_SAVE_DATA_KEY, SpreadsheetSaveData } from '@lib/spreadsheet-save-data';
 import { drive_v3, sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
 import Drive = drive_v3.Drive;
@@ -32,8 +33,6 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         none: []
     };
 
-    private numImageCols = 0;
-
     // These updates are sent after the spreadsheet is created to resize the sheet.
     private dimensionUpdates: Schema$UpdateDimensionPropertiesRequest[] = [];
 
@@ -57,8 +56,12 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         yield* this.columns.none;
     }
 
+    private developerSaveData: SpreadsheetSaveData = {
+        modifiedRows: {},
+        colData: []
+    }
+
     constructor(public spreadsheetName: string, private retailerId: number) {
-        this.addImageColumns();
     }
 
     addColumn(col: DscoColumn): void {
@@ -70,10 +73,6 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
      */
     addCatalogRow(rowData: DscoCatalogRow): void {
         this.rowData.push(rowData);
-
-        while (this.numImageCols < (rowData.catalog.images?.length ?? 0)) {
-            this.addImageColumns();
-        }
     }
 
     /**
@@ -137,7 +136,18 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                         },
                         title: 'Catalog Data',
                         sheetId: 0
-                    }
+                    },
+                    protectedRanges: [
+                        {
+                            description: 'Published Column',
+                            range: {
+                                sheetId: 0,
+                                startColumnIndex: 0,
+                                endColumnIndex: 1
+                            },
+                            warningOnly: true
+                        }
+                    ]
                 },
                 {
                     data: [{rowData: this.validationDataRows}],
@@ -160,12 +170,24 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                 }
             ],
             properties: {
-                title: this.spreadsheetName
-            }
+                title: this.spreadsheetName,
+            },
+            developerMetadata: [
+                {
+                    metadataKey: SPREADSHEET_SAVE_DATA_KEY,
+                    metadataValue: JSON.stringify(this.developerSaveData)
+                }
+            ]
         };
     }
 
     private parseCol(col: DscoColumn, numRowsToBuild: number, parsedColIdx: number): void {
+        this.developerSaveData.colData.push({
+            name: col.name,
+            fieldName: col.name !== col.fieldName ? col.fieldName : undefined,
+            type: col.type
+        });
+
         this.resizeColumnIfNecessary(col, parsedColIdx);
 
         // Adds the enum values to the spreadsheet, returns the saved range.
@@ -252,19 +274,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         return result;
     }
 
-    private addImageColumns() {
-        this.numImageCols++;
 
-        this.addColumn(new DscoColumn(`image_${this.numImageCols}_name`, 'transient', {
-            required: XrayActionSeverity.warn,
-            format: 'string'
-        }));
-
-        this.addColumn(new DscoColumn(`image_${this.numImageCols}_url`, 'transient', {
-            required: XrayActionSeverity.warn,
-            format: 'uri'
-        }));
-    }
 }
 
 function getColorForRequired(status: XrayActionSeverity, light = false): Schema$Color {

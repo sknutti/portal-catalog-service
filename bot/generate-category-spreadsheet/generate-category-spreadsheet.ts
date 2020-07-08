@@ -55,9 +55,6 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
     }
 
     for (const catalog of catalogItems) {
-        if (catalog.images?.length) {
-            console.error(catalog);
-        }
         spreadsheetOrError.addCatalogRow({
             catalog,
             published: true

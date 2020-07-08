@@ -232,22 +232,6 @@ function validateAndCreateCatalog(parsedRow: ParsedRow, cols: DscoColumn[], supp
         }
     }
 
-    // Handle images
-    let imageNum = 1;
-    while (`image_${imageNum}_name` in parsedRow.values) {
-        const image = new CatalogImage({
-            name: parsedRow.values[`image_${imageNum}_name`],
-            reference: parsedRow.values[`image_${imageNum}_url`]
-        });
-
-        if (image.name && image.reference) {
-            images.push(image);
-        }
-
-        imageNum++;
-    }
-
-
     return catalog;
 }
 

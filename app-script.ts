@@ -8,17 +8,25 @@ import Range = GoogleAppsScript.Spreadsheet.Range;
 import SpreadsheetRange = GoogleAppsScript.Spreadsheet.Range;
 import Spreadsheet = GoogleAppsScript.Spreadsheet.Spreadsheet;
 import Color = GoogleAppsScript.Spreadsheet.Color;
+import { SpreadsheetSaveData, SpreadsheetSaveDataKey } from '@lib/spreadsheet-save-data';
+import DeveloperMetadata = GoogleAppsScript.Spreadsheet.DeveloperMetadata;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+let log = (...values: any[]) => {};
 
 /**
  * Called every time a cell is edited in the spreadsheet
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onEdit({source, range}: SheetsOnEdit): void {
+    log = (...values) => source.getSheets()[1].appendRow(values);
+
     const editedRange = getEditableRange(range);
 
     if (editedRange) {
         resetRangeValidationAndFormatting(source, editedRange);
+        markRowsAsPending(source, editedRange);
+        storeModifiedRows(new SaveDataManager(source), editedRange);
     }
 }
 
@@ -172,4 +180,45 @@ function isDefaultFont(size: number, weight: string, family: string, style: stri
     }
 
     return size === 10 && weight === 'normal' && family === 'Arial' && style === 'normal' && line === 'none';
+}
+
+
+function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
+    const userSheet = spreadsheet.getSheets()[0];
+    userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight()).uncheck();
+}
+
+function storeModifiedRows(saveDataManager: SaveDataManager, editedRange: Range): void {
+    const {modifiedRows} = saveDataManager.saveData;
+    const startRowIdx = editedRange.getRow() - 1;
+    const startColIdx = editedRange.getColumn() - 1;
+    const endRowIdx = startRowIdx + editedRange.getNumRows();
+    const endColIdx = startColIdx + editedRange.getNumColumns();
+
+    for (let rowIdx = startRowIdx; rowIdx < endRowIdx; rowIdx++) {
+        const modifiedCols = new Set(modifiedRows[rowIdx] || []);
+        for (let colIdx = startColIdx; colIdx < endColIdx; colIdx++) {
+            modifiedCols.add(colIdx);
+        }
+
+        modifiedRows[rowIdx] = Array.from(modifiedCols);
+    }
+
+    saveDataManager.save();
+}
+
+class SaveDataManager {
+    private static key: SpreadsheetSaveDataKey = 'dsco_spreadsheet_save_data';
+
+    public saveData: SpreadsheetSaveData;
+    private dm: DeveloperMetadata;
+    constructor(private sheet: Spreadsheet) {
+        this.dm = sheet.getDeveloperMetadata().find(dm => dm.getKey() === SaveDataManager.key)!;
+        this.saveData = JSON.parse(this.dm.getValue()!);
+    }
+
+    save(): void {
+        log(JSON.stringify(this.saveData));
+        this.dm.setValue(JSON.stringify(this.saveData));
+    }
 }

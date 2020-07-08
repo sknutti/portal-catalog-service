@@ -31,26 +31,6 @@ export class DscoColumn {
     }
 
     /**
-     * If this is an image col, returns the info for that col.
-     */
-    get imageColInfo(): {type: 'name' | 'reference', imgIdx: number} | false {
-        if (this._imageColInfo || this._imageColInfo === false) {
-            return this._imageColInfo;
-        }
-
-        const match = this.fieldName.match(/image_(\d+)_(name|url)/);
-        if (match && match.length >= 3) {
-            return this._imageColInfo = {
-                imgIdx: +match[1] - 1,
-                type: match[2] === 'name' ? 'name' : 'reference'
-            };
-        } else {
-            return this._imageColInfo = false;
-        }
-    }
-    private _imageColInfo?: {type: 'name' | 'reference', imgIdx: number} | false;
-
-    /**
      If there are both core and extended rules for the same name, this should be set to true.
      The name will have the Dsco: prefix added.
     */
@@ -112,8 +92,6 @@ export class DscoColumn {
             data = rowData.catalog.extended_attributes?.[retailerId]?.[this.fieldName];
         } else if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
             data = rowData.published;
-        } else if (this.imageColInfo) {
-            data = rowData.catalog.images?.[this.imageColInfo.imgIdx]?.[this.imageColInfo.type];
         }
 
         if (data === null || data === undefined) {
