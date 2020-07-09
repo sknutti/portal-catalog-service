@@ -5,6 +5,7 @@ category-spreadsheet:
   environment:
     GENERATE_BOT_NAME: ${self:custom.generateSpreadsheetBotName}
     PUBLISH_BOT_NAME: ${self:custom.publishSpreadsheetBotName}
+    VERIFY_BOT_NAME: ${self:custom.verifySpreadsheetBotName}
   events:
     - http:
         path: spreadsheet

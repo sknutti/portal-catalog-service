@@ -14,7 +14,7 @@ export interface CatalogSpreadsheetWebsocketEvents {
     generateCatalogSpreadsheetSuccess: {
         categoryPath: string;
         url: string;
-        // outOfDate: boolean; // True if there have been changes outside of the spreadsheet
+        outOfDate: boolean; // True if there have been changes outside of the spreadsheet
     };
     publishCatalogSpreadsheetProgress: {
         categoryPath: string;
@@ -25,8 +25,8 @@ export interface CatalogSpreadsheetWebsocketEvents {
         categoryPath: string;
         rowMessages: { [row: number]: SpreadsheetRowMessage[] };
     };
-    // publishCatalogSpreadsheetFail: {
-    //     reason: 'out-of-date';
-    // };
+    publishCatalogSpreadsheetFail: {
+        reason: 'out-of-date' | 'no-spreadsheet-found';
+    };
 }
 

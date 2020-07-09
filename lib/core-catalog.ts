@@ -11,5 +11,6 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     },
     images?: CatalogImage[],
     toSnakeCase: undefined,
+    last_update_date?: string;
     [key: string]: any;
 }

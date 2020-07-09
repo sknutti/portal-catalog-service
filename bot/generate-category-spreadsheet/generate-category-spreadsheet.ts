@@ -1,18 +1,16 @@
-import { catalogItemSearch } from '@lib/catalog-item-search';
 import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
 import { generateScriptProjectForSheet } from '@lib/generate-script-project-for-sheet';
 import { generateSpreadsheet } from '@lib/generate-spreadsheet';
 import { prepareGoogleApis } from '@lib/google-api-utils';
 import { sendWebsocketEvent } from '@lib/send-websocket-event';
 import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
+import { verifyCategorySpreadsheet } from '@lib/verify-category-spreadsheet';
 
 export interface GenerateCategorySpreadsheetEvent {
     supplierId: number;
     retailerId: number;
     categoryPath: string;
 }
-
-const spreadsheetDynamoTable = new SpreadsheetDynamoTable();
 
 export async function generateCategorySpreadsheet({categoryPath, retailerId, supplierId}: GenerateCategorySpreadsheetEvent): Promise<void> {
     await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
@@ -21,11 +19,12 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
         message: 'Checking for existing spreadsheet...'
     }, supplierId);
 
-    const existing = await spreadsheetDynamoTable.getItem(supplierId, retailerId, categoryPath);
-    if (existing) {
+    const {savedSheet, outOfDate, catalogItems} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
+    if (savedSheet) {
         await sendWebsocketEvent('generateCatalogSpreadsheetSuccess', {
             categoryPath,
-            url: DscoSpreadsheet.generateUrl(existing.spreadsheetId)
+            url: DscoSpreadsheet.generateUrl(savedSheet.spreadsheetId),
+            outOfDate
         }, supplierId);
 
         return;
@@ -33,21 +32,11 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
 
     await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
         categoryPath,
-        progress: 0.25,
-        message: 'Loading existing items...'
-    }, supplierId);
-    const spreadsheetPromise = generateSpreadsheet(supplierId, retailerId, categoryPath);
-    const catalogItemsPromise = catalogItemSearch(supplierId, retailerId, categoryPath);
-
-    // We use race to give a progress update
-    await Promise.race([spreadsheetPromise, catalogItemsPromise]);
-    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
-        categoryPath,
         progress: 0.53,
         message: 'Loading Dsco schema & attribution data...'
     }, supplierId);
 
-    const [spreadsheetOrError, catalogItems] = await Promise.all([spreadsheetPromise, catalogItemsPromise]);
+    const spreadsheetOrError = await generateSpreadsheet(supplierId, retailerId, categoryPath);
 
     if (!(spreadsheetOrError instanceof DscoSpreadsheet)) {
         // TODO: Handle this
@@ -79,12 +68,13 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
 
     const scriptId = await generateScriptProjectForSheet(spreadsheetId, spreadsheetOrError.spreadsheetName, script);
 
-    await spreadsheetDynamoTable.putItem({spreadsheetId, categoryPath, retailerId, supplierId, scriptId});
+    await SpreadsheetDynamoTable.putItem({spreadsheetId, categoryPath, retailerId, supplierId, scriptId, lastUpdateDate: new Date()});
 
     await cleanupGoogleApis();
 
     await sendWebsocketEvent('generateCatalogSpreadsheetSuccess', {
         categoryPath,
-        url: DscoSpreadsheet.generateUrl(spreadsheetId)
+        url: DscoSpreadsheet.generateUrl(spreadsheetId),
+        outOfDate: false
     }, supplierId);
 }

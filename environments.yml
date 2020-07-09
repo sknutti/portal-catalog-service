@@ -5,6 +5,7 @@ test:
   kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/TestBus-LeoKinesisStream-*
   firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/TestBus-LeoFirehoseStream-*
   s3Arn: arn:aws:s3:::testbus-leos3-*/*
+  currentCatalogTable: catalog-attribution-test-currentCatalog
   gearman-and-mongo-vpc:
     securityGroupIds:
       - 'sg-95c611e9'
@@ -21,6 +22,7 @@ staging:
   kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/StagingBus-LeoKinesisStream-*
   firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/StagingBus-LeoFirehoseStream-*
   s3Arn: arn:aws:s3:::stagingbus-leos3-*/*
+  currentCatalogTable: catalog-attribution-staging-currentCatalog
   gearman-and-mongo-vpc:
     securityGroupIds:
       - 'sg-57f28422'
@@ -36,6 +38,7 @@ prod:
   kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/ProdBus-LeoKinesisStream-*
   firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/ProdBus-LeoFirehoseStream-*
   s3Arn: arn:aws:s3:::prodbus-leos3-*/*
+  currentCatalogTable: catalog-attribution-prod-currentCatalog
   gearman-and-mongo-vpc:
     securityGroupIds:
       - 'sg-fe78b299'

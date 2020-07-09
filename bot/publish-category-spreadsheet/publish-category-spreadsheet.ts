@@ -1,12 +1,12 @@
 import { SpreadsheetRowMessage } from '@api';
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { CatalogImage, UnexpectedError, XrayActionSeverity } from '@dsco/ts-models';
+import { CatalogImage, XrayActionSeverity } from '@dsco/ts-models';
+import { CoreCatalog } from '@lib/core-catalog';
 import { DscoColumn } from '@lib/dsco-column';
 import { generateSpreadsheetCols } from '@lib/generate-spreadsheet';
 import { parseValueFromSpreadsheet, prepareGoogleApis } from '@lib/google-api-utils';
-import { CoreCatalog } from '@lib/core-catalog';
 import { sendWebsocketEvent } from '@lib/send-websocket-event';
-import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
+import { verifyCategorySpreadsheet } from '@lib/verify-category-spreadsheet';
 import { sheets_v4 } from 'googleapis';
 
 export interface PublishCategorySpreadsheetEvent {
@@ -15,8 +15,6 @@ export interface PublishCategorySpreadsheetEvent {
     userId: number;
     categoryPath: string;
 }
-
-const spreadsheetDynamoTable = new SpreadsheetDynamoTable();
 
 const gearmanActionSuccess: Set<string> = new Set([
     'SAVED',
@@ -34,10 +32,12 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
         message: 'Loading spreadsheet...'
     }, supplierId);
 
-    const savedSheet = await spreadsheetDynamoTable.getItem(supplierId, retailerId, categoryPath);
-    if (!savedSheet) {
-        // TODO: Handle all of these unexpected errors
-        throw new UnexpectedError('No spreadsheet found for given params.', JSON.stringify({categoryPath, retailerId, supplierId}));
+    const {savedSheet, outOfDate} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
+    if (!savedSheet || outOfDate) {
+        await sendWebsocketEvent('publishCatalogSpreadsheetFail', {
+            reason: outOfDate ? 'out-of-date' : 'no-spreadsheet-found'
+        }, supplierId);
+        return;
     }
 
     const {sheets, cleanupGoogleApis} = await prepareGoogleApis();
