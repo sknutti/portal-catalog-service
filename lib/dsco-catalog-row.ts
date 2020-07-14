@@ -28,12 +28,13 @@ export class DscoCatalogRow {
         const result: DscoCatalogRow[] = [];
 
         const {userSheetRowData, saveData} = googleSpreadsheet;
+        const modifiedRows = new Set(saveData.modifiedRows);
 
         for (let rowIdx = 1; rowIdx < userSheetRowData.length; rowIdx++) { // Start at 1 to skip the header row
             const row = userSheetRowData[rowIdx]?.values || [];
 
             const {catalog} = createCoreCatalog(supplierId, retailerId, categoryPath);
-            const dscoCatalogRow = new DscoCatalogRow(catalog, !saveData.modifiedRows[rowIdx]?.length);
+            const dscoCatalogRow = new DscoCatalogRow(catalog, !modifiedRows.has(rowIdx));
 
             for (let colIdx = 0; colIdx < row.length; colIdx++) {
                 const cell = row[colIdx];

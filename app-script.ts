@@ -190,18 +190,14 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
 
 function storeModifiedRows(saveDataManager: SaveDataManager, editedRange: Range): void {
     const {modifiedRows} = saveDataManager.saveData;
+    const modifiedRowsSet = new Set(modifiedRows);
     const startRowIdx = editedRange.getRow() - 1;
-    const startColIdx = editedRange.getColumn() - 1;
     const endRowIdx = startRowIdx + editedRange.getNumRows();
-    const endColIdx = startColIdx + editedRange.getNumColumns();
 
     for (let rowIdx = startRowIdx; rowIdx < endRowIdx; rowIdx++) {
-        const modifiedCols = new Set(modifiedRows[rowIdx] || []);
-        for (let colIdx = startColIdx; colIdx < endColIdx; colIdx++) {
-            modifiedCols.add(colIdx);
+        if (!modifiedRowsSet.has(rowIdx)) {
+            modifiedRows.push(rowIdx);
         }
-
-        modifiedRows[rowIdx] = Array.from(modifiedCols);
     }
 
     saveDataManager.save();

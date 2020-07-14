@@ -158,7 +158,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         };
 
         const developerSaveData: SpreadsheetSaveData = {
-            modifiedRows: {},
+            modifiedRows: [],
             colSaveNames: []
         };
 
@@ -173,15 +173,22 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             validationRow.push(col.generateDataCell(undefined, this.retailerId, addEnumVals));
 
             // We start at 1 because the first userDataRow is the header row.
-            for (let i = 1; i < numRowsToBuild; i++) {
-                let row = userDataRows[i];
-                if (!row) {
-                    row = userDataRows[i] = {
+            for (let rowIdx = 1; rowIdx < numRowsToBuild; rowIdx++) {
+                const rowData = this.rowData[rowIdx - 1];
+
+                let row = userDataRows[rowIdx];
+                if (!row) { // Happens on the first iteration only
+                    row = userDataRows[rowIdx] = {
                         values: []
                     };
+
+                    if (!rowData.published) {
+                        developerSaveData.modifiedRows.push(rowIdx);
+                    }
                 }
 
-                row.values!.push(col.generateDataCell(this.rowData[i - 1], this.retailerId, addEnumVals));
+
+                row.values!.push(col.generateDataCell(rowData, this.retailerId, addEnumVals));
             }
 
 

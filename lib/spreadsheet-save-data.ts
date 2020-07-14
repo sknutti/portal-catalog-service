@@ -3,7 +3,6 @@
  */
 import { DscoColumn } from '@lib/dsco-column';
 
-export type ColIdx = number;
 export type RowIdx = number;
 
 export interface SpreadsheetSaveData {
@@ -11,7 +10,7 @@ export interface SpreadsheetSaveData {
      * @see DscoColumn.saveName
      */
     colSaveNames: string[];
-    modifiedRows: Record<RowIdx, ColIdx[]>;
+    modifiedRows: RowIdx[];
 }
 
 export type SpreadsheetSaveDataKey = 'dsco_spreadsheet_save_data';
