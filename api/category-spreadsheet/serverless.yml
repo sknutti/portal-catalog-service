@@ -5,7 +5,7 @@ category-spreadsheet:
   environment:
     GENERATE_BOT_NAME: ${self:custom.generateSpreadsheetBotName}
     PUBLISH_BOT_NAME: ${self:custom.publishSpreadsheetBotName}
-    VERIFY_BOT_NAME: ${self:custom.verifySpreadsheetBotName}
+    UPDATE_BOT_NAME: ${self:custom.updateSpreadsheetBotName}
   events:
     - http:
         path: spreadsheet
@@ -15,6 +15,12 @@ category-spreadsheet:
         authorizer: aws_iam
     - http:
         path: spreadsheet/publish
+        method: post
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam
+    - http:
+        path: spreadsheet/update
         method: post
         cors: true
         integration: lambda-proxy

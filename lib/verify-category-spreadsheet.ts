@@ -39,7 +39,7 @@ export async function getAttributionActivationDate(retailerId: number): Promise<
         AttributesToGet: ['activationDate'],
         Key: {
             accountId: {
-                N: retailerId as any
+                N: retailerId.toString()
             }
         }
     }).promise();

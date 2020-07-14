@@ -15,7 +15,7 @@ custom:
   spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
   generateSpreadsheetBotName: ${self:service}-${self:provider.stage}-generate-category-spreadsheet
   publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet
-  verifySpreadsheetBotName: ${self:service}-${self:provider.stage}-verify-category-spreadsheet
+  updateSpreadsheetBotName: ${self:service}-${self:provider.stage}-update-category-spreadsheet
   customDomain:
     domainName: ${self:custom.environment.domain}
     basePath: portal-catalog
@@ -67,7 +67,7 @@ provider:
       Resource:
         - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.generateSpreadsheetBotName}"
         - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
-        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.verifySpreadsheetBotName}"
+        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.updateSpreadsheetBotName}"
     - ${file(./leo-iam.yml):kinesis}
     - ${file(./leo-iam.yml):firehose}
     - ${file(./leo-iam.yml):s3}
@@ -77,7 +77,7 @@ functions:
   - ${file(./api/category-spreadsheet/serverless.yml)}
   - ${file(./bot/generate-category-spreadsheet/serverless.yml)}
   - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
-  - ${file(./bot/verify-category-spreadsheet/serverless.yml)}
+  - ${file(./bot/update-category-spreadsheet/serverless.yml)}
 
 resources:
   Resources:

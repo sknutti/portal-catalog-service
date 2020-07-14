@@ -19,6 +19,7 @@
     "typeRoots": ["node_modules/@types"],
     "incremental": true,
     "allowJs": true,
+    "importsNotUsedAsValues": "preserve",
     "lib": [
       "es2015"
     ],

@@ -1,7 +1,7 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { DscoCatalogRow, DscoSpreadsheet } from '@lib/dsco-spreadsheet';
+import { DscoCatalogRow } from '@lib/dsco-catalog-row';
+import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
 import { prepareValueForSpreadsheet, SerialDate } from '@lib/google-api-utils';
-import { CoreCatalog } from '@lib/core-catalog';
 import { sheets_v4 } from 'googleapis';
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$CellFormat = sheets_v4.Schema$CellFormat;
@@ -28,6 +28,14 @@ export class DscoColumn {
 
     get name(): string {
         return this.shouldHaveDscoPrefix ? DscoColumn.DSCO_PREFIX + this.fieldName : this.fieldName;
+    }
+
+    /**
+     * Saved as metadata in the google spreadsheet.
+     * Used to associate data in the google spreadsheet with a DscoColumn.
+     */
+    get saveName(): string {
+        return `${this.type}@${this.fieldName}`;
     }
 
     /**
@@ -79,6 +87,29 @@ export class DscoColumn {
             dataValidation: this.dataValidation,
             userEnteredFormat: this.format
         };
+    }
+
+    /**
+     * Reads the value from the given cell, storing it in the correct place in the rowData.
+     *
+     * Assumes extended_attributes[retailerId] exists
+     */
+    readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): void {
+        // We ignore the published col and pull that from the SpreadsheetSaveData
+        if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
+            return;
+        }
+
+        const valueToSet = this.getDataFromExtendedValue(cell.effectiveValue);
+        if (valueToSet === undefined || valueToSet === null) {
+            return;
+        }
+
+        if (this.type === 'core') {
+            rowData.catalog[this.fieldName] = valueToSet;
+        } else if (this.type === 'extended') {
+            rowData.catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;
+        }
     }
 
     /**
@@ -247,6 +278,42 @@ export class DscoColumn {
 
         // TODO: Validate array: =AND(ARRAYFORMULA(ISNUMBER(SPLIT(G5, ",", TRUE, TRUE))))
     }
+
+    private getDataFromExtendedValue(cellValue: Schema$ExtendedValue | undefined): any {
+        if (!cellValue) {
+            return;
+        }
+
+        switch (this.validation.format) {
+            case 'string':
+            case 'enum':
+            case 'email':
+            case 'uri':
+            case 'time': // TODO: What format does time expect?
+                return cellValue.stringValue ?? cellValue.numberValue?.toString() ?? cellValue.boolValue?.toString();
+            case 'number':
+            case 'integer':
+                return cellValue.numberValue ?? +(cellValue.stringValue || '0');
+            case 'boolean':
+                return cellValue.boolValue ?? (cellValue.numberValue === 1 || cellValue.stringValue?.toLowerCase() === 'true');
+            case 'array':
+                const num = this.validation.arrayType !== 'string';
+                return cellValue.stringValue?.split(',')?.map(item => {
+                    num ? +item.trim() : item.trim();
+                });
+            case 'date':
+            case 'date-time':
+                let date: Date | undefined;
+                if (cellValue.numberValue) {
+                    date = SerialDate.toJSDate(cellValue.numberValue);
+                } else if (cellValue.stringValue) {
+                    date = new Date(cellValue.stringValue);
+                }
+
+                return date?.getTime() ? date : undefined;
+        }
+    }
+
 }
 
 export interface DscoColValidation {

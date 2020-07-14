@@ -12,5 +12,25 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     images?: CatalogImage[],
     toSnakeCase: undefined,
     last_update_date?: string;
+    sku?: string;
     [key: string]: any;
+}
+
+export function createCoreCatalog(supplierId: number, retailerId: number, categoryPath: string): {
+    catalog: CoreCatalog,
+    extended: Record<string, any>
+} {
+    const extended: Record<string, any> = {};
+    const catalog: CoreCatalog =  {
+        supplier_id: supplierId,
+        categories: {
+            [retailerId]: [categoryPath]
+        },
+        extended_attributes: {
+            [retailerId]: extended
+        },
+        toSnakeCase: undefined
+    };
+
+    return {catalog, extended};
 }

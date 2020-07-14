@@ -2,6 +2,7 @@ import { ServerlessArtifactWebpackPlugin } from '@dsco/service-utils';
 import { resolve } from 'path';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import { Configuration, NormalModuleReplacementPlugin } from 'webpack';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
@@ -42,7 +43,7 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
                 {
                     test: /app-script\.ts/,
                     use: [
-                        {loader: 'ts-loader', options: {configFile: 'tsconfig.app-script.json'}},
+                        {loader: 'ts-loader', options: {configFile: 'tsconfig.app-script.json', transpileOnly: true}},
                         {loader: 'raw-loader'}
                     ],
                 },
@@ -50,7 +51,8 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
                     test: /\.tsx?$/,
                     loader: 'ts-loader',
                     options: {
-                        configFile: 'tsconfig.artifact.json'
+                        configFile: 'tsconfig.artifact.json',
+                        transpileOnly: true
                     },
                     exclude: /node_modules/
                 }
@@ -77,7 +79,8 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             //     }
             // }),
             // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
-            new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js'))
+            new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js')),
+          new ForkTsCheckerWebpackPlugin()
         ]
     };
 };
