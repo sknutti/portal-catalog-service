@@ -1,5 +1,7 @@
 /**
  * This is a google app script file that will be attached to every spreadsheet.
+ *
+ * NOTE: After any changes to this file, APP_SCRIPT_VERSION should be updated in @lib/spreadsheet-save-data
  */
 
 import SheetsOnEdit = GoogleAppsScript.Events.SheetsOnEdit;
@@ -8,7 +10,7 @@ import Range = GoogleAppsScript.Spreadsheet.Range;
 import SpreadsheetRange = GoogleAppsScript.Spreadsheet.Range;
 import Spreadsheet = GoogleAppsScript.Spreadsheet.Spreadsheet;
 import Color = GoogleAppsScript.Spreadsheet.Color;
-import { SpreadsheetSaveData, SpreadsheetSaveDataKey } from '@lib/spreadsheet-save-data';
+import type { AppScriptSaveData, AppScriptSaveDataKey } from '@lib/app-script-save-data';
 import DeveloperMetadata = GoogleAppsScript.Spreadsheet.DeveloperMetadata;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -204,9 +206,9 @@ function storeModifiedRows(saveDataManager: SaveDataManager, editedRange: Range)
 }
 
 class SaveDataManager {
-    private static key: SpreadsheetSaveDataKey = 'dsco_spreadsheet_save_data';
+    private static key: AppScriptSaveDataKey = 'dsco_spreadsheet_save_data';
 
-    public saveData: SpreadsheetSaveData;
+    public saveData: AppScriptSaveData;
     private dm: DeveloperMetadata;
     constructor(private sheet: Spreadsheet) {
         this.dm = sheet.getDeveloperMetadata().find(dm => dm.getKey() === SaveDataManager.key)!;

@@ -30,6 +30,7 @@ export class SpreadsheetDynamoTable {
             fullPath: {S: getFullPath(record.retailerId, record.categoryPath)},
             spreadsheetId: {S: record.spreadsheetId},
             scriptId: {S: record.scriptId},
+            scriptVersion: {S: record.scriptVersion},
             lastUpdateDate: {S: record.lastUpdateDate.toISOString()}
         };
 
@@ -54,6 +55,36 @@ export class SpreadsheetDynamoTable {
             Key
         }).promise();
     }
+
+    /**
+     * Marks the spreadsheet as updated - updates the script version and last update date
+     */
+    static async markItemAsUpdated(supplierId: number, retailerId: number, categoryPath: string, scriptVersion: string, lastUpdateDate: Date): Promise<void> {
+        const Key: Pick<SpreadsheetDynamoRecord, 'supplierId' | 'fullPath'> = {
+            supplierId: {
+                S: supplierId.toString(10)
+            },
+            fullPath: {
+                S: getFullPath(retailerId, categoryPath)
+            }
+        };
+        const versionColName: ColName = 'scriptVersion';
+        const dateColName: ColName = 'lastUpdateDate';
+
+        await DDB_CLIENT.updateItem({
+            TableName: this.tableName,
+            Key,
+            UpdateExpression: `SET ${versionColName} = :${versionColName}, ${dateColName} = :${dateColName}`,
+            ExpressionAttributeValues: {
+                [`:${versionColName}`]: {
+                    S: scriptVersion
+                },
+                [`:${dateColName}`]: {
+                    S: lastUpdateDate.toISOString()
+                }
+            }
+        }).promise();
+    }
 }
 
 /**
@@ -65,6 +96,7 @@ export interface SpreadsheetRecord {
     categoryPath: string;
     spreadsheetId: string;
     scriptId: string;
+    scriptVersion: string;
     lastUpdateDate: Date;
 }
 
@@ -74,6 +106,7 @@ const COL_NAMES = [
     'fullPath', // The range value - a concatenation of retailerId||categoryPath
     'spreadsheetId',
     'scriptId',
+    'scriptVersion',
     'lastUpdateDate'
 ] as const;
 
@@ -106,6 +139,7 @@ function createRecord(map: SpreadsheetDynamoRecord, partial: Partial<Spreadsheet
         categoryPath: partial.categoryPath || extracted!.categoryPath,
         spreadsheetId: partial.spreadsheetId || map.spreadsheetId.S,
         scriptId: partial.scriptId || map.scriptId.S,
+        scriptVersion: partial.scriptVersion || map.scriptVersion.S,
         lastUpdateDate: partial.lastUpdateDate || new Date(map.lastUpdateDate.S)
     };
 }

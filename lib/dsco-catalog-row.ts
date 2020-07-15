@@ -1,13 +1,15 @@
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
 import { GoogleSpreadsheet } from '@lib/google-spreadsheet';
-import { SPREADSHEET_SAVE_DATA_KEY, SpreadsheetSaveData } from '@lib/spreadsheet-save-data';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
 import { sheets_v4 } from 'googleapis';
 import Sheets = sheets_v4.Sheets;
 import Schema$RowData = sheets_v4.Schema$RowData;
 
 /**
- * Represents one row's data in the category spreadsheet.
+ * Represent's one row's data - a catalog and whether or not that catalog has been published.
+ *
+ * Can be extracted from a GoogleSpreadsheet, and added to a DscoSpreadsheet.
  */
 export class DscoCatalogRow {
     constructor(public catalog: CoreCatalog, public published: boolean) {
@@ -28,7 +30,7 @@ export class DscoCatalogRow {
         const result: DscoCatalogRow[] = [];
 
         const {userSheetRowData, saveData} = googleSpreadsheet;
-        const modifiedRows = new Set(saveData.modifiedRows);
+        const modifiedRows = new Set([1, 2]);
 
         for (let rowIdx = 1; rowIdx < userSheetRowData.length; rowIdx++) { // Start at 1 to skip the header row
             const row = userSheetRowData[rowIdx]?.values || [];

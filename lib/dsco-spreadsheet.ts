@@ -1,7 +1,7 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
 import { DscoCatalogRow } from '@lib/dsco-catalog-row';
 import { GoogleSpreadsheet } from '@lib/google-spreadsheet';
-import { SPREADSHEET_SAVE_DATA_KEY, SpreadsheetSaveData } from '@lib/spreadsheet-save-data';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
@@ -113,7 +113,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             }
         ], [
             {
-                metadataKey: SPREADSHEET_SAVE_DATA_KEY,
+                metadataKey: APP_SCRIPT_SAVE_DATA_KEY,
                 metadataValue: '',
                 visibility: 'DOCUMENT',
                 location: {spreadsheet: true}
@@ -157,7 +157,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             return `${DscoSpreadsheet.DATA_SHEET_NAME}!${rowNum}:${rowNum}`;
         };
 
-        const developerSaveData: SpreadsheetSaveData = {
+        const appScriptSaveData: AppScriptSaveData = {
             modifiedRows: [],
             colSaveNames: []
         };
@@ -165,7 +165,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         // Loops through every column, setting up the header row, validation row, and filling in the userData.
         let parsedColIdx = 0;
         for (const col of this) {
-            developerSaveData.colSaveNames.push(col.saveName);
+            appScriptSaveData.colSaveNames.push(col.saveName);
 
             resizeColumnIfNecessary(col, parsedColIdx, dimensionUpdates);
 
@@ -182,8 +182,8 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                         values: []
                     };
 
-                    if (!rowData.published) {
-                        developerSaveData.modifiedRows.push(rowIdx);
+                    if (rowData && !rowData.published) { // Mark the unpublished rows in the saveData
+                        appScriptSaveData.modifiedRows.push(rowIdx);
                     }
                 }
 
@@ -195,7 +195,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             parsedColIdx++;
         }
 
-        sheet.saveDataDeveloperMetadata.metadataValue = JSON.stringify(developerSaveData);
+        sheet.saveDataDeveloperMetadata.metadataValue = JSON.stringify(appScriptSaveData);
 
         return dimensionUpdates;
     }

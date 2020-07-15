@@ -27,7 +27,7 @@ export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async 
         return new UnauthorizedError();
     }
 
-    // These are long-running operations.  To prevent a 30 second timeout, we run them in a bot.  The bot uses websockets to communicate with the client.
+    // These are long-running operations.  To prevent a 30 second timeout, we run them in a bot.  The bots use websockets to communicate with the client.
     switch (event.resource) {
         case '/spreadsheet':
             await invokeGenerateBot(user.accountId, event.body.retailerId, event.body.categoryPath);

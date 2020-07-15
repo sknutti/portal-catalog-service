@@ -23,14 +23,14 @@ const gearmanActionSuccess: Set<string> = new Set([
     'SUCCESS',
 ]);
 
-const VALIDATING_PROGRESS_START_PCT = 0.66;
+const VALIDATING_PROGRESS_START_PCT = 0.63;
 
 export async function publishCategorySpreadsheet({categoryPath, retailerId, supplierId, userId}: PublishCategorySpreadsheetEvent): Promise<void> {
     const sendProgress = (progress: number, message: string) => {
         return sendWebsocketEvent('publishCatalogSpreadsheetProgress', {progress, message, categoryPath}, supplierId);
     };
 
-    await sendProgress(0.2, 'Publishing spreadsheet...');
+    await sendProgress(0.2, 'Verifying spreadsheet is up to date...');
 
     // First, we verify the spreadsheet, refusing to publish if it is out of date
     const {savedSheet, outOfDate} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
@@ -50,23 +50,13 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     }
 
     await sendProgress(0.45, 'Loading spreadsheet...');
-    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
-        categoryPath,
-        progress: 0.45,
-        message: 'Loading spreadsheet...'
-    }, supplierId);
 
     const {sheets, cleanupGoogleApis} = await prepareGoogleApis();
     const googleSpreadsheet = await GoogleSpreadsheet.loadFromGoogle(savedSheet.spreadsheetId, sheets);
     await cleanupGoogleApis();
 
 
-    await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
-        categoryPath,
-        progress: VALIDATING_PROGRESS_START_PCT,
-        message: 'Validating & saving rows...'
-    }, supplierId);
-
+    await sendProgress(VALIDATING_PROGRESS_START_PCT, 'Validating & saving rows...');
 
     const rowMessages: Record<number, SpreadsheetRowMessage[]> = {};
     const addRowMessage = (row: number, message: SpreadsheetRowMessage) => {

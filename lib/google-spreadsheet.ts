@@ -1,5 +1,5 @@
 import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { SPREADSHEET_SAVE_DATA_KEY, SpreadsheetSaveData } from '@lib/spreadsheet-save-data';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
 import { sheets_v4 } from 'googleapis';
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
 import Schema$DeveloperMetadata = sheets_v4.Schema$DeveloperMetadata;
@@ -36,7 +36,7 @@ export class GoogleSpreadsheet implements Schema$Spreadsheet {
     }
 
     get saveDataDeveloperMetadata(): Schema$DeveloperMetadata {
-        const saveDeveloperMetadata = this.developerMetadata.find(meta => meta.metadataKey === SPREADSHEET_SAVE_DATA_KEY);
+        const saveDeveloperMetadata = this.developerMetadata.find(meta => meta.metadataKey === APP_SCRIPT_SAVE_DATA_KEY);
 
         if (!saveDeveloperMetadata) {
             throw new Error(`No save data found for sheet: ${this.spreadsheetId}`);
@@ -45,13 +45,13 @@ export class GoogleSpreadsheet implements Schema$Spreadsheet {
         return saveDeveloperMetadata;
     }
 
-    get saveData(): SpreadsheetSaveData {
+    get saveData(): AppScriptSaveData {
         const meta = this.saveDataDeveloperMetadata;
         if (!meta.metadataValue) {
             throw new Error(`No save data found for sheet: ${this.spreadsheetId}`);
         }
 
-        return JSON.parse(meta.metadataValue!) as SpreadsheetSaveData;
+        return JSON.parse(meta.metadataValue!) as AppScriptSaveData;
     }
 
     get bandedRanges(): Schema$BandedRange[] {

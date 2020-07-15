@@ -95,7 +95,7 @@ export class DscoColumn {
      * Assumes extended_attributes[retailerId] exists
      */
     readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): void {
-        // We ignore the published col and pull that from the SpreadsheetSaveData
+        // We ignore the published col and pull that from the AppScriptSaveData
         if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
             return;
         }

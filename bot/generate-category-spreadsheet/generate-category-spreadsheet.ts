@@ -1,15 +1,15 @@
 import { DscoCatalogRow } from '@lib/dsco-catalog-row';
 import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { generateScriptProjectForSheet } from '@lib/generate-script-project-for-sheet';
+import { SpreadsheetAppScriptsManager } from '@lib/spreadsheet-app-scripts-manager';
 import { generateSpreadsheet } from '@lib/generate-spreadsheet';
 import { prepareGoogleApis } from '@lib/google-api-utils';
 import { sendWebsocketEvent } from '@lib/send-websocket-event';
 import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
+import { APP_SCRIPT_VERSION } from '@lib/app-script-save-data';
 import { verifyCategorySpreadsheet } from '@lib/verify-category-spreadsheet';
 import { drive_v3, sheets_v4 } from 'googleapis';
-import Schema$Spreadsheet = sheets_v4.Schema$Spreadsheet;
-import Sheets = sheets_v4.Sheets;
 import Drive = drive_v3.Drive;
+import Sheets = sheets_v4.Sheets;
 
 export interface GenerateCategorySpreadsheetEvent {
     supplierId: number;
@@ -18,14 +18,15 @@ export interface GenerateCategorySpreadsheetEvent {
 }
 
 export async function generateCategorySpreadsheet({categoryPath, retailerId, supplierId}: GenerateCategorySpreadsheetEvent): Promise<void> {
-    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
-        categoryPath,
-        progress: 0.2,
-        message: 'Checking for existing spreadsheet...'
-    }, supplierId);
+    const sendProgress = (progress: number, message: string) => {
+        return sendWebsocketEvent('generateCatalogSpreadsheetProgress', {progress, message, categoryPath}, supplierId);
+    };
+
+    // First, check for an existing spreadsheet
+    await sendProgress(0.2, 'Checking for existing spreadsheet...');
 
     const {savedSheet, outOfDate, catalogItems} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
-    if (savedSheet) {
+    if (savedSheet) { // If found, return it.
         await sendWebsocketEvent('generateCatalogSpreadsheetSuccess', {
             categoryPath,
             url: DscoSpreadsheet.generateUrl(savedSheet.spreadsheetId),
@@ -35,11 +36,8 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
         return;
     }
 
-    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
-        categoryPath,
-        progress: 0.53,
-        message: 'Loading Dsco schema & attribution data...'
-    }, supplierId);
+    // Otherwise, generate a DscoSpreadsheet
+    await sendProgress(0.53, 'Loading Dsco schema & attribution data...');
 
     const spreadsheetOrError = await generateSpreadsheet(supplierId, retailerId, categoryPath);
 
@@ -48,32 +46,35 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
         throw spreadsheetOrError;
     }
 
-    for (const catalog of catalogItems) {
+    for (const catalog of catalogItems) { // Populate the spreadsheet with all of their published catalog items
         spreadsheetOrError.addCatalogRow(new DscoCatalogRow(catalog, true));
     }
 
-    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
-        categoryPath,
-        progress: 0.66,
-        message: 'Creating Spreadsheet...'
-    }, supplierId);
+    // Send the spreadsheet to google
+    await sendProgress(0.66, 'Creating Spreadsheet...');
 
     const {sheets, drive, script, cleanupGoogleApis} = await prepareGoogleApis();
 
-    const spreadsheetId = await createGoogleSpreadsheet(spreadsheetOrError, sheets, drive);
+    const spreadsheetId = await sendSpreadsheetToGoogle(spreadsheetOrError, sheets, drive);
 
-    await sendWebsocketEvent('generateCatalogSpreadsheetProgress', {
+    // Generate a google apps scripts project for the spreadsheet.
+    await sendProgress(0.85, 'Adding validation to spreadsheet...');
+
+    const scriptId = await SpreadsheetAppScriptsManager.generateScriptProjectForSheet(spreadsheetId, spreadsheetOrError.spreadsheetName, script);
+
+    await SpreadsheetDynamoTable.putItem({
+        spreadsheetId,
         categoryPath,
-        progress: 0.85,
-        message: 'Adding validation to spreadsheet...'
-    }, supplierId);
-
-    const scriptId = await generateScriptProjectForSheet(spreadsheetId, spreadsheetOrError.spreadsheetName, script);
-
-    await SpreadsheetDynamoTable.putItem({spreadsheetId, categoryPath, retailerId, supplierId, scriptId, lastUpdateDate: new Date()});
+        retailerId,
+        supplierId,
+        scriptId,
+        scriptVersion: APP_SCRIPT_VERSION,
+        lastUpdateDate: new Date()
+    });
 
     await cleanupGoogleApis();
 
+    // Return the newly created spreadsheet url.
     await sendWebsocketEvent('generateCatalogSpreadsheetSuccess', {
         categoryPath,
         url: DscoSpreadsheet.generateUrl(spreadsheetId),
@@ -85,7 +86,7 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
  * Generates a google spreadsheet from the dsco spreadsheet
  * @returns the generated file id
  */
-async function createGoogleSpreadsheet(dscoSpreadsheet: DscoSpreadsheet, sheets: Sheets, drive: Drive): Promise<string> {
+async function sendSpreadsheetToGoogle(dscoSpreadsheet: DscoSpreadsheet, sheets: Sheets, drive: Drive): Promise<string> {
     const {spreadsheet, dimensionUpdates} = await dscoSpreadsheet.intoGoogleSpreadsheet();
 
     const response = await sheets.spreadsheets.create({

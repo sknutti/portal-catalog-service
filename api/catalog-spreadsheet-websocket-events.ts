@@ -28,5 +28,13 @@ export interface CatalogSpreadsheetWebsocketEvents {
     publishCatalogSpreadsheetFail: {
         reason: 'out-of-date' | 'no-spreadsheet-found';
     };
+    updateCatalogSpreadsheetProgress: {
+        categoryPath: string;
+        progress: number; // float; 0 to 1
+        message: string;
+    };
+    updateCatalogSpreadsheetSuccess: {
+        categoryPath: string;
+    };
 }
 

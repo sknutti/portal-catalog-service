@@ -5,6 +5,7 @@ kinesis:
     - kinesis:PutRecord
   Resource:
     - "${self:custom.environment.kinesisArn}"
+
 firehose:
   Effect: "Allow"
   Action:
@@ -12,6 +13,7 @@ firehose:
     - firehose:PutRecord
   Resource:
     - "${self:custom.environment.firehoseArn}"
+
 s3:
   Effect: "Allow"
   Action:

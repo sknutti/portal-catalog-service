@@ -1,4 +1,5 @@
 service: portal-catalog
+
 plugins:
   - serverless-domain-manager
   - serverless-pseudo-parameters
