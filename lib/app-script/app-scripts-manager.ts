@@ -66,7 +66,7 @@ export class AppScriptsManager {
     private static loadScriptSource(): string {
         if (!scriptSource) {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
-            scriptSource = require('../../app-script.js').default as string; // A  webpack loader causes this to be imported as a transpiled string.
+            scriptSource = require('../../app-script').default as string; // A  webpack loader causes this to be imported as a transpiled string.
         }
 
         return scriptSource;

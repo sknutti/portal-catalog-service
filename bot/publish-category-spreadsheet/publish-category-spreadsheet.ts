@@ -1,6 +1,6 @@
-import { SpreadsheetRowMessage } from '@api';
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { XrayActionSeverity } from '@dsco/ts-models';
+import { keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
+import { CoreCatalog } from '@lib/core-catalog';
 import {
     DscoCatalogRow,
     DscoSpreadsheet,
@@ -9,6 +9,7 @@ import {
     verifyCategorySpreadsheet
 } from '@lib/spreadsheet';
 import { prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
+import { SpreadsheetRowMessage } from '../../api';
 
 export interface PublishCategorySpreadsheetEvent {
     supplierId: number;
@@ -34,7 +35,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     await sendProgress(0.2, 'Verifying spreadsheet is up to date...');
 
     // First, we verify the spreadsheet, refusing to publish if it is out of date
-    const {savedSheet, outOfDate} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
+    const {savedSheet, outOfDate, catalogItems: existingCatalogItems} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
     if (!savedSheet || outOfDate) {
         await sendWebsocketEvent('publishCatalogSpreadsheetFail', {
             reason: outOfDate ? 'out-of-date' : 'no-spreadsheet-found'
@@ -73,7 +74,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
       row => !row.published
     );
 
-    const responses = await Promise.all(resolveCatalogsWithProgress(unpublishedCatalogs, userId, supplierId, categoryPath));
+    const responses = await Promise.all(resolveCatalogsWithProgress(unpublishedCatalogs, existingCatalogItems, userId, supplierId, categoryPath));
 
     let rowNum = 2; // row 1 is the header
     for (const response of responses) {
@@ -103,20 +104,28 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     }, supplierId);
 }
 
-function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
+function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], existingCatalogItems: CoreCatalog[],
+                                     userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
+    const existingItemMap = keyBy(existingCatalogItems, 'sku');
+
     const total = unpublishedCatalogs.length;
     let current = 0;
 
     let lastSendTime = 0;
     const THROTTLE_TIME = 300;
 
-    return unpublishedCatalogs.map(async catalog => {
+    return unpublishedCatalogs.map(async ({catalog}) => {
+        // Any product status other than pending requires a quantity available.  Default to zero if there isn't one.
+        if (catalog.product_status !== ProductStatus.PENDING && !catalog.quantity_available) {
+            catalog.quantity_available = existingItemMap[catalog.sku!]?.quantity_available || 0;
+        }
+
         const response = await new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
             caller: {
                 account_id: supplierId!.toString(10),
                 user_id: userId.toString(10)
             },
-            params: catalog.catalog
+            params: catalog
         }).submit();
 
         current++;

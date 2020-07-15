@@ -1,4 +1,4 @@
-import { Catalog, CatalogImage, SnakeCase } from '@dsco/ts-models';
+import { Catalog, CatalogImage, ProductStatus, SnakeCase } from '@dsco/ts-models';
 
 // This allows us to access snake_cased values on the catalog.
 export interface CoreCatalog extends SnakeCase<Catalog> {
@@ -13,6 +13,8 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     toSnakeCase: undefined,
     last_update_date?: string;
     sku?: string;
+    product_status?: ProductStatus;
+    quantity_available?: number;
     [key: string]: any;
 }
 
