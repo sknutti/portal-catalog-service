@@ -9,7 +9,9 @@ import {
     verifyCategorySpreadsheet
 } from '@lib/spreadsheet';
 import { prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
+import { sheets_v4 } from 'googleapis';
 import { SpreadsheetRowMessage } from '../../api';
+import Schema$RowData = sheets_v4.Schema$RowData;
 
 export interface PublishCategorySpreadsheetEvent {
     supplierId: number;
@@ -26,6 +28,7 @@ const gearmanActionSuccess: Set<string> = new Set([
 ]);
 
 const VALIDATING_PROGRESS_START_PCT = 0.63;
+const CLEANING_UP_PCT = 0.94;
 
 export async function publishCategorySpreadsheet({categoryPath, retailerId, supplierId, userId}: PublishCategorySpreadsheetEvent): Promise<void> {
     const sendProgress = (progress: number, message: string) => {
@@ -55,8 +58,6 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
 
     const {sheets, cleanupGoogleApis} = await prepareGoogleApis();
     const googleSpreadsheet = await GoogleSpreadsheet.loadFromGoogle(savedSheet.spreadsheetId, sheets);
-    await cleanupGoogleApis();
-
 
     await sendProgress(VALIDATING_PROGRESS_START_PCT, 'Validating & saving rows...');
 
@@ -98,6 +99,32 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
         rowNum++;
     }
 
+    await sendProgress(CLEANING_UP_PCT, 'Cleaning up...');
+
+    const numBoxesToBeChecked = googleSpreadsheet.numUserRows - 1; // minus 1 for the header
+    const trueValues: Schema$RowData[] = [];
+    for (let i = 0; i < numBoxesToBeChecked; i++) {
+        trueValues.push({
+            values: [{userEnteredValue: {boolValue: true}}]
+        });
+    }
+
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: savedSheet.spreadsheetId,
+        requestBody: {
+            requests: [
+                {
+                    updateCells: {
+                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, startRowIndex: 1, endRowIndex: googleSpreadsheet.numUserRows - 1},
+                        fields: 'userEnteredValue',
+                        rows: trueValues
+                    }
+                }
+            ]
+        }
+    });
+    await cleanupGoogleApis();
+
     await sendWebsocketEvent('publishCatalogSpreadsheetSuccess', {
         categoryPath,
         rowMessages
@@ -135,7 +162,7 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], exis
             lastSendTime = now;
             await sendWebsocketEvent('publishCatalogSpreadsheetProgress', {
                 categoryPath,
-                progress: VALIDATING_PROGRESS_START_PCT + ((1 - VALIDATING_PROGRESS_START_PCT) * (current / total)),
+                progress: VALIDATING_PROGRESS_START_PCT + ((CLEANING_UP_PCT - VALIDATING_PROGRESS_START_PCT) * (current / total)),
                 message: `Validating & saving rows ${current}/${total}...`
             }, supplierId);
         }

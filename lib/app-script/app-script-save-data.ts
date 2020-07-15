@@ -12,5 +12,6 @@ export interface AppScriptSaveData {
 export type RowIdx = number;
 
 export type AppScriptSaveDataKey = 'dsco_spreadsheet_save_data';
+export type UserDataSheetId = 0;
 export const APP_SCRIPT_SAVE_DATA_KEY: AppScriptSaveDataKey = 'dsco_spreadsheet_save_data';
 export const APP_SCRIPT_VERSION = '1.0';

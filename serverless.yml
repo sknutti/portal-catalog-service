@@ -5,6 +5,7 @@ plugins:
   - serverless-pseudo-parameters
   - serverless-offline
 
+
 package:
   excludeDevDependencies: false
   exclude:

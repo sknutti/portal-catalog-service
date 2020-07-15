@@ -5,21 +5,21 @@
  */
 
 import SheetsOnEdit = GoogleAppsScript.Events.SheetsOnEdit;
+import Color = GoogleAppsScript.Spreadsheet.Color;
 import DataValidation = GoogleAppsScript.Spreadsheet.DataValidation;
+import DeveloperMetadata = GoogleAppsScript.Spreadsheet.DeveloperMetadata;
 import Range = GoogleAppsScript.Spreadsheet.Range;
 import SpreadsheetRange = GoogleAppsScript.Spreadsheet.Range;
 import Spreadsheet = GoogleAppsScript.Spreadsheet.Spreadsheet;
-import Color = GoogleAppsScript.Spreadsheet.Color;
-import type { AppScriptSaveData, AppScriptSaveDataKey } from '@lib/app-script-save-data';
-import DeveloperMetadata = GoogleAppsScript.Spreadsheet.DeveloperMetadata;
+import type { AppScriptSaveData, AppScriptSaveDataKey, UserDataSheetId } from '@lib/app-script';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 let log = (...values: any[]) => {};
 
+const USER_SHEET_ID: UserDataSheetId = 0;
 /**
  * Called every time a cell is edited in the spreadsheet
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onEdit({source, range}: SheetsOnEdit): void {
     log = (...values) => source.getSheets()[1].appendRow(values);
 
@@ -28,7 +28,6 @@ function onEdit({source, range}: SheetsOnEdit): void {
     if (editedRange) {
         resetRangeValidationAndFormatting(source, editedRange);
         markRowsAsPending(source, editedRange);
-        storeModifiedRows(new SaveDataManager(source), editedRange);
     }
 }
 
@@ -153,23 +152,26 @@ function compareValidation(val1: DataValidation | null, val2: DataValidation | n
 }
 
 /**
- * The header cells and the first call aren't editable.
+ * The header cells aren't editable.
  * This will exclude those cells from the range.
  *
  * Returns null if the entire range is not editable
  */
 function getEditableRange(range: Range): Range | null {
+    if (range.getSheet().getSheetId() !== USER_SHEET_ID) {
+        return null;
+    }
+
     const numRows = range.getNumRows();
     const numCols = range.getNumColumns();
 
     const rowOffset = range.getRow() === 1 ? 1 : 0;
-    const colOffset = range.getColumn() === 1 ? 1 : 0;
 
-    if ((rowOffset && numRows === 1) || (colOffset && numCols === 1)) {
+    if (rowOffset && numRows === 1) {
         return null;
     }
 
-    return (rowOffset || colOffset) ? range.offset(rowOffset, colOffset, numRows - rowOffset, numCols - colOffset) : range;
+    return rowOffset ? range.offset(rowOffset, 0, numRows - rowOffset, numCols) : range;
 }
 
 function isDefaultFont(size: number, weight: string, family: string, style: string, line: string, color: Color): boolean {
@@ -186,23 +188,48 @@ function isDefaultFont(size: number, weight: string, family: string, style: stri
 
 
 function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
-    const userSheet = spreadsheet.getSheets()[0];
-    userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight()).uncheck();
-}
-
-function storeModifiedRows(saveDataManager: SaveDataManager, editedRange: Range): void {
+    const saveDataManager = new SaveDataManager(spreadsheet);
     const {modifiedRows} = saveDataManager.saveData;
     const modifiedRowsSet = new Set(modifiedRows);
+
     const startRowIdx = editedRange.getRow() - 1;
     const endRowIdx = startRowIdx + editedRange.getNumRows();
+    const startColIdx = editedRange.getColumn() - 1;
+    const numEditedCols = editedRange.getWidth();
+    // If the only thing the user touched was the published col, no need to mark the row as modified.
+    const editedActualData = !(startColIdx === 0 && numEditedCols === 1);
+
+    const userSheet = spreadsheet.getSheets()[0];
+    const publishedCheckboxRange = userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight());
+    const publishedCheckboxValues = publishedCheckboxRange.getValues() as boolean[][];
+    const updatedCheckboxValues: boolean[][] = [];
+    let shouldUpdateCheckboxValues = false;
+    let shouldUpdateSaveData = false;
 
     for (let rowIdx = startRowIdx; rowIdx < endRowIdx; rowIdx++) {
-        if (!modifiedRowsSet.has(rowIdx)) {
+        const publishedVal = publishedCheckboxValues[rowIdx - startRowIdx][0];
+
+        const isInModifiedRows = modifiedRowsSet.has(rowIdx);
+        const shouldBeInModified = isInModifiedRows || editedActualData;
+
+        if (shouldBeInModified && !isInModifiedRows) {
             modifiedRows.push(rowIdx);
+            shouldUpdateSaveData = true;
+        }
+
+        updatedCheckboxValues.push([!shouldBeInModified]);
+        if (!shouldBeInModified !== publishedVal) {
+            shouldUpdateCheckboxValues = true;
         }
     }
 
-    saveDataManager.save();
+    if (shouldUpdateSaveData) {
+        saveDataManager.save();
+    }
+
+    if (shouldUpdateCheckboxValues) {
+        publishedCheckboxRange.setValues(updatedCheckboxValues);
+    }
 }
 
 class SaveDataManager {

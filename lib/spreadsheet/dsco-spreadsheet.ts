@@ -1,5 +1,5 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData, UserDataSheetId } from '@lib/app-script';
 import { DscoCatalogRow, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
@@ -18,7 +18,7 @@ import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensio
 export class DscoSpreadsheet implements Iterable<DscoColumn> {
     static readonly PUBLISHED_COL_NAME = 'Published to Dsco';
     static readonly USER_SHEET_NAME = 'Catalog Data';
-    static readonly USER_SHEET_ID = 0;
+    static readonly USER_SHEET_ID: UserDataSheetId = 0;
     static readonly DATA_SHEET_NAME = 'ValidationData';
     static readonly DATA_SHEET_ID = 1;
 
@@ -51,8 +51,8 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         this.addColumn(
           new DscoColumn(DscoSpreadsheet.PUBLISHED_COL_NAME, 'transient', {
               format: 'boolean',
-              required: XrayActionSeverity.error
-          })
+              required: XrayActionSeverity.error,
+          }, {boolValue: true})
         );
     }
 

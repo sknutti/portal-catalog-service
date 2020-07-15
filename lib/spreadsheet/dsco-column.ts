@@ -48,7 +48,9 @@ export class DscoColumn {
       public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
       public validation: DscoColValidation = {
           required: 'none'
-      }
+      },
+      // Will be applied only on empty rows with no catalog data filled in
+      public defaultValue?: Schema$ExtendedValue
     ) {
     }
 
@@ -82,7 +84,7 @@ export class DscoColumn {
         this.generateValidationData(addEnumVals);
 
         return {
-            userEnteredValue: rowData ? this.makeExtendedValue(rowData, retailerId) : undefined,
+            userEnteredValue: rowData ? this.makeExtendedValue(rowData, retailerId) : this.defaultValue,
             dataValidation: this.dataValidation,
             userEnteredFormat: this.format
         };
