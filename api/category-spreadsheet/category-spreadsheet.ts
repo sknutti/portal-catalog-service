@@ -6,7 +6,10 @@ import type {
     publishCategorySpreadsheet,
     PublishCategorySpreadsheetEvent
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
-import type { updateCategorySpreadsheet, UpdateCategorySpreadsheetEvent } from '@bot/update-category-spreadsheet/update-category-spreadsheet';
+import type {
+    updateCategorySpreadsheet,
+    UpdateCategorySpreadsheetEvent
+} from '@bot/update-category-spreadsheet/update-category-spreadsheet';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
 import AWS from 'aws-sdk';

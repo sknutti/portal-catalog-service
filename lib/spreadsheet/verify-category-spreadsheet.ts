@@ -1,7 +1,7 @@
 import { UnexpectedError } from '@dsco/ts-models';
-import { catalogItemSearch } from '@lib/catalog-item-search';
 import { CoreCatalog } from '@lib/core-catalog';
-import { DDB_CLIENT, SpreadsheetDynamoTable, SpreadsheetRecord } from '@lib/spreadsheet-dynamo-table';
+import { DDB_CLIENT, SpreadsheetDynamoTable, SpreadsheetRecord } from '@lib/spreadsheet';
+import { catalogItemSearch } from '@lib/utils';
 import AWS from 'aws-sdk';
 
 const ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});

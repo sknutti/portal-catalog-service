@@ -3,14 +3,14 @@ import Script = script_v1.Script;
 
 let scriptSource: string | undefined;
 
-export class SpreadsheetAppScriptsManager {
+export class AppScriptsManager {
     /**
      * Generates a Google Apps Script project for the spreadsheet, and populates the project with the correct file data.
      *
      * @returns the generated project's scriptId.
      */
     static async generateScriptProjectForSheet(spreadsheetId: string, spreadsheetName: string, script: Script): Promise<string> {
-        const appScriptSource = SpreadsheetAppScriptsManager.loadScriptSource();
+        const appScriptSource = AppScriptsManager.loadScriptSource();
 
         const createdProjectResp = await script.projects.create({
             requestBody: {
@@ -44,7 +44,7 @@ export class SpreadsheetAppScriptsManager {
      * Updates the script project with the latest app script source.
      */
     static async updateExistingScriptProject(scriptId: string, script: Script): Promise<void> {
-        const appScriptSource = SpreadsheetAppScriptsManager.loadScriptSource();
+        const appScriptSource = AppScriptsManager.loadScriptSource();
 
         const projectContentResponse = await script.projects.getContent({scriptId});
 
@@ -66,7 +66,7 @@ export class SpreadsheetAppScriptsManager {
     private static loadScriptSource(): string {
         if (!scriptSource) {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
-            scriptSource = require('../app-script.ts').default as string; // A  webpack loader causes this to be imported as a transpiled string.
+            scriptSource = require('../../app-script.js').default as string; // A  webpack loader causes this to be imported as a transpiled string.
         }
 
         return scriptSource;

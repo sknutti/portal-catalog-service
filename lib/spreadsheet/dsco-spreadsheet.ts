@@ -1,7 +1,6 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { DscoCatalogRow } from '@lib/dsco-catalog-row';
-import { GoogleSpreadsheet } from '@lib/google-spreadsheet';
-import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script';
+import { DscoCatalogRow, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
@@ -87,14 +86,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                     gridProperties: {rowCount: numRowsToBuild, frozenRowCount: 1},
                     title: DscoSpreadsheet.USER_SHEET_NAME,
                     sheetId: DscoSpreadsheet.USER_SHEET_ID
-                },
-                protectedRanges: [
-                    {
-                        description: 'Published Column',
-                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, endColumnIndex: 1},
-                        warningOnly: true
-                    }
-                ]
+                }
             },
             {
                 data: [{rowData: []}],
@@ -117,6 +109,12 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                 metadataValue: '',
                 visibility: 'DOCUMENT',
                 location: {spreadsheet: true}
+            },
+            {
+                metadataKey: '',
+                location: {
+
+                }
             }
         ]);
 

@@ -1,5 +1,5 @@
-import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
+import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script';
+import { DscoSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
 import Schema$DeveloperMetadata = sheets_v4.Schema$DeveloperMetadata;

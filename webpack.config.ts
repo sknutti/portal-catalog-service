@@ -1,8 +1,8 @@
 import { ServerlessArtifactWebpackPlugin } from '@dsco/service-utils';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import { resolve } from 'path';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import { Configuration, NormalModuleReplacementPlugin } from 'webpack';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');

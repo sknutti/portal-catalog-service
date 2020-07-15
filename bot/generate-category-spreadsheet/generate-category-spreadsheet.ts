@@ -1,12 +1,12 @@
-import { DscoCatalogRow } from '@lib/dsco-catalog-row';
-import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { SpreadsheetAppScriptsManager } from '@lib/spreadsheet-app-scripts-manager';
-import { generateSpreadsheet } from '@lib/generate-spreadsheet';
-import { prepareGoogleApis } from '@lib/google-api-utils';
-import { sendWebsocketEvent } from '@lib/send-websocket-event';
-import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
-import { APP_SCRIPT_VERSION } from '@lib/app-script-save-data';
-import { verifyCategorySpreadsheet } from '@lib/verify-category-spreadsheet';
+import { APP_SCRIPT_VERSION, AppScriptsManager } from '@lib/app-script';
+import {
+    DscoCatalogRow,
+    DscoSpreadsheet,
+    generateSpreadsheet,
+    SpreadsheetDynamoTable,
+    verifyCategorySpreadsheet
+} from '@lib/spreadsheet';
+import { prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
 import { drive_v3, sheets_v4 } from 'googleapis';
 import Drive = drive_v3.Drive;
 import Sheets = sheets_v4.Sheets;
@@ -60,7 +60,7 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
     // Generate a google apps scripts project for the spreadsheet.
     await sendProgress(0.85, 'Adding validation to spreadsheet...');
 
-    const scriptId = await SpreadsheetAppScriptsManager.generateScriptProjectForSheet(spreadsheetId, spreadsheetOrError.spreadsheetName, script);
+    const scriptId = await AppScriptsManager.generateScriptProjectForSheet(spreadsheetId, spreadsheetOrError.spreadsheetName, script);
 
     await SpreadsheetDynamoTable.putItem({
         spreadsheetId,

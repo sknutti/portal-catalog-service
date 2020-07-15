@@ -1,7 +1,6 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { DscoCatalogRow } from '@lib/dsco-catalog-row';
-import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { prepareValueForSpreadsheet, SerialDate } from '@lib/google-api-utils';
+import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
+import { SerialDate } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$CellFormat = sheets_v4.Schema$CellFormat;
@@ -55,7 +54,7 @@ export class DscoColumn {
 
     generateHeaderCell(): Schema$CellData {
         return {
-            userEnteredValue: {stringValue: prepareValueForSpreadsheet(this.name)},
+            userEnteredValue: {stringValue: this.name},
             userEnteredFormat: {
                 textFormat: {
                     fontFamily: 'Arial',

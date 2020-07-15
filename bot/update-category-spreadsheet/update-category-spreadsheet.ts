@@ -1,13 +1,12 @@
-import { catalogItemSearch } from '@lib/catalog-item-search';
-import { DscoCatalogRow } from '@lib/dsco-catalog-row';
-import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { generateSpreadsheet } from '@lib/generate-spreadsheet';
-import { prepareGoogleApis } from '@lib/google-api-utils';
-import { GoogleSpreadsheet } from '@lib/google-spreadsheet';
-import { sendWebsocketEvent } from '@lib/send-websocket-event';
-import { SpreadsheetAppScriptsManager } from '@lib/spreadsheet-app-scripts-manager';
-import { SpreadsheetDynamoTable } from '@lib/spreadsheet-dynamo-table';
-import { APP_SCRIPT_VERSION } from '@lib/app-script-save-data';
+import { APP_SCRIPT_VERSION, AppScriptsManager } from '@lib/app-script';
+import {
+    DscoCatalogRow,
+    DscoSpreadsheet,
+    generateSpreadsheet,
+    GoogleSpreadsheet,
+    SpreadsheetDynamoTable
+} from '@lib/spreadsheet';
+import { catalogItemSearch, prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
 
 export interface UpdateCategorySpreadsheetEvent {
     supplierId: number;
@@ -139,7 +138,7 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     // Update the app script if necessary
     if (ddbSheet.scriptVersion !== APP_SCRIPT_VERSION) {
         await sendProgress(0.85, 'Updating validations...');
-        await SpreadsheetAppScriptsManager.updateExistingScriptProject(ddbSheet.scriptId, script);
+        await AppScriptsManager.updateExistingScriptProject(ddbSheet.scriptId, script);
     }
 
     await sendProgress(0.96, 'Cleaning up...');

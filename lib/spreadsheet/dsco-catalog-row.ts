@@ -1,10 +1,6 @@
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
-import { DscoSpreadsheet } from '@lib/dsco-spreadsheet';
-import { GoogleSpreadsheet } from '@lib/google-spreadsheet';
-import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData } from '@lib/app-script-save-data';
+import { DscoSpreadsheet, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
-import Sheets = sheets_v4.Sheets;
-import Schema$RowData = sheets_v4.Schema$RowData;
 
 /**
  * Represent's one row's data - a catalog and whether or not that catalog has been published.

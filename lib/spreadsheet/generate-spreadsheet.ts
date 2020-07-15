@@ -7,12 +7,11 @@ import {
     UnexpectedError,
     XrayActionSeverity
 } from '@dsco/ts-models';
+import { GetPipelineCatalogRulesRequest, GetPipelineRulesRequest } from '@lib/requests';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
 import { DscoColumn, DscoColValidation } from './dsco-column';
 import { DscoSpreadsheet } from './dsco-spreadsheet';
-import { GetPipelineCatalogRulesRequest } from './get-pipeline-catalog-rules.request';
-import { GetPipelineRulesRequest } from './get-pipeline-rules.request';
 
 const env = process.env.ENVIRONMENT! as DscoEnv;
 
@@ -37,7 +36,7 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
 /**
  * Generates column data using dsco's simple rules.
  */
-export async function generateSpreadsheetCols(supplierId: number, retailerId: number, categoryPath: string): Promise<DscoColumn[] | UnexpectedError> {
+async function generateSpreadsheetCols(supplierId: number, retailerId: number, categoryPath: string): Promise<DscoColumn[] | UnexpectedError> {
     const [catalogRulesResp, allRulesResp] = await Promise.all([
         axiosRequest(
           new GetPipelineCatalogRulesRequest(env, [categoryPath], retailerId.toString(10)),
