@@ -105,19 +105,7 @@ export class GoogleSpreadsheet implements Schema$Spreadsheet {
         }
 
         if (modified) {
-            data.developerMetadata = [{
-                metadataKey: IS_MODIFIED_SAVE_DATA_KEY,
-                metadataValue: 'true',
-                visibility: 'DOCUMENT',
-                location: {
-                    dimensionRange: {
-                        dimension: 'ROWS',
-                        sheetId: DscoSpreadsheet.USER_SHEET_ID,
-                        startIndex: idx,
-                        endIndex: idx + 1
-                    }
-                }
-            }];
+            data.developerMetadata = [GoogleSpreadsheet.createIsModifiedDeveloperMetadata(idx)];
         }
     }
 
@@ -131,6 +119,23 @@ export class GoogleSpreadsheet implements Schema$Spreadsheet {
             }
             rowIdx++;
         }
+    }
+
+
+    static createIsModifiedDeveloperMetadata(rowIdx: number): Schema$DeveloperMetadata {
+        return {
+            metadataKey: IS_MODIFIED_SAVE_DATA_KEY,
+            metadataValue: 'true',
+            visibility: 'DOCUMENT',
+            location: {
+                dimensionRange: {
+                    dimension: 'ROWS',
+                    sheetId: DscoSpreadsheet.USER_SHEET_ID,
+                    startIndex: rowIdx,
+                    endIndex: rowIdx + 1
+                }
+            }
+        };
     }
 
     static async loadFromGoogle(spreadsheetId: string, sheets: Sheets): Promise<GoogleSpreadsheet> {

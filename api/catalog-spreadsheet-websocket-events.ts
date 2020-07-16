@@ -23,9 +23,12 @@ export interface CatalogSpreadsheetWebsocketEvents {
     };
     publishCatalogSpreadsheetSuccess: {
         categoryPath: string;
+        numSuccessfulRows: number;
+        numFailedRows: number;
         rowMessages: { [row: number]: SpreadsheetRowMessage[] };
     };
     publishCatalogSpreadsheetFail: {
+        categoryPath: string;
         reason: 'out-of-date' | 'no-spreadsheet-found';
     };
     updateCatalogSpreadsheetProgress: {

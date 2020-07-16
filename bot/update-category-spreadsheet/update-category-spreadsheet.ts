@@ -57,7 +57,6 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
         if (!row.published) {
             alreadyAddedSkus.add(row.catalog.sku!);
             newDscoSpreadsheet.addCatalogRow(row);
-            console.error('Adding row', row);
         }
     }
 
@@ -65,7 +64,6 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     for (const item of catalogItems) {
         if (!alreadyAddedSkus.has(item.sku!)) {
             newDscoSpreadsheet.addCatalogRow(new DscoCatalogRow(item, true));
-            console.error('Adding row', item);
         }
     }
 

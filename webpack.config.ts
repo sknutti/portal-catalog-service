@@ -3,6 +3,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import { resolve } from 'path';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import { Configuration, NormalModuleReplacementPlugin } from 'webpack';
+import InjectPlugin from 'webpack-inject-plugin';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
@@ -13,6 +14,12 @@ process.env.LEO_LOCAL = 'true';
 
 module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
     const isLocal = env?.local;
+
+    /**
+     * This warning is expected:
+     * * The webpack config's entry differs from the ServerlessArtifactWebpackPlugin plugin's entry.This may be due to another plugin, and may break builds.
+     * because of the InjectPlugin beneath.
+     */
     const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
         layersProvidedDependencies: ['leo-sdk', 'leo-streams', 'leo-config']
     });
@@ -80,7 +87,8 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             // }),
             // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
             new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js')),
-            new ForkTsCheckerWebpackPlugin()
+            new ForkTsCheckerWebpackPlugin(),
+            new InjectPlugin(() => 'require("source-map-support").install();')
         ]
     };
 };

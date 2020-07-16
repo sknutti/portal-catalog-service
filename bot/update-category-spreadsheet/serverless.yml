@@ -3,6 +3,6 @@ update-category-spreadsheet:
   handler: bot/update-category-spreadsheet/update-category-spreadsheet.updateCategorySpreadsheet
   memorySize: 1024
   timeout: 240
-  vpc: ${self:custom.environment.gearman-vpc}
+  vpc: ${self:custom.environment.gearman-and-mongo-vpc}
   layers:
     - ${cf:layer-leo-${self:provider.stage}.LeoLambdaLayerQualifiedArn}

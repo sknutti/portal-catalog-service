@@ -49,6 +49,7 @@ provider:
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:DeleteItem
+        - dynamodb:UpdateItem
         - dynamodb:Query
       Resource:
         - Fn::GetAtt: [PortalCatalogSpreadsheetTable, Arn]
@@ -58,6 +59,9 @@ provider:
         - secretsmanager:PutSecretValue
       Resource:
         - "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:catalog-editor-google-api*"
+    - Effect: "Allow"
+      Action: secretsmanager:GetSecretValue
+      Resource: "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:mongo-${self:provider.stage}*"
     - Effect: "Allow"
       Action:
         - execute-api:Invoke
@@ -99,4 +103,3 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-

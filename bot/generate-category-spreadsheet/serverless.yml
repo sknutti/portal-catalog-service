@@ -3,6 +3,6 @@ generate-category-spreadsheet:
   handler: bot/generate-category-spreadsheet/generate-category-spreadsheet.generateCategorySpreadsheet
   memorySize: 1024
   timeout: 240
-#  vpc: ${self:custom.environment.gearman-vpc}
+  vpc: ${self:custom.environment.gearman-and-mongo-vpc}
   layers:
     - ${cf:layer-leo-${self:provider.stage}.LeoLambdaLayerQualifiedArn}

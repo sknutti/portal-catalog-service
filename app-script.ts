@@ -7,7 +7,6 @@
 import SheetsOnEdit = GoogleAppsScript.Events.SheetsOnEdit;
 import Color = GoogleAppsScript.Spreadsheet.Color;
 import DataValidation = GoogleAppsScript.Spreadsheet.DataValidation;
-import DeveloperMetadataLocationType = GoogleAppsScript.Spreadsheet.DeveloperMetadataLocationType;
 import Range = GoogleAppsScript.Spreadsheet.Range;
 import SpreadsheetRange = GoogleAppsScript.Spreadsheet.Range;
 import Spreadsheet = GoogleAppsScript.Spreadsheet.Spreadsheet;
@@ -144,8 +143,6 @@ function compareValidation(val1: DataValidation | null, val2: DataValidation | n
                 return true;
             }
 
-            Logger.log('Found different criteria vals: ', criteriaVal1, criteriaVal2);
-
             return false;
         }
     }
@@ -195,8 +192,7 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
     const developerMetadataFinder = editedRange
       .createDeveloperMetadataFinder()
       .onIntersectingLocations()
-      .withKey(IS_MODIFIED_SAVE_DATA_KEY)
-      .withLocationType(DeveloperMetadataLocationType.ROW);
+      .withKey(IS_MODIFIED_SAVE_DATA_KEY);
 
     const modifiedRowIndexes = developerMetadataFinder.find().map(metadata => {
         return metadata.getLocation().getRow()!.getRow() - 1;
@@ -235,7 +231,7 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
 
     for (const idx of newRowIdxsToModify) {
         const row = userSheet.getRange(`${idx + 1}:${idx + 1}`);
-        row.addDeveloperMetadata(IS_MODIFIED_SAVE_DATA_KEY, 'true', 'DOCUMENT' as any);
+        row.addDeveloperMetadata(IS_MODIFIED_SAVE_DATA_KEY, 'true');
     }
 
     if (shouldUpdateCheckboxValues) {

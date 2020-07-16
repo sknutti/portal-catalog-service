@@ -2,6 +2,7 @@ import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '
 import { keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
 import { IS_MODIFIED_SAVE_DATA_KEY } from '@lib/app-script';
 import { CoreCatalog } from '@lib/core-catalog';
+import { GetWarehousesGearmanApi, TinyWarehouse } from '@lib/requests';
 import {
     DscoCatalogRow,
     DscoSpreadsheet,
@@ -25,7 +26,7 @@ const gearmanActionSuccess: Set<string> = new Set([
     'SAVED',
     'CREATED',
     'UPDATED',
-    'SUCCESS',
+    'SUCCESS'
 ]);
 
 const VALIDATING_PROGRESS_START_PCT = 0.63;
@@ -42,6 +43,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     const {savedSheet, outOfDate, catalogItems: existingCatalogItems} = await verifyCategorySpreadsheet(categoryPath, supplierId, retailerId);
     if (!savedSheet || outOfDate) {
         await sendWebsocketEvent('publishCatalogSpreadsheetFail', {
+            categoryPath,
             reason: outOfDate ? 'out-of-date' : 'no-spreadsheet-found'
         }, supplierId);
         return;
@@ -71,79 +73,108 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
         messages.push(message);
     };
 
+    // TODO: Report rows without skus as being ignored!
     // Only save the rows that haven't been published
-    const unpublishedCatalogs = DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath).filter(
-      row => !row.published
-    );
+    const unpublishedCatalogs = DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath).map((row, idx) => {
+        return {row, rowIdx: idx + 1}; // + 1 because of header
+    }).filter(row => !row.row.published);
 
-    const responses = await Promise.all(resolveCatalogsWithProgress(unpublishedCatalogs, existingCatalogItems, userId, supplierId, categoryPath));
+    const rowIdxsWithErrors = new Set<number>();
+    let numSuccessfulRows = 0;
+    let numFailedRows = 0;
 
-    let rowNum = 2; // row 1 is the header
-    for (const response of responses) {
-        const successfullySaved = gearmanActionSuccess.has(response.action);
+    if (unpublishedCatalogs.length) { // If there are any unpublished catalogs, try saving them
+        const responses = await Promise.all(resolveCatalogsWithProgress(unpublishedCatalogs, existingCatalogItems, userId, supplierId, categoryPath));
 
-        let hasErrorMessage = false;
+        // Collect all of the error messages when trying to save them
+        for (const {response, rowIdx} of responses) {
+            const successfullySaved = gearmanActionSuccess.has(response.action);
 
-        for (const msg of response.validation_messages || []) {
-            addRowMessage(rowNum, msg);
-            hasErrorMessage = hasErrorMessage || msg.messageType === XrayActionSeverity.error;
-        }
+            let hasErrorMessage = false;
 
-        if (!successfullySaved && !hasErrorMessage) {
-            const messages = response.messages?.length ? response.messages : ['Unable to save item.'];
+            for (const msg of response.validation_messages || []) {
+                addRowMessage(rowIdx + 1, msg);
+                hasErrorMessage = hasErrorMessage || msg.messageType === XrayActionSeverity.error;
+            }
 
-            for (const message of messages) {
-                addRowMessage(rowNum, {message, messageType: XrayActionSeverity.error});
+            if (!successfullySaved && !hasErrorMessage) {
+                const messages = response.messages?.length ? response.messages : ['Unable to save item.'];
+
+                for (const message of messages) {
+                    addRowMessage(rowIdx + 1, {message, messageType: XrayActionSeverity.error});
+                }
+            }
+
+            if (successfullySaved) {
+                numSuccessfulRows++;
+            } else {
+                numFailedRows++;
+
+                rowIdxsWithErrors.add(rowIdx);
             }
         }
 
-        rowNum++;
-    }
+        // Update the checkbox values depending on which rows saved successfully.
+        await sendProgress(CLEANING_UP_PCT, 'Cleaning up...');
 
-    await sendProgress(CLEANING_UP_PCT, 'Cleaning up...');
+        const numBoxesToBeChecked = googleSpreadsheet.numUserRows - 1; // minus 1 for the header
+        const checkboxValues: Schema$RowData[] = [];
+        for (let i = 0; i < numBoxesToBeChecked; i++) {
+            checkboxValues.push({
+                values: [{
+                    userEnteredValue: {
+                        boolValue: !rowIdxsWithErrors.has(i + 1) // plus 1 for header
+                    }
+                }]
+            });
+        }
 
-    const numBoxesToBeChecked = googleSpreadsheet.numUserRows - 1; // minus 1 for the header
-    const trueValues: Schema$RowData[] = [];
-    for (let i = 0; i < numBoxesToBeChecked; i++) {
-        trueValues.push({
-            values: [{userEnteredValue: {boolValue: true}}]
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: savedSheet.spreadsheetId,
+            requestBody: {
+                requests: [
+                    // Mark all rows as not modified
+                    {
+                        deleteDeveloperMetadata: {
+                            dataFilter: {
+                                developerMetadataLookup: {
+                                    metadataKey: IS_MODIFIED_SAVE_DATA_KEY
+                                }
+                            }
+                        }
+                    },
+                    {
+                        updateCells: {
+                            range: {
+                                sheetId: DscoSpreadsheet.USER_SHEET_ID,
+                                startColumnIndex: 0,
+                                endColumnIndex: 1,
+                                startRowIndex: 1
+                            },
+                            fields: 'userEnteredValue',
+                            rows: checkboxValues
+                        }
+                    },
+                    ...Array.from(rowIdxsWithErrors).map(idx => ({
+                        createDeveloperMetadata: {developerMetadata: GoogleSpreadsheet.createIsModifiedDeveloperMetadata(idx)}
+                    }))
+                ]
+            }
         });
     }
 
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: savedSheet.spreadsheetId,
-        requestBody: {
-            requests: [
-                // Mark all rows as not modified
-                {
-                    deleteDeveloperMetadata: {
-                        dataFilter: {
-                            developerMetadataLookup: {
-                                metadataKey: IS_MODIFIED_SAVE_DATA_KEY
-                            }
-                        }
-                    }
-                },
-                {
-                    updateCells: {
-                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, endColumnIndex: 1, startRowIndex: 1},
-                        fields: 'userEnteredValue',
-                        rows: trueValues
-                    }
-                }
-            ]
-        }
-    });
     await cleanupGoogleApis();
 
     await sendWebsocketEvent('publishCatalogSpreadsheetSuccess', {
         categoryPath,
-        rowMessages
+        rowMessages,
+        numSuccessfulRows,
+        numFailedRows
     }, supplierId);
 }
 
-function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], existingCatalogItems: CoreCatalog[],
-                                     userId: number, supplierId: number, categoryPath: string): Array<Promise<ResolveExceptionGearmanApiResponse>> {
+function resolveCatalogsWithProgress(unpublishedCatalogs: Array<{row: DscoCatalogRow, rowIdx: number}>, existingCatalogItems: CoreCatalog[],
+                                     userId: number, supplierId: number, categoryPath: string): Array<Promise<{ response: ResolveExceptionGearmanApiResponse, rowIdx: number }>> {
     const existingItemMap = keyBy(existingCatalogItems, 'sku');
 
     const total = unpublishedCatalogs.length;
@@ -152,10 +183,21 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], exis
     let lastSendTime = 0;
     const THROTTLE_TIME = 300;
 
-    return unpublishedCatalogs.map(async ({catalog}) => {
-        // Any product status other than pending requires a quantity available.  Default to zero if there isn't one.
-        if (catalog.product_status !== ProductStatus.PENDING && !catalog.quantity_available) {
-            catalog.quantity_available = existingItemMap[catalog.sku!]?.quantity_available || 0;
+    let warehouses: TinyWarehouse[] | undefined;
+
+    return unpublishedCatalogs.map(async ({row, rowIdx}) => {
+        const {catalog} = row;
+        // Any product status other than pending requires both quantity_available and warehouses quantity.  This gives defaults of zero to both
+        if (catalog.product_status !== ProductStatus.PENDING) {
+            const existingItem = existingItemMap[catalog.sku!];
+            catalog.quantity_available = existingItem?.quantity_available || 0;
+
+            if (!warehouses) {
+                const resp = await new GetWarehousesGearmanApi(supplierId.toString()).submit();
+                warehouses = resp.success ? resp.warehouses : [];
+            }
+
+            handleWarehouseQuantity(catalog, warehouses, existingItem);
         }
 
         const response = await new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
@@ -178,6 +220,36 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: DscoCatalogRow[], exis
             }, supplierId);
         }
 
-        return response;
+        return {response, rowIdx};
     });
+}
+
+function handleWarehouseQuantity(item: CoreCatalog, warehouses: TinyWarehouse[], existing?: CoreCatalog): void {
+    const existingWarehouses = new Set<string>();
+    const newWarehouses = item.warehouses = item.warehouses || [];
+
+    for (const existingWarehouse of existing?.warehouses || []) {
+        if (!existingWarehouse) {
+            continue;
+        }
+
+        existingWarehouses.add(existingWarehouse.warehouse_id);
+        newWarehouses.push(existingWarehouse);
+        if (!existingWarehouse.quantity) {
+            existingWarehouse.quantity = 0;
+        }
+    }
+
+    for (const warehouse of warehouses) {
+        if (existingWarehouses.has(warehouse.warehouseId)) {
+            continue;
+        }
+
+        existingWarehouses.add(warehouse.warehouseId);
+        newWarehouses.push({
+            quantity: 0,
+            warehouse_id: warehouse.warehouseId,
+            code: warehouse.code
+        });
+    }
 }
