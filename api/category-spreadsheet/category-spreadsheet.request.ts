@@ -6,7 +6,7 @@ export interface CategorySpreadsheetRequestBody {
 }
 
 export class CategorySpreadsheetRequest extends DsRequest<CategorySpreadsheetRequestBody, DsResponse, DsError> {
-	constructor(env: DscoEnv, public retailerId: number, public categoryPath: string, public action: 'generate' | 'publish') {
-        super('POST', `/portal-catalog/spreadsheet${action === 'publish' ? '/publish' : ''}`, DsRequest.getHost(env, 'micro'), {retailerId, categoryPath});
+	constructor(env: DscoEnv, public retailerId: number, public categoryPath: string, public action: 'generate' | 'publish' | 'update') {
+        super('POST', `/portal-catalog/spreadsheet${action === 'generate' ? '' : `/${action}`}`, DsRequest.getHost(env, 'micro'), {retailerId, categoryPath});
     }
 }

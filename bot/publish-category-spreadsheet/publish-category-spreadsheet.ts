@@ -1,5 +1,6 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
 import { keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
+import { IS_MODIFIED_SAVE_DATA_KEY } from '@lib/app-script';
 import { CoreCatalog } from '@lib/core-catalog';
 import {
     DscoCatalogRow,
@@ -113,9 +114,19 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
         spreadsheetId: savedSheet.spreadsheetId,
         requestBody: {
             requests: [
+                // Mark all rows as not modified
+                {
+                    deleteDeveloperMetadata: {
+                        dataFilter: {
+                            developerMetadataLookup: {
+                                metadataKey: IS_MODIFIED_SAVE_DATA_KEY
+                            }
+                        }
+                    }
+                },
                 {
                     updateCells: {
-                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, startRowIndex: 1, endRowIndex: googleSpreadsheet.numUserRows - 1},
+                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, endColumnIndex: 1, startRowIndex: 1},
                         fields: 'userEnteredValue',
                         rows: trueValues
                     }

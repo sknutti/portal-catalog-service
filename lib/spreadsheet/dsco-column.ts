@@ -101,12 +101,17 @@ export class DscoColumn {
             return;
         }
 
-        const valueToSet = this.getDataFromExtendedValue(cell.effectiveValue);
+        let valueToSet = this.getDataFromExtendedValue(cell.effectiveValue);
         if (valueToSet === undefined || valueToSet === null) {
             return;
         }
 
         if (this.type === 'core') {
+            if (this.fieldName === 'sku' && typeof valueToSet === 'string') {
+                // The core automatically uppercases all skus.  This ensures nothing goes out of date.
+                valueToSet = valueToSet.toUpperCase();
+            }
+
             rowData.catalog[this.fieldName] = valueToSet;
         } else if (this.type === 'extended') {
             rowData.catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;

@@ -45,7 +45,7 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
                     use: [
                         {loader: 'ts-loader', options: {configFile: 'tsconfig.app-script.json', transpileOnly: true}},
                         {loader: 'raw-loader'}
-                    ],
+                    ]
                 },
                 {
                     test: /\.tsx?$/,
@@ -62,7 +62,7 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             extensions: ['.ts', '.js', '.tsx'],
             plugins: [
                 new TsconfigPathsPlugin({
-                    configFile: './tsconfig.json',
+                    configFile: './tsconfig.json'
                 })
             ]
         },
@@ -80,7 +80,7 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
             // }),
             // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
             new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js')),
-          new ForkTsCheckerWebpackPlugin()
+            new ForkTsCheckerWebpackPlugin()
         ]
     };
 };

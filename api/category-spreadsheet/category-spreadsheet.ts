@@ -15,6 +15,7 @@ import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@
 import AWS from 'aws-sdk';
 import { CategorySpreadsheetRequest } from './category-spreadsheet.request';
 
+const lambda = new AWS.Lambda({apiVersion: '2015-03-31'});
 export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async (event) => {
     if (!event.body.retailerId) {
         return new MissingRequiredFieldError('retailerId');
@@ -64,7 +65,6 @@ async function invokeGenerateBot(supplierId: number, retailerId: number, categor
             console.error(e);
         }
     } else {
-        const lambda = new AWS.Lambda();
         await lambda.invoke({
             FunctionName: process.env.GENERATE_BOT_NAME!,
             InvocationType: 'Event',
@@ -85,7 +85,6 @@ async function invokePublishBot(supplierId: number, retailerId: number, userId: 
             console.error(e);
         }
     } else {
-        const lambda = new AWS.Lambda();
         await lambda.invoke({
             FunctionName: process.env.PUBLISH_BOT_NAME!,
             InvocationType: 'Event',
@@ -107,7 +106,6 @@ async function invokeUpdateBot(supplierId: number, retailerId: number, categoryP
             console.error(e);
         }
     } else {
-        const lambda = new AWS.Lambda();
         await lambda.invoke({
             FunctionName: process.env.UPDATE_BOT_NAME!,
             InvocationType: 'Event',

@@ -7,16 +7,18 @@
 import SheetsOnEdit = GoogleAppsScript.Events.SheetsOnEdit;
 import Color = GoogleAppsScript.Spreadsheet.Color;
 import DataValidation = GoogleAppsScript.Spreadsheet.DataValidation;
-import DeveloperMetadata = GoogleAppsScript.Spreadsheet.DeveloperMetadata;
+import DeveloperMetadataLocationType = GoogleAppsScript.Spreadsheet.DeveloperMetadataLocationType;
 import Range = GoogleAppsScript.Spreadsheet.Range;
 import SpreadsheetRange = GoogleAppsScript.Spreadsheet.Range;
 import Spreadsheet = GoogleAppsScript.Spreadsheet.Spreadsheet;
-import type { AppScriptSaveData, AppScriptSaveDataKey, UserDataSheetId } from '@lib/app-script';
+import type { IsModifiedSaveDataKey, UserDataSheetId } from '@lib/app-script';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 let log = (...values: any[]) => {};
 
 const USER_SHEET_ID: UserDataSheetId = 0;
+const IS_MODIFIED_SAVE_DATA_KEY: IsModifiedSaveDataKey = 'dsco_is_modified';
+
 /**
  * Called every time a cell is edited in the spreadsheet
  */
@@ -188,9 +190,19 @@ function isDefaultFont(size: number, weight: string, family: string, style: stri
 
 
 function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
-    const saveDataManager = new SaveDataManager(spreadsheet);
-    const {modifiedRows} = saveDataManager.saveData;
-    const modifiedRowsSet = new Set(modifiedRows);
+    const userSheet = spreadsheet.getSheets()[0];
+
+    const developerMetadataFinder = editedRange
+      .createDeveloperMetadataFinder()
+      .onIntersectingLocations()
+      .withKey(IS_MODIFIED_SAVE_DATA_KEY)
+      .withLocationType(DeveloperMetadataLocationType.ROW);
+
+    const modifiedRowIndexes = developerMetadataFinder.find().map(metadata => {
+        return metadata.getLocation().getRow()!.getRow() - 1;
+    });
+    const modifiedRowsSet = new Set(modifiedRowIndexes);
+    const newRowIdxsToModify: number[] = [];
 
     const startRowIdx = editedRange.getRow() - 1;
     const endRowIdx = startRowIdx + editedRange.getNumRows();
@@ -199,12 +211,11 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
     // If the only thing the user touched was the published col, no need to mark the row as modified.
     const editedActualData = !(startColIdx === 0 && numEditedCols === 1);
 
-    const userSheet = spreadsheet.getSheets()[0];
+
     const publishedCheckboxRange = userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight());
     const publishedCheckboxValues = publishedCheckboxRange.getValues() as boolean[][];
     const updatedCheckboxValues: boolean[][] = [];
     let shouldUpdateCheckboxValues = false;
-    let shouldUpdateSaveData = false;
 
     for (let rowIdx = startRowIdx; rowIdx < endRowIdx; rowIdx++) {
         const publishedVal = publishedCheckboxValues[rowIdx - startRowIdx][0];
@@ -213,8 +224,7 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
         const shouldBeInModified = isInModifiedRows || editedActualData;
 
         if (shouldBeInModified && !isInModifiedRows) {
-            modifiedRows.push(rowIdx);
-            shouldUpdateSaveData = true;
+            newRowIdxsToModify.push(rowIdx);
         }
 
         updatedCheckboxValues.push([!shouldBeInModified]);
@@ -223,27 +233,12 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
         }
     }
 
-    if (shouldUpdateSaveData) {
-        saveDataManager.save();
+    for (const idx of newRowIdxsToModify) {
+        const row = userSheet.getRange(`${idx + 1}:${idx + 1}`);
+        row.addDeveloperMetadata(IS_MODIFIED_SAVE_DATA_KEY, 'true', 'DOCUMENT' as any);
     }
 
     if (shouldUpdateCheckboxValues) {
         publishedCheckboxRange.setValues(updatedCheckboxValues);
-    }
-}
-
-class SaveDataManager {
-    private static key: AppScriptSaveDataKey = 'dsco_spreadsheet_save_data';
-
-    public saveData: AppScriptSaveData;
-    private dm: DeveloperMetadata;
-    constructor(private sheet: Spreadsheet) {
-        this.dm = sheet.getDeveloperMetadata().find(dm => dm.getKey() === SaveDataManager.key)!;
-        this.saveData = JSON.parse(this.dm.getValue()!);
-    }
-
-    save(): void {
-        log(JSON.stringify(this.saveData));
-        this.dm.setValue(JSON.stringify(this.saveData));
     }
 }

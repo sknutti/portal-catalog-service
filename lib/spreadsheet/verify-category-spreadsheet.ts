@@ -1,10 +1,8 @@
 import { UnexpectedError } from '@dsco/ts-models';
+import { APP_SCRIPT_VERSION } from '@lib/app-script';
 import { CoreCatalog } from '@lib/core-catalog';
 import { DDB_CLIENT, SpreadsheetDynamoTable, SpreadsheetRecord } from '@lib/spreadsheet';
 import { catalogItemSearch } from '@lib/utils';
-import AWS from 'aws-sdk';
-
-const ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
 
 /**
  * Loads the saved category spreadsheet, if any.
@@ -20,14 +18,19 @@ export async function verifyCategorySpreadsheet(categoryPath: string, supplierId
     // Require there to be an active attribution
     if (!attributionActivationDate) {
         // TODO: Handle all of these unexpected errors
-        throw new UnexpectedError('No active catalog attributions for retailer', JSON.stringify({categoryPath, retailerId, supplierId}));
+        throw new UnexpectedError('No active catalog attributions for retailer', JSON.stringify({
+            categoryPath,
+            retailerId,
+            supplierId
+        }));
     }
 
     return {
         savedSheet,
         outOfDate: !!savedSheet && (
-          (savedSheet.lastUpdateDate < attributionActivationDate) ||
-          !!catalogItems.find(item => item.last_update_date && new Date(item.last_update_date) > savedSheet.lastUpdateDate)
+          (savedSheet.scriptVersion !== APP_SCRIPT_VERSION)
+          || (savedSheet.lastUpdateDate < attributionActivationDate)
+          || !!catalogItems.find(item => item.last_update_date && new Date(item.last_update_date) > savedSheet.lastUpdateDate)
         ),
         catalogItems
     };

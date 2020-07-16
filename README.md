@@ -39,7 +39,8 @@ const response = await signedFetch(request, DSCO_ENV, DSCO_CONFIG.AWS_REGION, DS
 ```
 
 ## Project Layout
-The source for each of the lambdas can be found in `/api/function_name/`
+The source for each of the apid lambdas can be found in `/api/function_name/`
+The source for each of the bot lambdas can be found in `/bot/function_name/`
 
 Shared code and helper code can be found under `/lib`
 

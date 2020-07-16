@@ -7,6 +7,8 @@ import {
     SpreadsheetDynamoTable
 } from '@lib/spreadsheet';
 import { catalogItemSearch, prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
+import { sheets_v4 } from 'googleapis';
+import Schema$DeveloperMetadata = sheets_v4.Schema$DeveloperMetadata;
 
 export interface UpdateCategorySpreadsheetEvent {
     supplierId: number;
@@ -74,23 +76,32 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
 
     const {
         bandedRanges: existingBandedRanges,
-        developerMetadata: existingDeveloperMetadata,
+        columnSaveNamesDeveloperMetadata: existingColumnSaveNamesDeveloperMetadata,
         numUserRows: existingNumUserRows,
         numUserCols: existingNumUserCols,
         numValidationRows: existingNumValidationRows,
         numValidationCols: existingNumValidationCols
     } = existingGoogleSpreadsheet;
 
+    const existingDeveloperMetadata: {developerMetadata: Schema$DeveloperMetadata}[] = [
+        {developerMetadata: existingColumnSaveNamesDeveloperMetadata},
+      ...existingGoogleSpreadsheet.getModifiedRowDeveloperMetadata(),
+    ];
+
     const {
         userSheetRowData,
         validationSheetRowData,
         bandedRanges: newBandedRanges,
-        developerMetadata: newDeveloperMetadata,
+        columnSaveNamesDeveloperMetadata: newColumnSaveNamesDeveloperMetadata,
         numUserRows: newNumUserRows,
         numUserCols: newNumUserCols,
         numValidationRows: newNumValidationRows,
         numValidationCols: newNumValidationCols
     } = newGoogleSpreadsheet;
+    const newDeveloperMetadata: {developerMetadata: Schema$DeveloperMetadata}[] = [
+        {developerMetadata: newColumnSaveNamesDeveloperMetadata},
+        ...newGoogleSpreadsheet.getModifiedRowDeveloperMetadata(),
+    ];
 
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId: existingGoogleSpreadsheet.spreadsheetId,
@@ -106,7 +117,9 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
                 // Remove all existing banded ranges
                 ...existingBandedRanges.map(({bandedRangeId}) => ({deleteBanding: {bandedRangeId}})),
                 // Remove all developer metadata
-                ...existingDeveloperMetadata.map(({metadataId}) => ({deleteDeveloperMetadata: {dataFilter: {developerMetadataLookup: {metadataId}}}})),
+                ...existingDeveloperMetadata.map(({developerMetadata}) => ({
+                    deleteDeveloperMetadata: {dataFilter: {developerMetadataLookup: {metadataId: developerMetadata.metadataId}}}
+                })),
                 // Update the cells for the user sheet
                 {
                     updateCells: {
@@ -124,7 +137,7 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
                     }
                 },
                 // Add the new developer metadata
-                ...newDeveloperMetadata.map(developerMetadata => ({createDeveloperMetadata: {developerMetadata}})),
+                ...newDeveloperMetadata.map(({developerMetadata}) => ({createDeveloperMetadata: {developerMetadata}})),
                 // Add the new banded ranges
                 ...newBandedRanges.map(bandedRange => ({addBanding: {bandedRange}})),
                 // Resize the columns that need it

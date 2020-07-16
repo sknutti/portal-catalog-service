@@ -1,5 +1,5 @@
 import { XrayActionSeverity } from '@dsco/ts-models';
-import { APP_SCRIPT_SAVE_DATA_KEY, AppScriptSaveData, UserDataSheetId } from '@lib/app-script';
+import { COLUMN_SAVE_NAMES_SAVE_DATA_KEY, UserDataSheetId } from '@lib/app-script';
 import { DscoCatalogRow, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
@@ -51,7 +51,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         this.addColumn(
           new DscoColumn(DscoSpreadsheet.PUBLISHED_COL_NAME, 'transient', {
               format: 'boolean',
-              required: XrayActionSeverity.error,
+              required: XrayActionSeverity.error
           }, {boolValue: true})
         );
     }
@@ -81,7 +81,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         const spreadsheet = new GoogleSpreadsheet([
             {
                 bandedRanges: this.generateBandedRanges(),
-                data: [{rowData: []}],
+                data: [{rowData: [], rowMetadata: []}],
                 properties: {
                     gridProperties: {rowCount: numRowsToBuild, frozenRowCount: 1},
                     title: DscoSpreadsheet.USER_SHEET_NAME,
@@ -105,18 +105,12 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             }
         ], [
             {
-                metadataKey: APP_SCRIPT_SAVE_DATA_KEY,
-                metadataValue: '',
+                metadataKey: COLUMN_SAVE_NAMES_SAVE_DATA_KEY,
+                metadataValue: Array.from(this).map(col => col.saveName).join(','),
                 visibility: 'DOCUMENT',
                 location: {spreadsheet: true}
-            },
-            {
-                metadataKey: '',
-                location: {
-
-                }
             }
-        ]);
+        ], this.spreadsheetName);
 
         const dimensionUpdates = this.fillGoogleSpreadsheet(spreadsheet, numRowsToBuild);
 
@@ -155,16 +149,9 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
             return `${DscoSpreadsheet.DATA_SHEET_NAME}!${rowNum}:${rowNum}`;
         };
 
-        const appScriptSaveData: AppScriptSaveData = {
-            modifiedRows: [],
-            colSaveNames: []
-        };
-
         // Loops through every column, setting up the header row, validation row, and filling in the userData.
         let parsedColIdx = 0;
         for (const col of this) {
-            appScriptSaveData.colSaveNames.push(col.saveName);
-
             resizeColumnIfNecessary(col, parsedColIdx, dimensionUpdates);
 
             headerRow.push(col.generateHeaderCell());
@@ -180,9 +167,8 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                         values: []
                     };
 
-                    if (rowData && !rowData.published) { // Mark the unpublished rows in the saveData
-                        appScriptSaveData.modifiedRows.push(rowIdx);
-                    }
+                    // Mark the unpublished rows in the sheet's metadata
+                    sheet.setRowModifiedMetadata(rowIdx, rowData?.published === false);
                 }
 
 
@@ -192,8 +178,6 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
 
             parsedColIdx++;
         }
-
-        sheet.saveDataDeveloperMetadata.metadataValue = JSON.stringify(appScriptSaveData);
 
         return dimensionUpdates;
     }

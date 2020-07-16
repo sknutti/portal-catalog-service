@@ -74,7 +74,6 @@ provider:
     - ${file(./leo-iam.yml):firehose}
     - ${file(./leo-iam.yml):s3}
 
-
 functions:
   - ${file(./api/category-spreadsheet/serverless.yml)}
   - ${file(./bot/generate-category-spreadsheet/serverless.yml)}
