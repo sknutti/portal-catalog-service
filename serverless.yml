@@ -28,6 +28,7 @@ custom:
 provider:
   name: aws
   runtime: nodejs12.x
+  versionFunctions: false
   deploymentBucket: leo-cli-publishbucket-19e80lsbylz0f
   stage: ${opt:stage, 'test'}
   environment:

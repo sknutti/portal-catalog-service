@@ -15,13 +15,13 @@ process.env.LEO_LOCAL = 'true';
 module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
     const isLocal = env?.local;
 
-    /**
-     * This warning is expected:
-     * * The webpack config's entry differs from the ServerlessArtifactWebpackPlugin plugin's entry.This may be due to another plugin, and may break builds.
-     * because of the InjectPlugin beneath.
-     */
     const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
-        layersProvidedDependencies: ['leo-sdk', 'leo-streams', 'leo-config']
+        layersProvidedDependencies: ['leo-sdk', 'leo-streams', 'leo-config'],
+        serverlessOfflineStage: 'prod',
+        /**
+         * This warning is expected because of the InjectPlugin beneath.
+         */
+        suppressEntryWarning: true
     });
 
     return {

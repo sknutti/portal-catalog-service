@@ -80,7 +80,7 @@ Bamboo builds are run automatically when changes are pushed to the master branch
 
 
 * [Connect to VPN](https://dsco.atlassian.net/wiki/spaces/DSCO/pages/362217473/Connect+to+VPN)
-* Go to [Portal Catalog Service Bamboo Dashboard](http://bamboo.ops:8085/browse/DCST-PC)
+* Go to [Portal Catalog Service Bamboo Dashboard](http://bamboo.ops:8085/browse/DCST-PCS)
 * To manually run a build, click `Run` in the top right corner.
 * To promote a deployment to an environment, use the deploy icon in the top right corner.
 

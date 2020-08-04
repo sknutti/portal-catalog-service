@@ -18,7 +18,7 @@
     "@dsco/aws-auth": "^1.0.12",
     "@dsco/gearman-apis": "0.0.18",
     "@dsco/search-apis": "^1.0.40",
-    "@dsco/service-utils": "0.0.17",
+    "@dsco/service-utils": "0.0.20",
     "@dsco/ts-models": "^1.0.72",
     "aws-sdk": "^2.692.0",
     "axios": "^0.19.2",
