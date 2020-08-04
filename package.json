@@ -7,7 +7,7 @@
     "start": "webpack --config webpack.config.ts --watch --env.local --progress",
     "test": "jest",
     "build": "rm -rf build && npm run build:artifact && npm run build:lib",
-    "build:artifact": "webpack --config webpack.config.ts --progress",
+    "build:artifact": "node --max_old_space_size=4096 ./node_modules/webpack/bin/webpack.js --config webpack.config.ts --progress",
     "build:lib": "npm run build:lib:ts && cp api/package.json build/lib/package.json && cp README.md build/lib/README.md",
     "build:lib:ts": "tsc -p tsconfig.lib.json && tsc -p tsconfig.lib.json -m esnext --outDir build/lib/fesm2015 -d false"
   },
