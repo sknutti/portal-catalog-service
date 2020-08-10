@@ -1,8 +1,8 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
+import { DsError, keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
 import { IS_MODIFIED_SAVE_DATA_KEY } from '@lib/app-script';
 import { CoreCatalog } from '@lib/core-catalog';
-import { GetWarehousesGearmanApi, TinyWarehouse } from '@lib/requests';
+import { GetWarehousesGearmanApi, GetWarehousesGearmanResponse, TinyWarehouse } from '@lib/requests';
 import {
     DscoCatalogRow,
     DscoSpreadsheet,
@@ -183,6 +183,7 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: Array<{row: DscoCatalo
     let lastSendTime = 0;
     const THROTTLE_TIME = 300;
 
+    let warehousesPromise: Promise<GetWarehousesGearmanResponse | DsError> | undefined;
     let warehouses: TinyWarehouse[] | undefined;
 
     return unpublishedCatalogs.map(async ({row, rowIdx}) => {
@@ -193,7 +194,8 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: Array<{row: DscoCatalo
             catalog.quantity_available = existingItem?.quantity_available || 0;
 
             if (!warehouses) {
-                const resp = await new GetWarehousesGearmanApi(supplierId.toString()).submit();
+                warehousesPromise = warehousesPromise || new GetWarehousesGearmanApi(supplierId.toString()).submit();
+                const resp = await warehousesPromise;
                 warehouses = resp.success ? resp.warehouses : [];
             }
 

@@ -8,7 +8,8 @@ import InjectPlugin from 'webpack-inject-plugin';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
 
-process.env.GEARMAN_HOST = 'gearman.test';
+const stage: 'test' | 'staging' | 'prod' = 'prod';
+process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
 process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
 process.env.LEO_LOCAL = 'true';
 
@@ -17,7 +18,7 @@ module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
 
     const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
         layersProvidedDependencies: ['leo-sdk', 'leo-streams', 'leo-config'],
-        serverlessOfflineStage: 'prod',
+        serverlessOfflineStage: stage,
         /**
          * This warning is expected because of the InjectPlugin beneath.
          */
