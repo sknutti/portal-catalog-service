@@ -3,12 +3,12 @@ import { DscoSpreadsheet, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
 
 /**
- * Represent's one row's data - a catalog and whether or not that catalog has been published.
+ * Represent's one row's data - a catalog and whether or not that catalog has been modified.
  *
  * Can be extracted from a GoogleSpreadsheet, and added to a DscoSpreadsheet.
  */
 export class DscoCatalogRow {
-    constructor(public catalog: CoreCatalog, public published: boolean) {
+    constructor(public catalog: CoreCatalog, public modified: boolean) {
     }
 
     /**

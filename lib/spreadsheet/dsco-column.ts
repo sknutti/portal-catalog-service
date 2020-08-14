@@ -1,4 +1,4 @@
-import { XrayActionSeverity } from '@dsco/ts-models';
+import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
 import { SerialDate } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
@@ -96,8 +96,8 @@ export class DscoColumn {
      * Assumes extended_attributes[retailerId] exists
      */
     readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): void {
-        // We ignore the published col and pull that from the AppScriptSaveData
-        if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
+        // We ignore the modified col and pull that from the AppScriptSaveData
+        if (this.name === DscoSpreadsheet.MODIFIED_COL_NAME) {
             return;
         }
 
@@ -106,7 +106,24 @@ export class DscoColumn {
             return;
         }
 
-        if (this.type === 'core') {
+        if (this.validation.format === 'image') { // Images need to be handled differently
+            const matches = this.fieldName.match(/^(.*)\.(.*)$/); // Extracts images.myName into [images.myName, images, myName]
+            if (!matches) {
+                throw new Error(`Unknown image column name: ${this.fieldName}`);
+            }
+
+            const [_, arrName, imgName] = matches;
+            const arr: CatalogImage[] = rowData.catalog[arrName] = rowData.catalog[arrName] || [];
+            let found = arr.find(img => img.name === imgName);
+            if (!found) {
+                found = {
+                    name: imgName
+                };
+                arr.push(found);
+            }
+
+            found.reference = valueToSet;
+        } else if (this.type === 'core') {
             if (this.fieldName === 'sku' && typeof valueToSet === 'string') {
                 // The core automatically uppercases all skus.  This ensures nothing goes out of date.
                 valueToSet = valueToSet.toUpperCase();
@@ -127,8 +144,8 @@ export class DscoColumn {
             data = rowData.catalog[this.fieldName];
         } else if (this.type === 'extended') {
             data = rowData.catalog.extended_attributes?.[retailerId]?.[this.fieldName];
-        } else if (this.name === DscoSpreadsheet.PUBLISHED_COL_NAME) {
-            data = rowData.published;
+        } else if (this.name === DscoSpreadsheet.MODIFIED_COL_NAME) {
+            data = rowData.modified;
         }
 
         if (data === null || data === undefined) {
@@ -152,6 +169,7 @@ export class DscoColumn {
             case 'uri':
             case 'email':
             case 'enum':
+            case 'image':
                 return {stringValue: `${data}`};
             case undefined:
                 return undefined;
@@ -249,9 +267,9 @@ export class DscoColumn {
                 strict: true,
                 inputMessage: dateInFuture ? `${this.name} must be a future date.` : `${this.name} must be a valid ${format === 'date' ? 'date' : 'date & time'}.`
             };
-            this.format = {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME'}};
+            this.format = {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME', pattern: format === 'date' ? 'M/d/yyyy' : 'M/d/yyyy H:mm'}};
         } else if (format === 'time') {
-            this.format = {numberFormat: {type: 'TIME', pattern: 'h":"mm" "am/pm'}};
+            this.format = {numberFormat: {type: 'TIME', pattern: 'H:mm'}};
         } else if (format === 'boolean') {
             this.dataValidation = {
                 condition: {type: 'BOOLEAN'},
@@ -272,7 +290,7 @@ export class DscoColumn {
                 strict: true,
                 inputMessage: `${this.name} must be one of the allowed values.`
             };
-        } else if (format === 'uri' || format === 'email') {
+        } else if (format === 'uri' || format === 'email' || format === 'image') {
             this.format = {numberFormat: {type: 'TEXT'}};
             this.dataValidation = {
                 condition: {type: format === 'email' ? 'TEXT_IS_EMAIL' : 'TEXT_IS_URL'},
@@ -280,9 +298,17 @@ export class DscoColumn {
                 strict: true,
                 inputMessage: `${this.name} must be ${format === 'email' ? 'an email' : 'a URL'}.`
             };
+        } else if (format === 'array') {
+            this.format = {numberFormat: {type: 'TEXT'}};
+            this.dataValidation = arrayType !== 'string' ? {
+                condition: {
+                    type: 'CUSTOM_FORMULA',
+                    values: [{userEnteredValue: '=AND(ARRAYFORMULA(ISNUMBER(SPLIT(INDIRECT("RC", false), ",", TRUE, TRUE))))'}]
+                },
+                strict: true,
+                inputMessage: `${this.name} must be a comma-separated list of numbers (${arrayType === 'integer' ? 'no decimals' : 'decimals allowed'}).`
+            } : undefined;
         }
-
-        // TODO: Validate array: =AND(ARRAYFORMULA(ISNUMBER(SPLIT(G5, ",", TRUE, TRUE))))
     }
 
     private getDataFromExtendedValue(cellValue: Schema$ExtendedValue | undefined): any {
@@ -295,6 +321,7 @@ export class DscoColumn {
             case 'enum':
             case 'email':
             case 'uri':
+            case 'image':
             case 'time': // TODO: What format does time expect?
                 return cellValue.stringValue ?? cellValue.numberValue?.toString() ?? cellValue.boolValue?.toString();
             case 'number':
@@ -323,7 +350,7 @@ export class DscoColumn {
 }
 
 export interface DscoColValidation {
-    format?: 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum' | 'uri' | 'email';
+    format?: 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum' | 'uri' | 'email' | 'image';
     enumVals?: Set<string | number>;
     min?: number;
     max?: number;
@@ -332,7 +359,9 @@ export interface DscoColValidation {
     match?: string; // regex
     dontMatch?: string[]; // regex
     regexMessage?: string;
-    required: XrayActionSeverity | 'none';
+    required: PipelineErrorType | 'none';
     arrayType?: 'string' | 'integer' | 'number';
     dateInFuture?: boolean;
+    minWidth?: number; // image
+    minHeight?: number; // image
 }

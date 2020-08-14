@@ -204,17 +204,17 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
     const endRowIdx = startRowIdx + editedRange.getNumRows();
     const startColIdx = editedRange.getColumn() - 1;
     const numEditedCols = editedRange.getWidth();
-    // If the only thing the user touched was the published col, no need to mark the row as modified.
+    // If the only thing the user touched was the is modified col, no need to mark the row as modified.
     const editedActualData = !(startColIdx === 0 && numEditedCols === 1);
 
 
-    const publishedCheckboxRange = userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight());
-    const publishedCheckboxValues = publishedCheckboxRange.getValues() as boolean[][];
+    const modifiedCheckboxRange = userSheet.getRange(editedRange.getRow(), 1, editedRange.getHeight());
+    const modifiedCheckboxValues = modifiedCheckboxRange.getValues() as boolean[][];
     const updatedCheckboxValues: boolean[][] = [];
     let shouldUpdateCheckboxValues = false;
 
     for (let rowIdx = startRowIdx; rowIdx < endRowIdx; rowIdx++) {
-        const publishedVal = publishedCheckboxValues[rowIdx - startRowIdx][0];
+        const modifiedVal = modifiedCheckboxValues[rowIdx - startRowIdx][0];
 
         const isInModifiedRows = modifiedRowsSet.has(rowIdx);
         const shouldBeInModified = isInModifiedRows || editedActualData;
@@ -223,8 +223,8 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
             newRowIdxsToModify.push(rowIdx);
         }
 
-        updatedCheckboxValues.push([!shouldBeInModified]);
-        if (!shouldBeInModified !== publishedVal) {
+        updatedCheckboxValues.push([shouldBeInModified]);
+        if (shouldBeInModified !== modifiedVal) {
             shouldUpdateCheckboxValues = true;
         }
     }
@@ -235,6 +235,6 @@ function markRowsAsPending(spreadsheet: Spreadsheet, editedRange: Range): void {
     }
 
     if (shouldUpdateCheckboxValues) {
-        publishedCheckboxRange.setValues(updatedCheckboxValues);
+        modifiedCheckboxRange.setValues(updatedCheckboxValues);
     }
 }

@@ -51,19 +51,19 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     const existingRows = DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath);
 
 
-    // We add any non-published rows to the new spreadsheet
+    // We add any modified rows to the new spreadsheet
     const alreadyAddedSkus = new Set<string>();
     for (const row of existingRows) {
-        if (!row.published) {
+        if (row.modified) {
             alreadyAddedSkus.add(row.catalog.sku!);
             newDscoSpreadsheet.addCatalogRow(row);
         }
     }
 
-    // Then add any remaining catalog items as published rows
+    // Then add any remaining catalog items as unmodified rows
     for (const item of catalogItems) {
         if (!alreadyAddedSkus.has(item.sku!)) {
-            newDscoSpreadsheet.addCatalogRow(new DscoCatalogRow(item, true));
+            newDscoSpreadsheet.addCatalogRow(new DscoCatalogRow(item, false));
         }
     }
 
@@ -154,7 +154,6 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
 
     await sendProgress(0.96, 'Cleaning up...');
 
-    // TODO: Actually synchronize the app script, don't just update the script version
     await SpreadsheetDynamoTable.markItemAsUpdated(supplierId, retailerId, categoryPath, APP_SCRIPT_VERSION, new Date());
 
     await sendWebsocketEvent('updateCatalogSpreadsheetSuccess', {categoryPath}, supplierId);

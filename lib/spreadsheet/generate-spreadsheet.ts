@@ -1,6 +1,6 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import {
-    DscoEnv,
+    DscoEnv, PipelineErrorType,
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
@@ -70,7 +70,7 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
         if (!result) {
             result = cols[type][name] = new DscoColumn(name, type, {
                 // Custom attributes should default to info, not none
-                required: type === 'extended' ? XrayActionSeverity.info : 'none'
+                required: type === 'extended' ? PipelineErrorType.info : 'none'
             });
             allCols.push(result);
         }
@@ -157,25 +157,30 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
             }
             default: return;
         }
-    } else if (rule.type === 'range' && rule.severity !== XrayActionSeverity.info) {
+    } else if (rule.type === 'range' && rule.severity !== PipelineErrorType.info) {
         const col = ensureCol(rule.field, rule);
         col.validation.min = rule.min;
         col.validation.max = rule.max;
-    } else if ((rule.type === 'length_range' || rule.type === 'catalog_length_range') && rule.severity !== XrayActionSeverity.info) {
+    } else if ((rule.type === 'length_range' || rule.type === 'catalog_length_range') && rule.severity !== PipelineErrorType.info) {
         const col = ensureCol(rule.field, rule);
         col.validation.minLength = rule.minLength;
         col.validation.maxLength = rule.maxLength;
-    } else if ((rule.type === 'pattern_match' || rule.type === 'catalog_pattern_match') && rule.severity !== XrayActionSeverity.info) {
+    } else if ((rule.type === 'pattern_match' || rule.type === 'catalog_pattern_match') && rule.severity !== PipelineErrorType.info) {
         const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.regexMessage = rule.description || rule.message;
-    }  else if ((rule.type === 'multi_pattern' || rule.type === 'catalog_multi_pattern') && rule.severity !== XrayActionSeverity.info) {
+    }  else if ((rule.type === 'multi_pattern' || rule.type === 'catalog_multi_pattern') && rule.severity !== PipelineErrorType.info) {
         const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.dontMatch = rule.notPatterns;
         col.validation.regexMessage = rule.description || rule.message;
-    } else if (rule.type === 'date_in_future' && rule.severity !== XrayActionSeverity.info) {
+    } else if (rule.type === 'date_in_future' && rule.severity !== PipelineErrorType.info) {
         setValidation(rule.field, 'dateInFuture', true);
+    } else if (rule.type === 'image') {
+        const col = ensureCol(rule.field, rule);
+        col.validation.format = 'image';
+        col.validation.minWidth = rule.minWidth;
+        col.validation.minHeight = rule.minHeight;
     }
 }
 
@@ -189,6 +194,11 @@ const SKIPPED_COLS = new Set(['item_id', 'supplier_id', 'trading_partner_id',
 function shouldSkipCol(name: string): boolean {
     // Skip fields starting in two underscores: __create_date
     // Skip fields with array or object access: attributes[]/name | attributes.name
+
+    //Should allow images.name fields
+    if (/^[a-zA-Z0-9_]*[iI]mages\.[a-zA-Z0-9_]+$/.test(name)) {
+        return false;
+    }
 
     return SKIPPED_COLS.has(name) || name.startsWith('__') || /\[]|\.|\//.test(name);
 }

@@ -74,17 +74,17 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     };
 
     // TODO: Report rows without skus as being ignored!
-    // Only save the rows that haven't been published
-    const unpublishedCatalogs = DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath).map((row, idx) => {
+    // Only save the rows that have been modified
+    const modifiedCatalogs = DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath).map((row, idx) => {
         return {row, rowIdx: idx + 1}; // + 1 because of header
-    }).filter(row => !row.row.published);
+    }).filter(row => row.row.modified);
 
     const rowIdxsWithErrors = new Set<number>();
     let numSuccessfulRows = 0;
     let numFailedRows = 0;
 
-    if (unpublishedCatalogs.length) { // If there are any unpublished catalogs, try saving them
-        const responses = await Promise.all(resolveCatalogsWithProgress(unpublishedCatalogs, existingCatalogItems, userId, supplierId, categoryPath));
+    if (modifiedCatalogs.length) { // If there are any modified catalogs, try saving them
+        const responses = await Promise.all(resolveCatalogsWithProgress(modifiedCatalogs, existingCatalogItems, userId, supplierId, categoryPath));
 
         // Collect all of the error messages when trying to save them
         for (const {response, rowIdx} of responses) {
@@ -173,11 +173,11 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     }, supplierId);
 }
 
-function resolveCatalogsWithProgress(unpublishedCatalogs: Array<{row: DscoCatalogRow, rowIdx: number}>, existingCatalogItems: CoreCatalog[],
+function resolveCatalogsWithProgress(modifiedCatalogs: Array<{row: DscoCatalogRow, rowIdx: number}>, existingCatalogItems: CoreCatalog[],
                                      userId: number, supplierId: number, categoryPath: string): Array<Promise<{ response: ResolveExceptionGearmanApiResponse, rowIdx: number }>> {
     const existingItemMap = keyBy(existingCatalogItems, 'sku');
 
-    const total = unpublishedCatalogs.length;
+    const total = modifiedCatalogs.length;
     let current = 0;
 
     let lastSendTime = 0;
@@ -186,7 +186,7 @@ function resolveCatalogsWithProgress(unpublishedCatalogs: Array<{row: DscoCatalo
     let warehousesPromise: Promise<GetWarehousesGearmanResponse | DsError> | undefined;
     let warehouses: TinyWarehouse[] | undefined;
 
-    return unpublishedCatalogs.map(async ({row, rowIdx}) => {
+    return modifiedCatalogs.map(async ({row, rowIdx}) => {
         const {catalog} = row;
         // Any product status other than pending requires both quantity_available and warehouses quantity.  This gives defaults of zero to both
         if (catalog.product_status !== ProductStatus.PENDING) {

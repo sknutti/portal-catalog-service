@@ -46,8 +46,8 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
         throw spreadsheetOrError;
     }
 
-    for (const catalog of catalogItems) { // Populate the spreadsheet with all of their published catalog items
-        spreadsheetOrError.addCatalogRow(new DscoCatalogRow(catalog, true));
+    for (const catalog of catalogItems) { // Populate the spreadsheet with all of their catalog items
+        spreadsheetOrError.addCatalogRow(new DscoCatalogRow(catalog, false));
     }
 
     // Send the spreadsheet to google

@@ -10,9 +10,11 @@ import type {
     updateCategorySpreadsheet,
     UpdateCategorySpreadsheetEvent
 } from '@bot/update-category-spreadsheet/update-category-spreadsheet';
+import { axiosRequest } from '@dsco/aws-auth';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
-import AWS from 'aws-sdk';
+import { GetPipelineCatalogRulesRequest } from '@lib/requests';
+import AWS, { Credentials } from 'aws-sdk';
 import { CategorySpreadsheetRequest } from './category-spreadsheet.request';
 
 const lambda = new AWS.Lambda({apiVersion: '2015-03-31'});
@@ -23,6 +25,14 @@ export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async 
     if (!event.body.categoryPath) {
         return new MissingRequiredFieldError('categoryPath');
     }
+    // const resp = await axiosRequest(
+    //   new GetPipelineCatalogRulesRequest('test', [event.body.categoryPath], event.body.retailerId.toString(10)),
+    //   'test',
+    //   AWS.config.credentials as Credentials,
+    //   process.env.AWS_REGION!
+    // );
+    //
+    // debugger;
 
     const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
 

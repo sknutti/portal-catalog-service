@@ -1,4 +1,4 @@
-import { XrayActionSeverity } from '@dsco/ts-models';
+import { PipelineErrorType } from '@dsco/ts-models';
 import { COLUMN_SAVE_NAMES_SAVE_DATA_KEY, UserDataSheetId } from '@lib/app-script';
 import { DscoCatalogRow, GoogleSpreadsheet } from '@lib/spreadsheet';
 import { sheets_v4 } from 'googleapis';
@@ -16,7 +16,7 @@ import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensio
  * Can be turned into a GoogleSpreadsheet by using .intoGoogleSpreadsheet();
  */
 export class DscoSpreadsheet implements Iterable<DscoColumn> {
-    static readonly PUBLISHED_COL_NAME = 'Published to Dsco';
+    static readonly MODIFIED_COL_NAME = 'Is Modified';
     static readonly USER_SHEET_NAME = 'Catalog Data';
     static readonly USER_SHEET_ID: UserDataSheetId = 0;
     static readonly DATA_SHEET_NAME = 'ValidationData';
@@ -26,10 +26,10 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?rm=minimal`;
     }
 
-    columns: Record<XrayActionSeverity | 'none', DscoColumn[]> = {
-        [XrayActionSeverity.error]: [],
-        [XrayActionSeverity.warn]: [],
-        [XrayActionSeverity.info]: [],
+    columns: Record<PipelineErrorType | 'none', DscoColumn[]> = {
+        [PipelineErrorType.error]: [],
+        [PipelineErrorType.warn]: [],
+        [PipelineErrorType.info]: [],
         none: []
     };
 
@@ -49,9 +49,9 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
 
     constructor(public spreadsheetName: string, private retailerId: number) {
         this.addColumn(
-          new DscoColumn(DscoSpreadsheet.PUBLISHED_COL_NAME, 'transient', {
+          new DscoColumn(DscoSpreadsheet.MODIFIED_COL_NAME, 'transient', {
               format: 'boolean',
-              required: XrayActionSeverity.error
+              required: PipelineErrorType.error
           }, {boolValue: true})
         );
     }
@@ -167,8 +167,8 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
                         values: []
                     };
 
-                    // Mark the unpublished rows in the sheet's metadata
-                    sheet.setRowModifiedMetadata(rowIdx, rowData?.published === false);
+                    // Mark the modified rows in the sheet's metadata
+                    sheet.setRowModifiedMetadata(rowIdx, rowData?.modified);
                 }
 
 
@@ -186,7 +186,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         const result: Schema$BandedRange[] = [];
         let bandedIdx = 0;
 
-        for (const type of [XrayActionSeverity.error, XrayActionSeverity.warn, XrayActionSeverity.info]) {
+        for (const type of [PipelineErrorType.error, PipelineErrorType.warn, PipelineErrorType.info]) {
             const count = this.columns[type].length;
             if (count) {
                 result.push({
@@ -211,21 +211,21 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
     }
 }
 
-function getColorForRequired(status: XrayActionSeverity, light = false): Schema$Color {
+function getColorForRequired(status: PipelineErrorType, light = false): Schema$Color {
     switch (status) {
-        case XrayActionSeverity.error:
+        case PipelineErrorType.error:
             return {
                 red: light ? 0.9281132075 : 0.5529412,
                 green: light ? 1 : 0.7764706,
                 blue: light ? 0.9013207547 : 0.24705882
             };
-        case XrayActionSeverity.warn:
+        case PipelineErrorType.warn:
             return {
                 red: light ? 0.9130188679 : 0.47058824,
                 green: light ? 0.9696226415 : 0.78039217,
                 blue: light ? 1 : 0.9254902
             };
-        case XrayActionSeverity.info:
+        case PipelineErrorType.info:
             return {
                 red: light ? 0.97 : 0.8784314,
                 green: light ? 0.97 : 0.8784314,
