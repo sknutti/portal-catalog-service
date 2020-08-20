@@ -14,4 +14,4 @@ export type IsModifiedSaveDataKey = 'dsco_is_modified';
 export const IS_MODIFIED_SAVE_DATA_KEY: IsModifiedSaveDataKey = 'dsco_is_modified';
 
 export type UserDataSheetId = 0;
-export const APP_SCRIPT_VERSION = '1.0';
+export const APP_SCRIPT_VERSION = '1.1';

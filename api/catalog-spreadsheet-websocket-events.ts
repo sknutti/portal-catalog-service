@@ -24,6 +24,7 @@ export interface CatalogSpreadsheetWebsocketEvents {
     publishCatalogSpreadsheetSuccess: {
         categoryPath: string;
         numSuccessfulRows: number;
+        numEmptyRows: number;
         numFailedRows: number;
         rowMessages: { [row: number]: SpreadsheetRowMessage[] };
     };

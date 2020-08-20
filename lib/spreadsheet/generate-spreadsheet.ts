@@ -1,12 +1,13 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import {
-    DscoEnv, PipelineErrorType,
+    DscoEnv,
+    PipelineErrorType,
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
-    UnexpectedError,
-    XrayActionSeverity
+    UnexpectedError
 } from '@dsco/ts-models';
+import { descriptions } from '@lib/descriptions';
 import { GetPipelineCatalogRulesRequest, GetPipelineRulesRequest } from '@lib/requests';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
@@ -26,6 +27,18 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
 
     const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`, retailerId);
 
+    // If the first column isn't sku, sort to enforce it.
+    if (colsOrErr[0].fieldName !== 'sku') {
+        colsOrErr.sort((a, b) => {
+           if (a.fieldName === 'sku') {
+               return -1;
+           } else if (b.fieldName === 'sku') {
+               return 1;
+           } else {
+               return 0;
+           }
+        });
+    }
     for (const colName in colsOrErr) {
         spreadsheet.addColumn(colsOrErr[colName]);
     }
@@ -68,7 +81,7 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
 
         let result = cols[type][name];
         if (!result) {
-            result = cols[type][name] = new DscoColumn(name, type, {
+            result = cols[type][name] = new DscoColumn(name, descriptions[name], type, {
                 // Custom attributes should default to info, not none
                 required: type === 'extended' ? PipelineErrorType.info : 'none'
             });
@@ -187,18 +200,17 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
 /**
  * These are columns that we don't want to show up in the final spreadsheet
  */
-const SKIPPED_COLS = new Set(['item_id', 'supplier_id', 'trading_partner_id',
-    'trading_partner_name', 'last_update_date', 'dsco_last_product_status_update_date',
-    'dsco_last_cost_update_date', 'extended_attributes']);
+const SKIPPED_COLS = new Set(['item_id', 'supplier_id', 'trading_partner_id', 'dsco_trading_partner_id',
+    'trading_partner_name', 'dsco_trading_partner_name', 'last_update_date', 'dsco_last_product_status_update_date',
+    'dsco_last_cost_update_date', 'extended_attributes', 'commission_amount']);
 
 function shouldSkipCol(name: string): boolean {
-    // Skip fields starting in two underscores: __create_date
-    // Skip fields with array or object access: attributes[]/name | attributes.name
-
     //Should allow images.name fields
     if (/^[a-zA-Z0-9_]*[iI]mages\.[a-zA-Z0-9_]+$/.test(name)) {
         return false;
     }
 
+    // Skip fields starting in two underscores: __create_date
+    // Skip fields with array or object access: attributes[]/name | attributes.name
     return SKIPPED_COLS.has(name) || name.startsWith('__') || /\[]|\.|\//.test(name);
 }

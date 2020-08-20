@@ -45,6 +45,7 @@ export class DscoColumn {
 
     constructor(
       public fieldName: string,
+      public fieldDescription: string | undefined,
       public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
       public validation: DscoColValidation = {
           required: 'none'
@@ -63,6 +64,7 @@ export class DscoColumn {
                     bold: true
                 }
             },
+            note: this.fieldDescription,
             dataValidation: {
                 condition: {
                     type: 'CUSTOM_FORMULA',
@@ -81,7 +83,7 @@ export class DscoColumn {
      * @param addEnumVals A callback telling the spreadsheet to add these enum values to the spreadsheet.  It returns the range that holds the enum values.
      */
     generateDataCell(rowData: DscoCatalogRow | undefined, retailerId: number, addEnumVals: (vals: Array<string | number>) => string): Schema$CellData {
-        this.generateValidationData(addEnumVals);
+        this.generateValidationData(addEnumVals, rowData);
 
         return {
             userEnteredValue: rowData ? this.makeExtendedValue(rowData, retailerId) : this.defaultValue,
@@ -95,15 +97,15 @@ export class DscoColumn {
      *
      * Assumes extended_attributes[retailerId] exists
      */
-    readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): void {
+    readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): 'empty' | 'hasValue' {
         // We ignore the modified col and pull that from the AppScriptSaveData
         if (this.name === DscoSpreadsheet.MODIFIED_COL_NAME) {
-            return;
+            return 'empty';
         }
 
         let valueToSet = this.getDataFromExtendedValue(cell.effectiveValue);
         if (valueToSet === undefined || valueToSet === null) {
-            return;
+            return 'empty';
         }
 
         if (this.validation.format === 'image') { // Images need to be handled differently
@@ -133,6 +135,8 @@ export class DscoColumn {
         } else if (this.type === 'extended') {
             rowData.catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;
         }
+
+        return 'hasValue';
     }
 
     /**
@@ -196,8 +200,22 @@ export class DscoColumn {
      * Generates the validation and formatting data for this column
      *
      * @param addEnumVals A callback telling the spreadsheet to add these enum values to the spreadsheet.  It returns the range that holds the enum values.
+     * @param rowData
      */
-    private generateValidationData(addEnumVals: (vals: Array<string | number>) => string): void {
+    private generateValidationData(addEnumVals: (vals: Array<string | number>) => string, rowData: DscoCatalogRow | undefined): void {
+        if (this.fieldName === 'sku') {
+            this.dataValidation = rowData?.savedToDsco ? {
+                condition: {
+                    type: 'CUSTOM_FORMULA',
+                    values: [{userEnteredValue: `=EQ(INDIRECT("RC", false), "${rowData.catalog.sku}")`}]
+                },
+                strict: true,
+                inputMessage: `Cannot modify a sku that has been saved to Dsco.  Must equal ${rowData.catalog.sku}.`
+            } : undefined;
+
+            return;
+        }
+
         if (this.generatedValidationYet) {
             return;
         }
@@ -267,7 +285,9 @@ export class DscoColumn {
                 strict: true,
                 inputMessage: dateInFuture ? `${this.name} must be a future date.` : `${this.name} must be a valid ${format === 'date' ? 'date' : 'date & time'}.`
             };
-            this.format = {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME', pattern: format === 'date' ? 'M/d/yyyy' : 'M/d/yyyy H:mm'}};
+            //  Intentionally left off date-time, as it improves the datepicker experience and isn't really needed for any catalog fields
+            // this.format = {numberFormat: {type: format === 'date' ? 'DATE' : 'DATE_TIME', pattern: format === 'date' ? 'M/d/yyyy' : 'M/d/yyyy H:mm'}};
+            this.format = {numberFormat: {type: 'DATE', pattern: 'M/d/yyyy'}};
         } else if (format === 'time') {
             this.format = {numberFormat: {type: 'TIME', pattern: 'H:mm'}};
         } else if (format === 'boolean') {
@@ -299,6 +319,7 @@ export class DscoColumn {
                 inputMessage: `${this.name} must be ${format === 'email' ? 'an email' : 'a URL'}.`
             };
         } else if (format === 'array') {
+            // TODO: Handle min and max length
             this.format = {numberFormat: {type: 'TEXT'}};
             this.dataValidation = arrayType !== 'string' ? {
                 condition: {
@@ -322,7 +343,6 @@ export class DscoColumn {
             case 'email':
             case 'uri':
             case 'image':
-            case 'time': // TODO: What format does time expect?
                 return cellValue.stringValue ?? cellValue.numberValue?.toString() ?? cellValue.boolValue?.toString();
             case 'number':
             case 'integer':
@@ -336,6 +356,7 @@ export class DscoColumn {
                 });
             case 'date':
             case 'date-time':
+                // TODO: If the user specifies the date "January 1", should we store it as UTC Jan 1 or Jan 1 in their preferred timezone?
                 let date: Date | undefined;
                 if (cellValue.numberValue) {
                     date = SerialDate.toJSDate(cellValue.numberValue);
@@ -344,6 +365,8 @@ export class DscoColumn {
                 }
 
                 return date?.getTime() ? date : undefined;
+            case 'time': // TODO: Dsco doesn't really have a time format.  I've assumed 'H:mm AM|PM'
+                return cellValue.numberValue ? SerialDate.toTime(cellValue.numberValue) : cellValue.stringValue;
         }
     }
 

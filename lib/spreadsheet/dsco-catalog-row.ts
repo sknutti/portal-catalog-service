@@ -1,6 +1,5 @@
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { DscoSpreadsheet, GoogleSpreadsheet } from '@lib/spreadsheet';
-import { sheets_v4 } from 'googleapis';
 
 /**
  * Represent's one row's data - a catalog and whether or not that catalog has been modified.
@@ -8,7 +7,9 @@ import { sheets_v4 } from 'googleapis';
  * Can be extracted from a GoogleSpreadsheet, and added to a DscoSpreadsheet.
  */
 export class DscoCatalogRow {
-    constructor(public catalog: CoreCatalog, public modified: boolean) {
+    emptyRow = false;
+
+    constructor(public catalog: CoreCatalog, public modified: boolean, public savedToDsco: boolean) {
     }
 
     /**
@@ -21,8 +22,12 @@ export class DscoCatalogRow {
       dscoSpreadsheet: DscoSpreadsheet,
       supplierId: number,
       retailerId: number,
-      categoryPath: string
+      categoryPath: string,
+      existingCatalogItems: CoreCatalog[]
     ): DscoCatalogRow[] {
+        const existingSkus = new Set<string>();
+        existingCatalogItems.forEach(item => item.sku && existingSkus.add(item.sku));
+
         const result: DscoCatalogRow[] = [];
 
         const {userSheetRowData, modifiedRowIndexes, columnSaveNames} = googleSpreadsheet;
@@ -31,8 +36,9 @@ export class DscoCatalogRow {
             const row = userSheetRowData[rowIdx]?.values || [];
 
             const {catalog} = createCoreCatalog(supplierId, retailerId, categoryPath);
-            const dscoCatalogRow = new DscoCatalogRow(catalog, !modifiedRowIndexes.has(rowIdx));
+            const dscoCatalogRow = new DscoCatalogRow(catalog, modifiedRowIndexes.has(rowIdx), !!catalog.sku && existingSkus.has(catalog.sku));
 
+            let hasValue = false;
             for (let colIdx = 0; colIdx < row.length; colIdx++) {
                 const cell = row[colIdx];
                 const colSaveName = columnSaveNames[colIdx];
@@ -41,13 +47,13 @@ export class DscoCatalogRow {
                     continue;
                 }
 
-                dscoCol.readDataFromExistingCell(cell, dscoCatalogRow, retailerId);
+                if (dscoCol.readDataFromExistingCell(cell, dscoCatalogRow, retailerId) === 'hasValue') {
+                    hasValue = true;
+                }
             }
 
-            // Keep rows that have at least a sku
-            if (catalog.sku) {
-                result.push(dscoCatalogRow);
-            }
+            dscoCatalogRow.emptyRow = !hasValue;
+            result.push(dscoCatalogRow);
         }
 
         return result;

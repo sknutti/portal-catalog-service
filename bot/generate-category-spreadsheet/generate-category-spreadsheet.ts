@@ -1,3 +1,4 @@
+import { ProductStatus } from '@dsco/ts-models';
 import { APP_SCRIPT_VERSION, AppScriptsManager } from '@lib/app-script';
 import {
     DscoCatalogRow,
@@ -47,7 +48,7 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
     }
 
     for (const catalog of catalogItems) { // Populate the spreadsheet with all of their catalog items
-        spreadsheetOrError.addCatalogRow(new DscoCatalogRow(catalog, false));
+        spreadsheetOrError.addCatalogRow(new DscoCatalogRow(catalog, false, true));
     }
 
     // Send the spreadsheet to google

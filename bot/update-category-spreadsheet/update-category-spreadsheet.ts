@@ -48,14 +48,17 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
 
     const existingGoogleSpreadsheet = await GoogleSpreadsheet.loadFromGoogle(ddbSheet.spreadsheetId, sheets);
 
-    const existingRows = DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath);
+    const existingRows = DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath, catalogItems);
 
 
-    // We add any modified rows to the new spreadsheet
+    // We add any modified and non-empty rows to the new spreadsheet
     const alreadyAddedSkus = new Set<string>();
     for (const row of existingRows) {
-        if (row.modified) {
-            alreadyAddedSkus.add(row.catalog.sku!);
+        if (row.modified && !row.emptyRow) {
+            if (row.catalog.sku) {
+                alreadyAddedSkus.add(row.catalog.sku);
+            }
+
             newDscoSpreadsheet.addCatalogRow(row);
         }
     }
@@ -63,7 +66,7 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     // Then add any remaining catalog items as unmodified rows
     for (const item of catalogItems) {
         if (!alreadyAddedSkus.has(item.sku!)) {
-            newDscoSpreadsheet.addCatalogRow(new DscoCatalogRow(item, false));
+            newDscoSpreadsheet.addCatalogRow(new DscoCatalogRow(item, false, true));
         }
     }
 

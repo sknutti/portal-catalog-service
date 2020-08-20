@@ -76,7 +76,7 @@ If you don't have serverless installed globally, run `npm i serverless -g`.
 After building, simply run `cd build/artifact/ && sls deploy --stage {stage}` to deploy to the given stage.
 
 ### Bamboo Deploy
-Bamboo builds are run automatically when changes are pushed to the master branch.  New builds are automatically deployed to test.
+Bamboo builds run automatically when changes are pushed to the master branch.  New builds will be automatically deployed to test.
 
 
 * [Connect to VPN](https://dsco.atlassian.net/wiki/spaces/DSCO/pages/362217473/Connect+to+VPN)

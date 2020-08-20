@@ -3,6 +3,7 @@ import { drive_v3, google, script_v1, sheets_v4 } from 'googleapis';
 import Drive = drive_v3.Drive;
 import Script = script_v1.Script;
 import Sheets = sheets_v4.Sheets;
+import NP from 'number-precision';
 
 interface GoogleSecret {
     accessToken: string;
@@ -79,7 +80,7 @@ export function parseValueFromSpreadsheet(value: string): string {
  * @see https://developers.google.com/sheets/api/reference/rest/v4/DateTimeRenderOption#ENUM_VALUES.SERIAL_NUMBER
  */
 export class SerialDate {
-    private static START_TIME = new Date(1899, 11, 30).getTime();
+    private static START_TIME = Date.UTC(1899, 11, 30);
     private static MS_IN_DAY = 1000 * 60 * 60 * 24;
 
     static toJSDate(serialDate: number): Date {
@@ -92,6 +93,33 @@ export class SerialDate {
         return (time - SerialDate.START_TIME) / SerialDate.MS_IN_DAY;
     }
 
+    /**
+     * Converts google's serialDate to a human readable time
+     * toTime(0.5 (noon)) = 12:00 PM
+     */
+    static toTime(time: number): string {
+        const date = new Date(Date.UTC(1970, 0, 1, 0, 0, 0, (time - Math.floor(time)) * this.MS_IN_DAY));
+        let hours = date.getUTCHours();
+        const ext = hours >= 12 ? 'PM' : 'AM';
+        if (hours > 12) {
+            hours -= 12;
+        }
+        if (hours === 0) { // midnight
+            hours = 12;
+        }
+
+        let mins = `${date.getUTCMinutes()}`;
+        if (mins.length === 1) {
+            mins = `0${mins}`;
+        }
+
+        return `${hours}:${mins} ${ext}`;
+    }
+
+    /**
+     * Converts a user time string into a google serialDate
+     * fromTime('12:00 PM') = 0.5
+     */
     static fromTime(time: string): number {
         const ms = new Date(`2020-12-31 ${time}`).getTime() - new Date('2020-12-31 00:00').getTime();
         return ms / SerialDate.MS_IN_DAY;

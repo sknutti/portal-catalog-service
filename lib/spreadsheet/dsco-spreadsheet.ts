@@ -16,7 +16,8 @@ import Schema$UpdateDimensionPropertiesRequest = sheets_v4.Schema$UpdateDimensio
  * Can be turned into a GoogleSpreadsheet by using .intoGoogleSpreadsheet();
  */
 export class DscoSpreadsheet implements Iterable<DscoColumn> {
-    static readonly MODIFIED_COL_NAME = 'Is Modified';
+    static readonly MODIFIED_COL_NAME = 'Needs Save?';
+    static readonly MODIFIED_COL_DESC = "This column will be automatically checked on any rows with changes that haven't been saved to Dsco.";
     static readonly USER_SHEET_NAME = 'Catalog Data';
     static readonly USER_SHEET_ID: UserDataSheetId = 0;
     static readonly DATA_SHEET_NAME = 'ValidationData';
@@ -49,10 +50,10 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
 
     constructor(public spreadsheetName: string, private retailerId: number) {
         this.addColumn(
-          new DscoColumn(DscoSpreadsheet.MODIFIED_COL_NAME, 'transient', {
+          new DscoColumn(DscoSpreadsheet.MODIFIED_COL_NAME, DscoSpreadsheet.MODIFIED_COL_DESC, 'transient', {
               format: 'boolean',
               required: PipelineErrorType.error
-          }, {boolValue: true})
+          }, {boolValue: false})
         );
     }
 
