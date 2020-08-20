@@ -3,7 +3,6 @@ import { drive_v3, google, script_v1, sheets_v4 } from 'googleapis';
 import Drive = drive_v3.Drive;
 import Script = script_v1.Script;
 import Sheets = sheets_v4.Sheets;
-import NP from 'number-precision';
 
 interface GoogleSecret {
     accessToken: string;
