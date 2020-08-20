@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack --config webpack.config.ts --watch --env.local --progress",
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "rm -rf build && npm run build:artifact && npm run build:lib",
     "build:artifact": "node --max_old_space_size=4096 ./node_modules/webpack/bin/webpack.js --config webpack.config.ts --progress",
     "build:lib": "npm run build:lib:ts && cp api/package.json build/lib/package.json && cp README.md build/lib/README.md",

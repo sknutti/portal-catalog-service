@@ -2,12 +2,12 @@ process.env.JEST_FILE = 'coverage/jest.json';
 
 module.exports = {
 	preset: 'ts-jest',
-	// testEnvironment: 'node',
-	// collectCoverageFrom: [
-	// 	'api/**/*.ts',
-	// 	'bot/**/*.ts',
-	// 	'lib/**/*.ts'
-	// ],
+	testEnvironment: 'node',
+	collectCoverageFrom: [
+		'api/**/*.ts',
+		'bot/**/*.ts',
+		'lib/**/*.ts'
+	],
 	modulePathIgnorePatterns: [
 		'<rootDir>/(build|coverage|node_modules)/'
 	],
