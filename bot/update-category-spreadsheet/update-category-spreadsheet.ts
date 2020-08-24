@@ -14,9 +14,10 @@ export interface UpdateCategorySpreadsheetEvent {
     supplierId: number;
     retailerId: number;
     categoryPath: string;
+    revert: boolean; // Whether or not to revert old changes
 }
 
-export async function updateCategorySpreadsheet({categoryPath, retailerId, supplierId}: UpdateCategorySpreadsheetEvent): Promise<void> {
+export async function updateCategorySpreadsheet({categoryPath, retailerId, supplierId, revert}: UpdateCategorySpreadsheetEvent): Promise<void> {
     const sendProgress = (progress: number, message: string) => {
         return sendWebsocketEvent('updateCatalogSpreadsheetProgress', {progress, message, categoryPath}, supplierId);
     };
@@ -51,15 +52,16 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     const existingRows = DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath, catalogItems);
 
 
-    // We add any modified and non-empty rows to the new spreadsheet
     const alreadyAddedSkus = new Set<string>();
-    for (const row of existingRows) {
-        if (row.modified && !row.emptyRow) {
-            if (row.catalog.sku) {
-                alreadyAddedSkus.add(row.catalog.sku);
-            }
+    if (!revert) { // If we aren't reverting, add any modified and non-empty rows
+        for (const row of existingRows) {
+            if (row.modified && !row.emptyRow) {
+                if (row.catalog.sku) {
+                    alreadyAddedSkus.add(row.catalog.sku);
+                }
 
-            newDscoSpreadsheet.addCatalogRow(row);
+                newDscoSpreadsheet.addCatalogRow(row);
+            }
         }
     }
 

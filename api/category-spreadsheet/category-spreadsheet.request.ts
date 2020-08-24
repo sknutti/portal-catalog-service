@@ -3,6 +3,12 @@ import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 export interface CategorySpreadsheetRequestBody {
     retailerId: number;
     categoryPath: string;
+
+    /**
+     * Should only be specified when action is 'update'
+     * Updates the spreadsheet without copying unsaved changes.
+     */
+    revert?: boolean;
 }
 
 export class CategorySpreadsheetRequest extends DsRequest<CategorySpreadsheetRequestBody, DsResponse, DsError> {

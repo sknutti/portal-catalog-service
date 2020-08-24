@@ -50,7 +50,7 @@ export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async 
             await invokePublishBot(user.accountId, event.body.retailerId, user.userId, event.body.categoryPath);
             break;
         case '/spreadsheet/update':
-            await invokeUpdateBot(user.accountId, event.body.retailerId, event.body.categoryPath);
+            await invokeUpdateBot(user.accountId, event.body.retailerId, event.body.categoryPath, !!event.body.revert);
             break;
         default:
             return new UnexpectedError('Unknown Resource', `Resource: ${event.resource}`);
@@ -104,8 +104,8 @@ async function invokePublishBot(supplierId: number, retailerId: number, userId: 
 }
 
 
-async function invokeUpdateBot(supplierId: number, retailerId: number, categoryPath: string): Promise<void> {
-    const event: UpdateCategorySpreadsheetEvent = {supplierId, retailerId, categoryPath};
+async function invokeUpdateBot(supplierId: number, retailerId: number, categoryPath: string, revert: boolean): Promise<void> {
+    const event: UpdateCategorySpreadsheetEvent = {supplierId, retailerId, categoryPath, revert};
 
     if (process.env.LEO_LOCAL === 'true') {
         // This invokes the webpack output for the update-category-spreadsheet function.
