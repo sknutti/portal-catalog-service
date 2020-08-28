@@ -150,13 +150,13 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
         }
     });
 
-    await cleanupGoogleApis();
-
     // Update the app script if necessary
     if (ddbSheet.scriptVersion !== APP_SCRIPT_VERSION) {
         await sendProgress(0.85, 'Updating validations...');
         await AppScriptsManager.updateExistingScriptProject(ddbSheet.scriptId, script);
     }
+
+    await cleanupGoogleApis();
 
     await sendProgress(0.96, 'Cleaning up...');
 
