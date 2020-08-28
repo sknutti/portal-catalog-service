@@ -1,7 +1,5 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
-import { DsError, keyBy, ProductStatus, XrayActionSeverity } from '@dsco/ts-models';
-import { CoreCatalog } from '@lib/core-catalog';
-import { GetWarehousesGearmanApi, GetWarehousesGearmanResponse, TinyWarehouse } from '@lib/requests';
+import { XrayActionSeverity } from '@dsco/ts-models';
 import { DscoCatalogRow } from '@lib/spreadsheet';
 import { sendWebsocketEvent } from '@lib/utils';
 import { SpreadsheetRowMessage } from '../../api';
@@ -24,10 +22,6 @@ export class CatalogResolver {
     numEmptyRows = 0;
     rowIdxsWithErrors: number[] = [];
 
-    private warehousesPromise?: Promise<GetWarehousesGearmanResponse | DsError>;
-
-    private existingItems: Record<string, CoreCatalog>;
-
     /**
      * The number of rows that were modified that have been processed.  Used to give a progress report.
      */
@@ -43,18 +37,14 @@ export class CatalogResolver {
      */
     private lastSendTime = 0;
 
-    private warehouses?: TinyWarehouse[];
-
     constructor(
       private rows: DscoCatalogRow[],
-      existingItems: CoreCatalog[],
       private userId: number,
       private supplierId: number,
       private categoryPath: string,
       private fromPct: number,
       private toPct: number
     ) {
-        this.existingItems = keyBy(existingItems, 'sku');
         this.numRowsToProcess = rows.filter(row => row.modified).length;
     }
 
@@ -89,64 +79,17 @@ export class CatalogResolver {
             }
         }
 
-        return {response, rowIdx, hasError, row, existingSku: !!row.catalog.sku && row.catalog.sku in this.existingItems};
+        return {response, rowIdx, hasError, row};
     }
 
     private async resolveModifiedCatalog(row: DscoCatalogRow): Promise<ResolveExceptionGearmanApiResponse> {
-        const {catalog} = row;
-
-        // Any product status other than pending requires both quantity_available and warehouses quantity.  This gives defaults of zero to both
-        if (catalog.product_status !== ProductStatus.PENDING) {
-            const existingItem = this.existingItems[catalog.sku!];
-            catalog.quantity_available = existingItem?.quantity_available || 0;
-
-            if (!this.warehouses) {
-                this.warehousesPromise = this.warehousesPromise || new GetWarehousesGearmanApi(this.supplierId.toString()).submit();
-                const resp = await this.warehousesPromise;
-                this.warehouses = resp.success ? resp.warehouses : [];
-            }
-
-            this.handleWarehouseQuantity(catalog, existingItem);
-        }
-
         return new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
             caller: {
                 account_id: this.supplierId.toString(10),
                 user_id: this.userId.toString(10)
             },
-            params: catalog
+            params: row.catalog
         }).submit();
-    }
-
-    private handleWarehouseQuantity(item: CoreCatalog, existing?: CoreCatalog): void {
-        const existingWarehouses = new Set<string>();
-        const newWarehouses = item.warehouses = item.warehouses || [];
-
-        for (const existingWarehouse of existing?.warehouses || []) {
-            if (!existingWarehouse) {
-                continue;
-            }
-
-            existingWarehouses.add(existingWarehouse.warehouse_id);
-            newWarehouses.push(existingWarehouse);
-            if (!existingWarehouse.quantity) {
-                existingWarehouse.quantity = 0;
-            }
-        }
-
-        // This function must be called after we know we have loaded warehouses
-        for (const warehouse of this.warehouses!) {
-            if (existingWarehouses.has(warehouse.warehouseId)) {
-                continue;
-            }
-
-            existingWarehouses.add(warehouse.warehouseId);
-            newWarehouses.push({
-                quantity: 0,
-                warehouse_id: warehouse.warehouseId,
-                code: warehouse.code
-            });
-        }
     }
 
     private addRowMessage(row: number, message: SpreadsheetRowMessage) {
@@ -194,6 +137,5 @@ interface CatalogResolveRecord {
     row: DscoCatalogRow;
     rowIdx: number;
     hasError: boolean;
-    existingSku: boolean;
     response?: ResolveExceptionGearmanApiResponse;
 }

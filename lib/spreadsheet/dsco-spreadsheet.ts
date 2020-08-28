@@ -39,6 +39,11 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
      */
     columnsBySaveName: Record<string, DscoColumn> = {};
 
+    /**
+     * Holds all image-type columns
+     */
+    imageColumns: DscoColumn[] = [];
+
     private rowData: DscoCatalogRow[] = [];
 
     * [Symbol.iterator](): IterableIterator<DscoColumn> {
@@ -60,6 +65,10 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
     addColumn(col: DscoColumn): void {
         this.columns[col.validation.required].push(col);
         this.columnsBySaveName[col.saveName] = col;
+
+        if (col.validation.format === 'image') {
+            this.imageColumns.push(col);
+        }
     }
 
     /**

@@ -1,3 +1,4 @@
+import { keyBy } from '@dsco/ts-models';
 import { APP_SCRIPT_VERSION, AppScriptsManager } from '@lib/app-script';
 import {
     DscoCatalogRow,
@@ -49,7 +50,7 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
 
     const existingGoogleSpreadsheet = await GoogleSpreadsheet.loadFromGoogle(ddbSheet.spreadsheetId, sheets);
 
-    const existingRows = DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath, catalogItems);
+    const existingRows = await DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(catalogItems, 'sku'));
 
 
     const alreadyAddedSkus = new Set<string>();

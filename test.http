@@ -5,7 +5,7 @@ cognito-identity-id: us-east-1:79fea512-29f8-411c-8a20-d48d76726c39 #Logged in a
 
 {
   "retailerId": 1000000001,
-  "categoryPath": "Clothing||Shoes"
+  "categoryPath": "Shoes"
 }
 
 ### Publish Spreadsheet
@@ -15,7 +15,7 @@ cognito-identity-id: us-east-1:79fea512-29f8-411c-8a20-d48d76726c39 #Logged in a
 
 {
   "retailerId": 1000000001,
-  "categoryPath": "Clothing||Shoes"
+  "categoryPath": "Shoes"
 }
 
 ### update Spreadsheet

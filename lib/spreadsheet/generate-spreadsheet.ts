@@ -88,6 +88,11 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
             allCols.push(result);
         }
 
+        // If there is both a core and extended attribute of the same name, prefix the core with "Dsco: "
+        if (cols.core[name] && cols.extended[name]) {
+            cols.core[name].shouldHaveDscoPrefix = true;
+        }
+
         return result;
     };
 
@@ -108,6 +113,10 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
  * Parses the pipeline rule, creating a column for it if necessary
  */
 function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: PipelineRule) => DscoColumn): void {
+    if ((rule.type === 'catalog_image' || rule.type === 'image') && !rule.field.endsWith(rule.imageName)) {
+        rule.field = `${rule.field}.${rule.imageName}`;
+    }
+
     if (typeof rule.field === 'string' && shouldSkipCol(rule.field)) {
         return;
     }
@@ -189,8 +198,9 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
         col.validation.regexMessage = rule.description || rule.message;
     } else if (rule.type === 'date_in_future' && rule.severity !== PipelineErrorType.info) {
         setValidation(rule.field, 'dateInFuture', true);
-    } else if (rule.type === 'image') {
+    } else if (rule.type === 'image' || rule.type === 'catalog_image') {
         const col = ensureCol(rule.field, rule);
+        col.validation.required = rule.severity;
         col.validation.format = 'image';
         col.validation.minWidth = rule.minWidth;
         col.validation.minHeight = rule.minHeight;

@@ -1,4 +1,5 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
+import { keyBy } from '@dsco/ts-models';
 import { IS_MODIFIED_SAVE_DATA_KEY } from '@lib/app-script';
 import {
     DscoCatalogRow,
@@ -54,10 +55,11 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
 
     await sendProgress(VALIDATING_PROGRESS_START_PCT, 'Validating & saving rows...');
 
-    // TODO: Report rows without skus as being ignored!
-    // Only save the rows that have been modified
-    const catalogRows = DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath, existingCatalogItems);
-    const resolver = new CatalogResolver(catalogRows, existingCatalogItems, userId, supplierId, categoryPath, VALIDATING_PROGRESS_START_PCT, CLEANING_UP_PCT);
+    // Pull the row data from the google spreadsheet
+    const catalogRows = await DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(existingCatalogItems, 'sku'));
+
+    // Resolve the rows that were modified, giving progress updates
+    const resolver = new CatalogResolver(catalogRows, userId, supplierId, categoryPath, VALIDATING_PROGRESS_START_PCT, CLEANING_UP_PCT);
     const resolvedRows = await resolver.resolveCatalogsWithProgress();
     const {numFailedRows, numSuccessfulRows, numEmptyRows, rowMessages, rowIdxsWithErrors} = resolver;
 
@@ -70,7 +72,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
         await sendProgress(CLEANING_UP_PCT, 'Cleaning up...');
 
         const checkboxAndSkuValues: Schema$RowData[] = [];
-        for (const {row, hasError, existingSku} of resolvedRows) {
+        for (const {row, hasError} of resolvedRows) {
             checkboxAndSkuValues.push({
                 values: [{
                     userEnteredValue: {
@@ -86,7 +88,7 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
                         stringValue: row.catalog.sku,
                     },
                     // Make the sku immutable if it already existed or was newly created
-                    dataValidation: row.catalog.sku && (!hasError || existingSku) ? {
+                    dataValidation: row.catalog.sku && (!hasError || row.savedToDsco) ? {
                         condition: {
                             type: 'CUSTOM_FORMULA',
                             values: [{userEnteredValue: `=EQ(INDIRECT("RC", false), "${row.catalog.sku}")`}]

@@ -1,4 +1,5 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
+import { CoreCatalog } from '@lib/core-catalog';
 import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
 import { SerialDate } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
@@ -24,6 +25,17 @@ export class DscoColumn {
     private format?: Schema$CellFormat;
     private generatedValidationYet = false;
 
+    /**
+     * Extracts [images, front_view] from "images.front_view"
+     */
+    get imageNames(): [string, string] {
+        const matches = this.fieldName.match(/^(.*)\.(.*)$/); // Extracts images.myName into [images.myName, images, myName]
+        if (!matches) {
+            throw new Error(`Unknown image column name: ${this.fieldName}`);
+        }
+
+        return [matches[1], matches[2]];
+    }
 
     get name(): string {
         return this.shouldHaveDscoPrefix ? DscoColumn.DSCO_PREFIX + this.fieldName : this.fieldName;
@@ -97,7 +109,7 @@ export class DscoColumn {
      *
      * Assumes extended_attributes[retailerId] exists
      */
-    readDataFromExistingCell(cell: Schema$CellData, rowData: DscoCatalogRow, retailerId: number): 'empty' | 'hasValue' {
+    readDataFromExistingCell(cell: Schema$CellData, catalog: CoreCatalog, retailerId: number): 'empty' | 'hasValue' {
         // We ignore the modified col and pull that from the AppScriptSaveData
         if (this.name === DscoSpreadsheet.MODIFIED_COL_NAME) {
             return 'empty';
@@ -109,13 +121,8 @@ export class DscoColumn {
         }
 
         if (this.validation.format === 'image') { // Images need to be handled differently
-            const matches = this.fieldName.match(/^(.*)\.(.*)$/); // Extracts images.myName into [images.myName, images, myName]
-            if (!matches) {
-                throw new Error(`Unknown image column name: ${this.fieldName}`);
-            }
-
-            const [_, arrName, imgName] = matches;
-            const arr: CatalogImage[] = rowData.catalog[arrName] = rowData.catalog[arrName] || [];
+            const [arrName, imgName] = this.imageNames;
+            const arr: CatalogImage[] = catalog[arrName] = catalog[arrName] || [];
             let found = arr.find(img => img.name === imgName);
             if (!found) {
                 found = {
@@ -124,16 +131,16 @@ export class DscoColumn {
                 arr.push(found);
             }
 
-            found.reference = valueToSet;
+            found.source_url = valueToSet;
         } else if (this.type === 'core') {
             if (this.fieldName === 'sku' && typeof valueToSet === 'string') {
                 // The core automatically uppercases all skus.  This ensures nothing goes out of date.
                 valueToSet = valueToSet.toUpperCase();
             }
 
-            rowData.catalog[this.fieldName] = valueToSet;
+            catalog[this.fieldName] = valueToSet;
         } else if (this.type === 'extended') {
-            rowData.catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;
+            catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;
         }
 
         return 'hasValue';

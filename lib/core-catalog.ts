@@ -10,6 +10,9 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         [partnerId: number]: Record<string, any>;
     },
     images?: CatalogImage[],
+    brand_logo_images?: CatalogImage[],
+    product_images?: CatalogImage[],
+    swatch_images?: CatalogImage[],
     toSnakeCase: undefined,
     last_update_date?: string;
     sku?: string;

@@ -25,14 +25,6 @@ export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async 
     if (!event.body.categoryPath) {
         return new MissingRequiredFieldError('categoryPath');
     }
-    // const resp = await axiosRequest(
-    //   new GetPipelineCatalogRulesRequest('test', [event.body.categoryPath], event.body.retailerId.toString(10)),
-    //   'test',
-    //   AWS.config.credentials as Credentials,
-    //   process.env.AWS_REGION!
-    // );
-    //
-    // debugger;
 
     const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
 
