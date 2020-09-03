@@ -32,6 +32,8 @@ export function createCoreCatalog(supplierId: number, retailerId: number, catego
 } {
     const extended: Record<string, any> = {};
     const catalog: CoreCatalog =  {
+        // This is a kludge to notify validation that errors should come back even when the product_status is pending
+        _error_for_pending_: true,
         supplier_id: supplierId,
         categories: {
             [retailerId]: [categoryPath]
