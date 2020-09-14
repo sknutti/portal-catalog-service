@@ -253,14 +253,14 @@ export class DscoColumn {
                 this.dataValidation = {
                     condition: {
                         type: 'CUSTOM_FORMULA',
-                        values: [{userEnteredValue: '=ISNUMBER(INDIRECT("RC", false))'}]
+                        values: [{userEnteredValue: format === 'integer' ? '=EQ(FLOOR(INDIRECT("RC", false)), INDIRECT("RC", false))' : '=ISNUMBER(INDIRECT("RC", false))'}]
                     },
                     strict: true,
-                    inputMessage: `${this.name} must be a number ${format === 'integer' ? '(no decimal)' : '(decimals allowed)'}`
+                    inputMessage: `${this.name} must be a number ${format === 'integer' ? '(no decimal allowed)' : '(decimals allowed)'}`
                 };
             }
 
-            this.format = {numberFormat: {pattern: format === 'integer' ? '#,##0' : '#,##0.00', type: 'NUMBER'}};
+            this.format = {numberFormat: {pattern: format === 'integer' ? '0' : '#,##0.00', type: 'NUMBER'}};
 
         } else if (format === 'string') {
             const validations: string[] = [];

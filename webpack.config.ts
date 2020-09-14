@@ -13,7 +13,7 @@ process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
 process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
 process.env.LEO_LOCAL = 'true';
 
-module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
+module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
     const isLocal = env?.local;
 
     const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
