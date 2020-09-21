@@ -79,6 +79,11 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
         for await (const row of existingRows) {
             if (row.modified && !row.emptyRow) {
                 if (row.catalog.sku) {
+                    // If the sku was added via excel, skip it
+                    if (alreadyAddedSkus.has(row.catalog.sku)) {
+                        continue;
+                    }
+
                     alreadyAddedSkus.add(row.catalog.sku);
                 }
 
