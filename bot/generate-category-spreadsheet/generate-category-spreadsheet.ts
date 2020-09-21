@@ -1,4 +1,3 @@
-import { ProductStatus } from '@dsco/ts-models';
 import { APP_SCRIPT_VERSION, AppScriptsManager } from '@lib/app-script';
 import {
     DscoCatalogRow,
@@ -8,9 +7,6 @@ import {
     verifyCategorySpreadsheet
 } from '@lib/spreadsheet';
 import { prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
-import { drive_v3, sheets_v4 } from 'googleapis';
-import Drive = drive_v3.Drive;
-import Sheets = sheets_v4.Sheets;
 
 export interface GenerateCategorySpreadsheetEvent {
     supplierId: number;
@@ -56,7 +52,9 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
 
     const {sheets, drive, script, cleanupGoogleApis} = await prepareGoogleApis();
 
-    const spreadsheetId = await sendSpreadsheetToGoogle(spreadsheetOrError, sheets, drive);
+    const {spreadsheet: googleSpreadsheet, dimensionUpdates} = await spreadsheetOrError.intoGoogleSpreadsheet();
+
+    const spreadsheetId = await googleSpreadsheet.sendToGoogle(sheets, drive, dimensionUpdates);
 
     // Generate a google apps scripts project for the spreadsheet.
     await sendProgress(0.85, 'Adding validation to spreadsheet...');
@@ -81,46 +79,4 @@ export async function generateCategorySpreadsheet({categoryPath, retailerId, sup
         url: DscoSpreadsheet.generateUrl(spreadsheetId),
         outOfDate: false
     }, supplierId);
-}
-
-/**
- * Generates a google spreadsheet from the dsco spreadsheet
- * @returns the generated file id
- */
-async function sendSpreadsheetToGoogle(dscoSpreadsheet: DscoSpreadsheet, sheets: Sheets, drive: Drive): Promise<string> {
-    const {spreadsheet, dimensionUpdates} = await dscoSpreadsheet.intoGoogleSpreadsheet();
-
-    const response = await sheets.spreadsheets.create({
-        requestBody: spreadsheet
-    });
-
-    const fileId = response.data.spreadsheetId!;
-
-    const bandedRanges = spreadsheet.bandedRanges;
-
-    // For some annoying reason banding and dimensions need to be done after the fact.
-    if (bandedRanges.length || dimensionUpdates.length) {
-        await sheets.spreadsheets.batchUpdate({
-            spreadsheetId: fileId,
-            requestBody: {
-                includeSpreadsheetInResponse: false,
-                responseIncludeGridData: false,
-                requests: [
-                    ...bandedRanges.map(bandedRange => ({addBanding: {bandedRange}})),
-                    ...dimensionUpdates.map(dimension => ({updateDimensionProperties: dimension}))
-                ]
-            }
-        });
-    }
-
-    // Makes the spreadsheet public
-    await drive.permissions.create({
-        fileId,
-        requestBody: {
-            role: 'writer',
-            type: 'anyone'
-        }
-    });
-
-    return fileId;
 }

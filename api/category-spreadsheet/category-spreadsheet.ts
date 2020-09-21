@@ -10,11 +10,9 @@ import type {
     updateCategorySpreadsheet,
     UpdateCategorySpreadsheetEvent
 } from '@bot/update-category-spreadsheet/update-category-spreadsheet';
-import { axiosRequest } from '@dsco/aws-auth';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
-import { GetPipelineCatalogRulesRequest } from '@lib/requests';
-import AWS, { Credentials } from 'aws-sdk';
+import AWS from 'aws-sdk';
 import { CategorySpreadsheetRequest } from './category-spreadsheet.request';
 
 const lambda = new AWS.Lambda({apiVersion: '2015-03-31'});
@@ -42,7 +40,7 @@ export const categorySpreadsheet = apiWrapper<CategorySpreadsheetRequest>(async 
             await invokePublishBot(user.accountId, event.body.retailerId, user.userId, event.body.categoryPath);
             break;
         case '/spreadsheet/update':
-            await invokeUpdateBot(user.accountId, event.body.retailerId, event.body.categoryPath, !!event.body.revert);
+            await invokeUpdateBot(user.accountId, event.body.retailerId, event.body.categoryPath, !!event.body.revert, event.body.xlsxSheetBase64);
             break;
         default:
             return new UnexpectedError('Unknown Resource', `Resource: ${event.resource}`);
@@ -96,8 +94,8 @@ async function invokePublishBot(supplierId: number, retailerId: number, userId: 
 }
 
 
-async function invokeUpdateBot(supplierId: number, retailerId: number, categoryPath: string, revert: boolean): Promise<void> {
-    const event: UpdateCategorySpreadsheetEvent = {supplierId, retailerId, categoryPath, revert};
+async function invokeUpdateBot(supplierId: number, retailerId: number, categoryPath: string, revert: boolean, xlsxSheetBase64?: string): Promise<void> {
+    const event: UpdateCategorySpreadsheetEvent = {supplierId, retailerId, categoryPath, revert, xlsxSheetBase64};
 
     if (process.env.LEO_LOCAL === 'true') {
         // This invokes the webpack output for the update-category-spreadsheet function.

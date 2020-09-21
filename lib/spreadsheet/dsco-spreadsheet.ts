@@ -1,6 +1,7 @@
 import { PipelineErrorType } from '@dsco/ts-models';
 import { COLUMN_SAVE_NAMES_SAVE_DATA_KEY, UserDataSheetId } from '@lib/app-script';
 import { DscoCatalogRow, GoogleSpreadsheet } from '@lib/spreadsheet';
+import { assertUnreachable } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
 import { DscoColumn } from './dsco-column';
 import Schema$BandedRange = sheets_v4.Schema$BandedRange;
@@ -40,6 +41,11 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
     columnsBySaveName: Record<string, DscoColumn> = {};
 
     /**
+     * Maps from a column's display name to the actual column.
+     */
+    columnsByName: Record<string, DscoColumn> = {};
+
+    /**
      * Holds all image-type columns
      */
     imageColumns: DscoColumn[] = [];
@@ -65,6 +71,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
     addColumn(col: DscoColumn): void {
         this.columns[col.validation.required].push(col);
         this.columnsBySaveName[col.saveName] = col;
+        this.columnsByName[col.name] = col;
 
         if (col.validation.format === 'image') {
             this.imageColumns.push(col);
@@ -241,6 +248,8 @@ function getColorForRequired(status: PipelineErrorType, light = false): Schema$C
                 green: light ? 0.97 : 0.8784314,
                 blue: light ? 0.97 : 0.8784314
             };
+        default:
+            assertUnreachable(status, 'PipelineErrorType', 'getColorForRequired');
     }
 }
 
