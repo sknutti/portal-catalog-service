@@ -1,7 +1,7 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
-import { SerialDate } from '@lib/utils';
+import { assertUnreachable, SerialDate } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
 import Schema$CellData = sheets_v4.Schema$CellData;
 import Schema$CellFormat = sheets_v4.Schema$CellFormat;
@@ -104,19 +104,17 @@ export class DscoColumn {
         };
     }
 
-    /**
-     * Reads the value from the given cell, storing it in the correct place in the rowData.
-     *
-     * Assumes extended_attributes[retailerId] exists
-     */
-    readDataFromExistingCell(cell: Schema$CellData, catalog: CoreCatalog, retailerId: number): 'empty' | 'hasValue' {
+    writeCellValueToCatalog(cellValue: CellValue, catalog: CoreCatalog, extendedAttrs: Record<string, any>): 'empty' | 'hasValue' {
         // We ignore the modified col and pull that from the AppScriptSaveData
         if (this.name === DscoSpreadsheet.MODIFIED_COL_NAME) {
             return 'empty';
         }
 
-        let valueToSet = this.getDataFromExtendedValue(cell.effectiveValue);
-        if (valueToSet === undefined || valueToSet === null) {
+        const valueToSet = this.coerceCatalogValueFromCellValue(cellValue);
+
+        if (valueToSet === null) { // We don't actually write a null value to the catalog, at risk of overwriting fields that were set outside the catalog
+            // TODO: We require them to update when their catalog information is out of date,
+            //  so in theory we could treat the spreadsheet as the source of truth and get rid of this early return.
             return 'empty';
         }
 
@@ -131,16 +129,17 @@ export class DscoColumn {
                 arr.push(found);
             }
 
-            found.source_url = valueToSet;
+            found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
-            if (this.fieldName === 'sku' && typeof valueToSet === 'string') {
-                // The core automatically uppercases all skus.  This ensures nothing goes out of date.
-                valueToSet = valueToSet.toUpperCase();
-            }
-
-            catalog[this.fieldName] = valueToSet;
+            // The core automatically uppercases all skus.  This ensures nothing goes out of date.
+            catalog[this.fieldName] = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
         } else if (this.type === 'extended') {
-            catalog.extended_attributes![retailerId]![this.fieldName] = valueToSet;
+            extendedAttrs[this.fieldName] = valueToSet;
+        }
+
+        // Even though there is technically a value, the value is the default, so leave it empty
+        if (this.validation.format === 'boolean' && valueToSet === false) {
+            return 'empty';
         }
 
         return 'hasValue';
@@ -170,7 +169,7 @@ export class DscoColumn {
             case 'time':
                 return {numberValue: SerialDate.fromTime(data)};
             case 'array':
-                return {stringValue: (data || []).join(', ')};
+                return {stringValue: typeof data === 'string' ? data : (data || []).join(', ')};
             case 'boolean':
                 return {boolValue: !!data};
             case 'integer':
@@ -184,6 +183,8 @@ export class DscoColumn {
                 return {stringValue: `${data}`};
             case undefined:
                 return undefined;
+            default:
+                assertUnreachable(this.validation.format, 'DscoColFormat', 'makeExtendedValue');
         }
     }
 
@@ -339,9 +340,9 @@ export class DscoColumn {
         }
     }
 
-    private getDataFromExtendedValue(cellValue: Schema$ExtendedValue | undefined): any {
-        if (!cellValue) {
-            return;
+    private coerceCatalogValueFromCellValue(cellValue: CellValue): string | Date | number | boolean | null | Array<string | number> {
+        if (cellValue === null || cellValue === undefined || cellValue === '') {
+            return null;
         }
 
         switch (this.validation.format) {
@@ -350,37 +351,45 @@ export class DscoColumn {
             case 'email':
             case 'uri':
             case 'image':
-                return cellValue.stringValue ?? cellValue.numberValue?.toString() ?? cellValue.boolValue?.toString();
+                return cellValue.toString();
             case 'number':
             case 'integer':
-                return cellValue.numberValue ?? +(cellValue.stringValue || '0');
+                return +cellValue;
             case 'boolean':
-                return cellValue.boolValue ?? (cellValue.numberValue === 1 || cellValue.stringValue?.toLowerCase() === 'true');
-            case 'array':
+                return !!cellValue;
+            case 'array': {
                 const num = this.validation.arrayType !== 'string';
-                return cellValue.stringValue?.split(',')?.map(item => {
-                    num ? +item.trim() : item.trim();
-                });
+                if (typeof cellValue !== 'string') {
+                    if (num) {
+                        const numVal = +cellValue;
+                        return isNaN(numVal) ? [] : [numVal];
+                    } else {
+                        return [cellValue.toString()];
+                    }
+                } else {
+                    return cellValue.split(',').map(item => {
+                        return num ? +item.trim() : item.trim();
+                    });
+                }
+            }
             case 'date':
             case 'date-time':
                 // TODO: If the user specifies the date "January 1", should we store it as UTC Jan 1 or Jan 1 in their preferred timezone?
-                let date: Date | undefined;
-                if (cellValue.numberValue) {
-                    date = SerialDate.toJSDate(cellValue.numberValue);
-                } else if (cellValue.stringValue) {
-                    date = new Date(cellValue.stringValue);
-                }
-
-                return date?.getTime() ? date : undefined;
-            case 'time': // TODO: Dsco doesn't really have a time format.  I've assumed 'H:mm AM|PM'
-                return cellValue.numberValue ? SerialDate.toTime(cellValue.numberValue) : cellValue.stringValue;
+                return cellValue instanceof Date ? cellValue : typeof cellValue === 'string' ? new Date(cellValue) : null;
+            case 'time': // TODO: Dsco doesn't really have a time format.  I'm just assuming it's going to be a string
+                return cellValue.toString();
+            case undefined:
+                return cellValue; // We don't know the expected type, let anything through
+            default:
+                assertUnreachable(this.validation.format, 'DscoColFormat', 'coerceCatalogValueFromCellValue');
         }
     }
-
 }
 
+export type CellValue = string | number | boolean | Date | undefined;
+
 export interface DscoColValidation {
-    format?: 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum' | 'uri' | 'email' | 'image';
+    format?: DscoColFormat;
     enumVals?: Set<string | number>;
     min?: number;
     max?: number;
@@ -395,3 +404,5 @@ export interface DscoColValidation {
     minWidth?: number; // image
     minHeight?: number; // image
 }
+
+export type DscoColFormat = 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum' | 'uri' | 'email' | 'image';

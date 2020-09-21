@@ -14,7 +14,7 @@ module.exports = {
 	moduleNameMapper: {
 		'^@lib/(.*)$': '<rootDir>/lib/$1',
 	},
-	testRegex: '/(api|bot|lib)/.*.test.ts',
+	testRegex: '/(api|bot|lib|test)/.*.test.ts',
 	// collectCoverage: true,
 	testResultsProcessor: 'jest-bamboo-formatter'
 };

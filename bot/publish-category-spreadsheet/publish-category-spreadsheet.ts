@@ -1,13 +1,7 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
 import { keyBy } from '@dsco/ts-models';
 import { IS_MODIFIED_SAVE_DATA_KEY } from '@lib/app-script';
-import {
-    DscoCatalogRow,
-    DscoSpreadsheet,
-    generateSpreadsheet,
-    GoogleSpreadsheet,
-    verifyCategorySpreadsheet
-} from '@lib/spreadsheet';
+import { DscoSpreadsheet, generateSpreadsheet, GoogleSpreadsheet, verifyCategorySpreadsheet } from '@lib/spreadsheet';
 import { prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
 import { sheets_v4 } from 'googleapis';
 import Schema$RowData = sheets_v4.Schema$RowData;
@@ -56,10 +50,10 @@ export async function publishCategorySpreadsheet({categoryPath, retailerId, supp
     await sendProgress(VALIDATING_PROGRESS_START_PCT, 'Validating & saving rows...');
 
     // Pull the row data from the google spreadsheet
-    const catalogRows = await DscoCatalogRow.fromExistingSheet(googleSpreadsheet, dscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(existingCatalogItems, 'sku'));
+    const catalogRows = googleSpreadsheet.extractCatalogRows(dscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(existingCatalogItems, 'sku'));
 
     // Resolve the rows that were modified, giving progress updates
-    const resolver = new CatalogResolver(catalogRows, userId, supplierId, categoryPath, VALIDATING_PROGRESS_START_PCT, CLEANING_UP_PCT);
+    const resolver = new CatalogResolver(catalogRows, googleSpreadsheet.numDataRows, userId, supplierId, categoryPath, VALIDATING_PROGRESS_START_PCT, CLEANING_UP_PCT);
     const resolvedRows = await resolver.resolveCatalogsWithProgress();
     const {numFailedRows, numSuccessfulRows, numEmptyRows, rowMessages, rowIdxsWithErrors} = resolver;
 

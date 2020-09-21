@@ -28,28 +28,40 @@ export class CatalogResolver {
     private numProcessedRows = 0;
 
     /**
-     * The number of rows that were modified that need to be processed.  Used to give a progress report.
-     */
-    private numRowsToProcess: number;
-
-    /**
      * Keeps track of when we last sen't a progress report, used to throttle progress updates.
      */
     private lastSendTime = 0;
 
+    /**
+     * @param rows
+     * @param numRowsToProcess the number of rows that were modified that need to be processed.  Used to give a progress report.
+     * @param userId
+     * @param supplierId
+     * @param categoryPath
+     * @param fromPct
+     * @param toPct
+     */
     constructor(
-      private rows: DscoCatalogRow[],
+      private rows: IterableIterator<Promise<DscoCatalogRow>>,
+      private numRowsToProcess: number,
       private userId: number,
       private supplierId: number,
       private categoryPath: string,
       private fromPct: number,
       private toPct: number
     ) {
-        this.numRowsToProcess = rows.filter(row => row.modified).length;
     }
 
     resolveCatalogsWithProgress(): Promise<CatalogResolveRecord[]> {
-        return Promise.all(this.rows.map((row, index) => this.resolveCatalog(row, index + 1))); // +1 for the header row
+        const promises: Array<Promise<CatalogResolveRecord>> = [];
+
+        let rowIdx = 1; // start at 1 for the header row
+        for (const rowPromise of this.rows) {
+            promises.push(rowPromise.then(row => this.resolveCatalog(row, rowIdx)));
+            rowIdx++;
+        }
+
+        return Promise.all(promises);
     }
 
 
@@ -109,8 +121,12 @@ export class CatalogResolver {
         let hasErrorMessage = false;
 
         for (const msg of response.validation_messages || []) {
-            this.addRowMessage(rowIdx + 1, msg);
-            hasErrorMessage = hasErrorMessage || msg.messageType === XrayActionSeverity.error;
+            // TODO: We want all validation messages here, but are only flowing errors because of AWS message size limit
+            // @see https://dsco.atlassian.net/browse/ES-857
+            if (msg.messageType === XrayActionSeverity.error) {
+                this.addRowMessage(rowIdx + 1, msg);
+                hasErrorMessage = true;
+            }
         }
 
         if (hasError && !hasErrorMessage) {

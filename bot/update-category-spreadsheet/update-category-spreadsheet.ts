@@ -5,20 +5,28 @@ import {
     DscoSpreadsheet,
     generateSpreadsheet,
     GoogleSpreadsheet,
-    SpreadsheetDynamoTable
+    SpreadsheetDynamoTable,
+    XlsxSpreadsheet
 } from '@lib/spreadsheet';
 import { catalogItemSearch, prepareGoogleApis, sendWebsocketEvent } from '@lib/utils';
-import { sheets_v4 } from 'googleapis';
-import Schema$DeveloperMetadata = sheets_v4.Schema$DeveloperMetadata;
 
 export interface UpdateCategorySpreadsheetEvent {
     supplierId: number;
     retailerId: number;
     categoryPath: string;
-    revert: boolean; // Whether or not to revert old changes
+
+    /**
+     * Optional base64 xlsx data.  If provided will override any data on the google sheet
+     */
+    xlsxSheetBase64?: string;
+
+    /**
+     * Whether or not to revert old changes
+     */
+    revert: boolean;
 }
 
-export async function updateCategorySpreadsheet({categoryPath, retailerId, supplierId, revert}: UpdateCategorySpreadsheetEvent): Promise<void> {
+export async function updateCategorySpreadsheet({categoryPath, retailerId, supplierId, revert, xlsxSheetBase64}: UpdateCategorySpreadsheetEvent): Promise<void> {
     const sendProgress = (progress: number, message: string) => {
         return sendWebsocketEvent('updateCatalogSpreadsheetProgress', {progress, message, categoryPath}, supplierId);
     };
@@ -50,12 +58,25 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
 
     const existingGoogleSpreadsheet = await GoogleSpreadsheet.loadFromGoogle(ddbSheet.spreadsheetId, sheets);
 
-    const existingRows = await DscoCatalogRow.fromExistingSheet(existingGoogleSpreadsheet, newDscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(catalogItems, 'sku'));
+    const existingRows = existingGoogleSpreadsheet.extractCatalogRows(newDscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(catalogItems, 'sku'));
 
-
+    // We keep track of which skus we've added to the updated dsco spreadsheet so there aren't any duplicates
     const alreadyAddedSkus = new Set<string>();
+
+    const xlsxSheet = xlsxSheetBase64 ? XlsxSpreadsheet.fromBase64(xlsxSheetBase64) : undefined;
+    if (xlsxSheet) { // Add the catalog data from the xlsx sheet
+        const xlsxRows = xlsxSheet.extractCatalogRows(newDscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(catalogItems, 'sku'));
+
+        for await (const row of xlsxRows) {
+            if (!row.emptyRow && row.catalog.sku) {
+                alreadyAddedSkus.add(row.catalog.sku);
+                newDscoSpreadsheet.addCatalogRow(row);
+            }
+        }
+    }
+
     if (!revert) { // If we aren't reverting, add any modified and non-empty rows
-        for (const row of existingRows) {
+        for await (const row of existingRows) {
             if (row.modified && !row.emptyRow) {
                 if (row.catalog.sku) {
                     alreadyAddedSkus.add(row.catalog.sku);
@@ -78,77 +99,7 @@ export async function updateCategorySpreadsheet({categoryPath, retailerId, suppl
     // Finally we convert the new DscoSpreadsheet into a GoogleSpreadsheet, and update the existing spreadsheet with the new data.
     const {spreadsheet: newGoogleSpreadsheet, dimensionUpdates} = newDscoSpreadsheet.intoGoogleSpreadsheet();
 
-    const {
-        bandedRanges: existingBandedRanges,
-        columnSaveNamesDeveloperMetadata: existingColumnSaveNamesDeveloperMetadata,
-        numUserRows: existingNumUserRows,
-        numUserCols: existingNumUserCols,
-        numValidationRows: existingNumValidationRows,
-        numValidationCols: existingNumValidationCols
-    } = existingGoogleSpreadsheet;
-
-    const existingDeveloperMetadata: {developerMetadata: Schema$DeveloperMetadata}[] = [
-        {developerMetadata: existingColumnSaveNamesDeveloperMetadata},
-      ...existingGoogleSpreadsheet.getModifiedRowDeveloperMetadata(),
-    ];
-
-    const {
-        userSheetRowData,
-        validationSheetRowData,
-        bandedRanges: newBandedRanges,
-        columnSaveNamesDeveloperMetadata: newColumnSaveNamesDeveloperMetadata,
-        numUserRows: newNumUserRows,
-        numUserCols: newNumUserCols,
-        numValidationRows: newNumValidationRows,
-        numValidationCols: newNumValidationCols
-    } = newGoogleSpreadsheet;
-    const newDeveloperMetadata: {developerMetadata: Schema$DeveloperMetadata}[] = [
-        {developerMetadata: newColumnSaveNamesDeveloperMetadata},
-        ...newGoogleSpreadsheet.getModifiedRowDeveloperMetadata(),
-    ];
-
-    await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: existingGoogleSpreadsheet.spreadsheetId,
-        requestBody: {
-            requests: [
-                // Append rows / cols to either sheet if needed. (google will throw an error without this)
-                ...[
-                    {appendDimension: {sheetId: DscoSpreadsheet.USER_SHEET_ID, dimension: 'COLUMNS', length: newNumUserCols - existingNumUserCols}},
-                    {appendDimension: {sheetId: DscoSpreadsheet.USER_SHEET_ID, dimension: 'ROWS', length: newNumUserRows - existingNumUserRows}},
-                    {appendDimension: {sheetId: DscoSpreadsheet.DATA_SHEET_ID, dimension: 'COLUMNS', length: newNumValidationCols - existingNumValidationCols}},
-                    {appendDimension: {sheetId: DscoSpreadsheet.DATA_SHEET_ID, dimension: 'ROWS', length: newNumValidationRows - existingNumValidationRows}},
-                ].filter(req => req.appendDimension.length > 0),
-                // Remove all existing banded ranges
-                ...existingBandedRanges.map(({bandedRangeId}) => ({deleteBanding: {bandedRangeId}})),
-                // Remove all developer metadata
-                ...existingDeveloperMetadata.map(({developerMetadata}) => ({
-                    deleteDeveloperMetadata: {dataFilter: {developerMetadataLookup: {metadataId: developerMetadata.metadataId}}}
-                })),
-                // Update the cells for the user sheet
-                {
-                    updateCells: {
-                        range: {sheetId: DscoSpreadsheet.USER_SHEET_ID, startColumnIndex: 0, startRowIndex: 0},
-                        fields: '*',
-                        rows: userSheetRowData
-                    }
-                },
-                // Same for the data sheet
-                {
-                    updateCells: {
-                        range: {sheetId: DscoSpreadsheet.DATA_SHEET_ID, startColumnIndex: 0, startRowIndex: 0},
-                        fields: '*',
-                        rows: validationSheetRowData
-                    }
-                },
-                // Add the new developer metadata
-                ...newDeveloperMetadata.map(({developerMetadata}) => ({createDeveloperMetadata: {developerMetadata}})),
-                // Add the new banded ranges
-                ...newBandedRanges.map(bandedRange => ({addBanding: {bandedRange}})),
-                // Resize the columns that need it
-                ...dimensionUpdates.map(dimension => ({updateDimensionProperties: dimension}))
-            ]
-        }
-    });
+    await existingGoogleSpreadsheet.migrateInPlace(newGoogleSpreadsheet, dimensionUpdates, sheets);
 
     // Update the app script if necessary
     if (ddbSheet.scriptVersion !== APP_SCRIPT_VERSION) {

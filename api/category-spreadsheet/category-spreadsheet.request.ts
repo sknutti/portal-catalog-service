@@ -9,10 +9,16 @@ export interface CategorySpreadsheetRequestBody {
      * Updates the spreadsheet without copying unsaved changes.
      */
     revert?: boolean;
+
+    /**
+     * Should only be specified when action is 'update'
+     * Updates the spreadsheet, overwriting any data with data in the xlsx spreadsheet
+     */
+    xlsxSheetBase64?: string;
 }
 
 export class CategorySpreadsheetRequest extends DsRequest<CategorySpreadsheetRequestBody, DsResponse, DsError> {
-	constructor(env: DscoEnv, public retailerId: number, public categoryPath: string, public action: 'generate' | 'publish' | 'update') {
-        super('POST', `/portal-catalog/spreadsheet${action === 'generate' ? '' : `/${action}`}`, DsRequest.getHost(env, 'micro'), {retailerId, categoryPath});
+	constructor(env: DscoEnv, public action: 'generate' | 'publish' | 'update', body: CategorySpreadsheetRequestBody) {
+        super('POST', `/portal-catalog/spreadsheet${action === 'generate' ? '' : `/${action}`}`, DsRequest.getHost(env, 'micro'), body);
     }
 }
