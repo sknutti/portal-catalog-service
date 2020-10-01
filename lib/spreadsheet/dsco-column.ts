@@ -153,7 +153,7 @@ export class DscoColumn {
 
         if (this.validation.format === 'image') {
             const [arrName, imgName] = this.imageNames;
-            data = rowData.catalog[arrName].find(img => img.name === imgName)?.source_url;
+            data = rowData.catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.source_url;
         } else if (this.type === 'core') {
             data = rowData.catalog[this.fieldName];
         } else if (this.type === 'extended') {
