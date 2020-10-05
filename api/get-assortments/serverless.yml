@@ -2,6 +2,7 @@ get-assortments:
   handler: api/get-assortments/get-assortments.getAssortments
   memorySize: 256
   timeout: 30
+  vpc: ${self:custom.environment.gearman-and-mongo-vpc}
   events:
     - http:
         path: assortments
