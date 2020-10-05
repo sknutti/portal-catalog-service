@@ -1,0 +1,11 @@
+get-assortments:
+  handler: api/get-assortments/get-assortments.getAssortments
+  memorySize: 256
+  timeout: 30
+  events:
+    - http:
+        path: assortments
+        method: get
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam

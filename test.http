@@ -1,3 +1,9 @@
+### Get Assortments
+GET http://localhost:3000/assortments
+Content-Type: application/json
+cognito-identity-id: us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329 #Logged in as Mike's Stuff
+
+
 ### Generate Spreadsheet
 POST http://localhost:3000/spreadsheet
 Content-Type: application/json
