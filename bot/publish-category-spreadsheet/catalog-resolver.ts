@@ -55,10 +55,9 @@ export class CatalogResolver {
     resolveCatalogsWithProgress(): Promise<CatalogResolveRecord[]> {
         const promises: Array<Promise<CatalogResolveRecord>> = [];
 
-        let rowIdx = 1; // start at 1 for the header row
         for (const rowPromise of this.rows) {
+            const rowIdx = promises.length + 1; // start at 1 for the header row
             promises.push(rowPromise.then(row => this.resolveCatalog(row, rowIdx)));
-            rowIdx++;
         }
 
         return Promise.all(promises);

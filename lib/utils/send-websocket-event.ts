@@ -9,7 +9,7 @@ const leo = require('leo-sdk');
 const ls = require('leo-streams');
 
 export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(type: K, data: CatalogSpreadsheetWebsocketEvents[K], accountId: number): Promise<void> {
-    if (process.env.ENVIRONMENT === 'test') {
+    if (process.env.ENVIRONMENT === 'test' || process.env.LEO_LOCAL) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
     }
 
