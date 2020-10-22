@@ -8,7 +8,7 @@ import InjectPlugin from 'webpack-inject-plugin';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
 
-const stage = 'test' as 'test' | 'staging' | 'prod';
+const stage = 'prod' as 'test' | 'staging' | 'prod';
 process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
 process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
 process.env.LEO_LOCAL = 'true';
@@ -27,7 +27,9 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
 
     return {
         entry: serverlessArtifactPlugin.entry,
-        devtool: 'source-map',
+        devtool: isLocal
+            ? 'cheap-module-eval-source-map'
+            : 'source-map',
         target: 'node',
         mode: isLocal ? 'development' : 'production',
         // aws-sdk is provided by aws, saslprep and mongodb-client-encryption are optional and unused.
@@ -49,13 +51,6 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
                 //     ]
                 // },
                 {
-                    test: /app-script\.ts/,
-                    use: [
-                        {loader: 'ts-loader', options: {configFile: 'tsconfig.app-script.json', transpileOnly: true}},
-                        {loader: 'raw-loader'}
-                    ]
-                },
-                {
                     test: /\.tsx?$/,
                     loader: 'ts-loader',
                     options: {
@@ -68,6 +63,8 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
         },
         resolve: {
             extensions: ['.ts', '.js', '.tsx'],
+            // Used to reduce size of sheetjs.  @see https://github.com/SheetJS/sheetjs/issues/694
+            alias: { './dist/cpexcel.js': '' },
             plugins: [
                 new TsconfigPathsPlugin({
                     configFile: './tsconfig.json'

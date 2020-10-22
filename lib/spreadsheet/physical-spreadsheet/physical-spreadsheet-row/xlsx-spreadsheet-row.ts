@@ -1,6 +1,7 @@
 import { CellValue, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
 import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
-import { CellObject } from 'xlsx';
+import { CellObject } from '@sheet/image';
+
 
 /**
  * An intermediate representation of a row in a xlsx sheet,

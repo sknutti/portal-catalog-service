@@ -38,6 +38,28 @@ const request = new GenerateCategorySpreadsheetRequest(...);
 const response = await signedFetch(request, DSCO_ENV, DSCO_CONFIG.AWS_REGION, DSCO_CONFIG.AWS_COGNITO_ID, window.AWS);
 ```
 
+## Installing the @sheets/image package 
+The @sheets/image package requires you to be logged in to a private npm registry.
+
+```
+npm login --scope=@sheet --registry=https://pylon.sheetjs.com:54111/
+```
+
+Use these credentials:
+
+Username: `dscoio`
+
+Password: `kL6RdzbKMKtUBu4C`
+
+Email Address: `me@sheetjs.com`
+
+The module includes:
+- documentation at `node_modules/@sheet/image/README.html`
+- standalone browser scripts at `node_modules/@sheet/image/dist/`
+- NPM and bundler-friendly code at `node_modules/@sheet/image/`
+
+Updates are distributed through NPM.  To download the latest version, run `npm install @sheet/image@*` 
+
 ## Project Layout
 The source for each of the apid lambdas can be found in `/api/function_name/`
 The source for each of the bot lambdas can be found in `/bot/function_name/`

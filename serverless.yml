@@ -15,9 +15,6 @@ package:
 custom:
   environment: ${file(environments.yml):${self:provider.stage}}
   spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
-  generateSpreadsheetBotName: ${self:service}-${self:provider.stage}-generate-category-spreadsheet
-  publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet
-  updateSpreadsheetBotName: ${self:service}-${self:provider.stage}-update-category-spreadsheet
   customDomain:
     domainName: ${self:custom.environment.domain}
     basePath: portal-catalog
@@ -57,34 +54,24 @@ provider:
     - Effect: "Allow"
       Action:
         - secretsmanager:GetSecretValue
-        - secretsmanager:PutSecretValue
       Resource:
         - "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:catalog-editor-google-api*"
     - Effect: "Allow"
-      Action: secretsmanager:GetSecretValue
-      Resource: "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:mongo-${self:provider.stage}*"
-    - Effect: "Allow"
       Action:
         - execute-api:Invoke
-      Resource: # TODO: this could be more restrictive!
+      Resource: # TODO: this could be more restrictive!  Only used for item search
         - "arn:aws:execute-api:${self:provider.region}:#{AWS::AccountId}:*/*/*/*"
     - Effect: "Allow"
-      Action:
-        - lambda:InvokeFunction
-      Resource:
-        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.generateSpreadsheetBotName}"
-        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
-        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.updateSpreadsheetBotName}"
+      Action: secretsmanager:GetSecretValue
+      Resource: "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:mongo-${self:provider.stage}*"
     - ${file(./leo-iam.yml):kinesis}
     - ${file(./leo-iam.yml):firehose}
     - ${file(./leo-iam.yml):s3}
 
 functions:
   - ${file(./api/get-assortments/serverless.yml)}
-  - ${file(./api/category-spreadsheet/serverless.yml)}
-  - ${file(./bot/generate-category-spreadsheet/serverless.yml)}
-  - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
-  - ${file(./bot/update-category-spreadsheet/serverless.yml)}
+  - ${file(./api/generate-category-spreadsheet/serverless.yml)}
+  - ${file(./api/publish-category-spreadsheet/serverless.yml)}
 
 resources:
   Resources:

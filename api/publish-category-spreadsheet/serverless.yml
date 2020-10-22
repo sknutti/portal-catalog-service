@@ -1,0 +1,12 @@
+publish-category-spreadsheet:
+  handler: api/publish-category-spreadsheet/publish-category-spreadsheet.publishCategorySpreadsheet
+  memorySize: 1024
+  timeout: 30
+  vpc: ${self:custom.environment.gearman-and-mongo-vpc}
+  events:
+    - http:
+        path: spreadsheet/publish
+        method: post
+        cors: true
+        integration: lambda-proxy
+        authorizer: aws_iam

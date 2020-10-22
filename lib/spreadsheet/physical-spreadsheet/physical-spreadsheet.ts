@@ -11,7 +11,7 @@ export abstract class PhysicalSpreadsheet {
     /**
      * Provides an iterator to read the rows from the sheet
      */
-    abstract rows(): IterableIterator<PhysicalSpreadsheetRow>;
+    abstract rows(startRowIdx?: number): IterableIterator<PhysicalSpreadsheetRow>;
 
     /**
      * Extracts the DscoCatalogRow information from the physical row data
@@ -21,15 +21,17 @@ export abstract class PhysicalSpreadsheet {
      * @param retailerId
      * @param categoryPath
      * @param existingCatalogItems Used to merge some fields from existing catalog items (such as the images array)
+     * @param startRowIdx Used to optionally skip some rows
      */
     *extractCatalogRows(
       dscoSpreadsheet: DscoSpreadsheet,
       supplierId: number,
       retailerId: number,
       categoryPath: string,
-      existingCatalogItems: Record<string, CoreCatalog>
+      existingCatalogItems: Record<string, CoreCatalog>,
+      startRowIdx?: number
     ): IterableIterator<Promise<DscoCatalogRow>> {
-        for (const row of this.rows()) {
+        for (const row of this.rows(startRowIdx)) {
             yield row.parseCatalogRow(dscoSpreadsheet, supplierId, retailerId, categoryPath, existingCatalogItems);
         }
     }
