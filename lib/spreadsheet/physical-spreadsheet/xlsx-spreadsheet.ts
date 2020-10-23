@@ -1,6 +1,6 @@
 import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
 import { PhysicalSpreadsheet } from './physical-spreadsheet';
-import { CellObject, Range, read, utils, WorkBook, WorkSheet } from 'xlsx';
+import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
 
 export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private range: Range = utils.decode_range(this.sheet['!ref']!); // xlsx always have ref;
@@ -9,15 +9,16 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private headerNames: Map<number, string> = this.parseHeaderNames();
 
     constructor(
+      private workbook: WorkBook,
       private sheet: WorkSheet
     ) {
         super();
     }
 
-    static fromBase64(base64: string): XlsxSpreadsheet | undefined {
+    static fromBuffer(buffer: Buffer): XlsxSpreadsheet | undefined {
         // TODO: this could be slow, perhaps move to child process?
-        const file = read(base64, {
-            type: 'base64',
+        const file = read(buffer, {
+            type: 'buffer',
             cellDates: true,
             cellFormula: false,
             cellHTML: false
@@ -25,11 +26,24 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
 
         const sheet = file?.SheetNames?.length ? file.Sheets[file.SheetNames[0]] : undefined;
 
-        return sheet ? new XlsxSpreadsheet(sheet) : undefined;
+        return sheet ? new XlsxSpreadsheet(file, sheet) : undefined;
     }
 
-    *rows(): IterableIterator<XlsxSpreadsheetRow> {
-        for (let rowNum = this.range.s.r + 1; rowNum <= this.range.e.r; rowNum++) { // + 1 to skip the header row
+    toBuffer(): Buffer {
+        return write(this.workbook, {
+            type: 'buffer',
+        });
+    }
+
+    toFile(name = 'output.xlsx'): void {
+        writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}`);
+    }
+
+    *rows(startRowIdx?: number): IterableIterator<XlsxSpreadsheetRow> {
+        startRowIdx = startRowIdx ?? this.range.s.r + 1; // + 1 to skip the header row
+
+        console.error(startRowIdx, this.range);
+        for (let rowNum = startRowIdx; rowNum <= this.range.e.r; rowNum++) {
             yield new XlsxSpreadsheetRow(this.rowIterator(rowNum));
         }
     }

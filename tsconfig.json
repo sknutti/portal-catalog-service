@@ -32,7 +32,6 @@
     "api/**/*.ts",
     "bot/**/*.ts",
     "test/**/*.ts",
-    "app-script.ts",
     "lib/**/*.ts",
     "webpack.config.ts"
   ]

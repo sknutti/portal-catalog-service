@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.artifact.json",
-  "compilerOptions": {
-    "sourceMap": false,
-    "importsNotUsedAsValues": "remove",
-    "module": "None"
-  },
-  "include": ["app-script.ts"]
-}
