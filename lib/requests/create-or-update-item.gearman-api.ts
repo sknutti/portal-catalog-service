@@ -7,6 +7,7 @@ export interface CreateOrUpdateItemGearmanApiRequest {
         account_id: number;
         user_id: string;
         data_type: string;
+        from_portal: boolean;
     }
 }
 
@@ -41,5 +42,6 @@ export class CreateOrUpdateItemGearmanApi extends GearmanApi<CreateOrUpdateItemG
         this.body.params.account_id = account_id;
         this.body.params.user_id = user_id;
         this.body.params.data_type = 'Catalog';
+        this.body.params.from_portal = true;
     }
 }

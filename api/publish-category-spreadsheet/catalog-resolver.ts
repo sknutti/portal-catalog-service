@@ -25,6 +25,7 @@ export class CatalogResolver {
             return 'empty';
         }
 
+        // TODO: Use the bulk upload api
         const gearmanResponse = await new CreateOrUpdateItemGearmanApi(this.supplierId, this.userId.toString(10), row.catalog).submit();
 
         return gearmanResponse.success ? 'success' : this.findErrors(gearmanResponse);

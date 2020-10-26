@@ -57,24 +57,26 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     let numSuccessfulRows = 0;
     let numEmptyRows = 0;
 
-    for (const catalogRow of catalogRows) {
-        const response = await resolver.resolveCatalogRow(await catalogRow);
+    const resolvedCatalogBatcher = batch(catalogRows, 30, (row) => row.then((r) => resolver.resolveCatalogRow(r)));
 
-        if (response === 'success') {
-            numSuccessfulRows++;
-        } else if (response === 'empty') {
-            numEmptyRows++;
-        } else {
-            return {
-                success: true,
-                numEmptyRows,
-                numSuccessfulRows,
-                rowWithError: rowIdx,
-                validationMessages: response
-            };
+    for (const resolvedCatalogBatch of resolvedCatalogBatcher) {
+        for (const response of await Promise.all(resolvedCatalogBatch)) {
+            if (response === 'success') {
+                numSuccessfulRows++;
+            } else if (response === 'empty') {
+                numEmptyRows++;
+            } else {
+                return {
+                    success: true,
+                    numEmptyRows,
+                    numSuccessfulRows,
+                    rowWithError: rowIdx,
+                    validationMessages: response
+                };
+            }
+
+            rowIdx++;
         }
-
-        rowIdx++;
     }
 
     return {
@@ -94,4 +96,21 @@ function gunzipAsync(text: string): Promise<Buffer> {
             }
         });
     });
+}
+
+function *batch<T, U>(iterator: IterableIterator<T>, batchSize: number, mapper: (item: T) => U): Generator<U[]> {
+    let result: U[] = [];
+
+    for (const item of iterator) {
+        result.push(mapper(item));
+
+        if (result.length === batchSize) {
+            yield result;
+            result = [];
+        }
+    }
+
+    if (result.length) {
+        yield result;
+    }
 }
