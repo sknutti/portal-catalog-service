@@ -1,5 +1,6 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { getDSFField } from '@lib/format-conversions';
 import { assertUnreachable } from '@lib/utils';
 
 /**
@@ -76,7 +77,7 @@ export class DscoColumn {
             found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
             // The core automatically uppercases all skus.  This ensures nothing goes out of date.
-            catalog[this.fieldName] = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
+            catalog[getDSFField(this.fieldName)] = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
         } else if (this.type === 'extended') {
             extendedAttrs[this.fieldName] = valueToSet;
         }

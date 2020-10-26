@@ -3,7 +3,7 @@ import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { DscoCatalogRow, DscoSpreadsheet, generateSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogItemSearch } from '@lib/utils';
-import { deflate, gzip } from 'zlib';
+import { gzip } from 'zlib';
 import { GenerateCategorySpreadsheetRequest } from './generate-category-spreadsheet.request';
 
 export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadsheetRequest>(async event => {

@@ -19,7 +19,7 @@ export interface PublishCategorySpreadsheetResponse extends DsResponse {
     numSuccessfulRows: number;
     numEmptyRows: number;
     rowWithError?: number;
-    validationMessages?: SpreadsheetRowMessage[];
+    validationMessages?: string[];
 }
 
 export class PublishCategorySpreadsheetRequest extends DsRequest<PublishCategorySpreadsheetRequestBody, PublishCategorySpreadsheetResponse, DsError> {

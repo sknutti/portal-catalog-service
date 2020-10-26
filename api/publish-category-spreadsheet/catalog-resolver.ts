@@ -1,5 +1,9 @@
 import { ResolveExceptionGearmanApi, ResolveExceptionGearmanApiResponse } from '@dsco/gearman-apis';
 import { ValidationMessage, XrayActionSeverity } from '@dsco/ts-models';
+import {
+    CreateOrUpdateItemGearmanApi,
+    CreateOrUpdateItemGearmanApiResponse
+} from '@lib/requests/create-or-update-item.gearman-api';
 import { DscoCatalogRow } from '@lib/spreadsheet';
 import { SpreadsheetRowMessage } from '../../api';
 
@@ -21,48 +25,27 @@ export class CatalogResolver {
             return 'empty';
         }
 
-        const gearmanResponse = await new ResolveExceptionGearmanApi('CreateOrUpdateCatalogItem', {
-            caller: {
-                account_id: this.supplierId.toString(10),
-                user_id: this.userId.toString(10)
-            },
-            params: row.catalog
-        }).submit();
+        const gearmanResponse = await new CreateOrUpdateItemGearmanApi(this.supplierId, this.userId.toString(10), row.catalog).submit();
 
-        const errors = this.findErrors(gearmanResponse);
-
-        return errors.length ? errors : 'success';
+        return gearmanResponse.success ? 'success' : this.findErrors(gearmanResponse);
     }
 
     /**
      * Handles any errors in the gearman response, returning true if there was an error
      */
-    private findErrors(response: ResolveExceptionGearmanApiResponse): SpreadsheetRowMessage[] {
-        const result: SpreadsheetRowMessage[] = [];
+    private findErrors(response: CreateOrUpdateItemGearmanApiResponse & {success: boolean}): string[] {
+        let errors = response.data?.messages?.filter(m => m.type === 'ERROR') || [];
 
-        const hasError = !gearmanActionSuccess.has(response.action);
-
-        let hasErrorMessage = false;
-
-        for (const msg of response.validation_messages || []) {
-            // TODO: We want all validation messages here, but are only flowing errors because of AWS message size limit
-            // @see https://dsco.atlassian.net/browse/ES-857
-            if (msg.messageType === XrayActionSeverity.error) {
-                result.push(msg);
-                hasErrorMessage = true;
-            }
+        if (!errors.length) {
+           errors = response.data?.messages?.filter(m => m.type === 'RECORD_STATUS_MESSAGE') || [];
         }
 
-        if (hasError && !hasErrorMessage) {
-            const messages = response.messages?.length ? response.messages : ['Unable to save item.'];
-
-            for (const message of messages) {
-                result.push({message, messageType: XrayActionSeverity.error});
-            }
+        if (errors.length) {
+            return errors.map(e => e.message);
+        } else {
+            return ['Unable to save item.'];
         }
-
-        return result;
     }
 }
 
-type CatalogResolveResponse = 'empty' | 'success' | SpreadsheetRowMessage[];
+type CatalogResolveResponse = 'empty' | 'success' | string[];

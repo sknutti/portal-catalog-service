@@ -1,5 +1,6 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 
@@ -171,7 +172,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
         const [arrName, imgName] = col.imageNames;
         data = catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.source_url;
     } else if (col.type === 'core') {
-        data = catalog[col.fieldName];
+        data = extractFieldFromCoreCatalog(col.fieldName, catalog);
     } else if (col.type === 'extended') {
         data = catalog.extended_attributes?.[retailerId]?.[col.fieldName];
     }
