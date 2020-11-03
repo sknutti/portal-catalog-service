@@ -82,13 +82,8 @@ export abstract class PhysicalSpreadsheetRow {
         if (existing) {
             for (const imageColumn of dscoSpreadsheet.imageColumns) {
                 const arrayNameToCopy = imageColumn.imageNames[0];
-                const arrayToCopy: CatalogImage[] = existing[arrayNameToCopy] || [];
 
-                catalog[arrayNameToCopy] = arrayToCopy.map<CatalogImage>(image => ({
-                    source_url: image.source_url,
-                    reference: image.reference,
-                    name: image.name
-                }));
+                catalog[arrayNameToCopy] = existing[arrayNameToCopy] || [];
             }
         }
     }
