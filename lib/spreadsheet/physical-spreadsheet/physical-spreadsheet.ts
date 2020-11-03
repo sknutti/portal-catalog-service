@@ -1,4 +1,5 @@
 import { CoreCatalog } from '@lib/core-catalog';
+import { TinyWarehouse } from '@lib/requests';
 import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
 import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
 
@@ -21,6 +22,7 @@ export abstract class PhysicalSpreadsheet {
      * @param retailerId
      * @param categoryPath
      * @param existingCatalogItems Used to merge some fields from existing catalog items (such as the images array)
+     * @param warehouses The supplier's warehouses
      * @param startRowIdx Used to optionally skip some rows
      */
     *extractCatalogRows(
@@ -29,10 +31,11 @@ export abstract class PhysicalSpreadsheet {
       retailerId: number,
       categoryPath: string,
       existingCatalogItems: Record<string, CoreCatalog>,
+      warehouses: TinyWarehouse[],
       startRowIdx?: number
-    ): IterableIterator<Promise<DscoCatalogRow>> {
+    ): IterableIterator<DscoCatalogRow> {
         for (const row of this.rows(startRowIdx)) {
-            yield row.parseCatalogRow(dscoSpreadsheet, supplierId, retailerId, categoryPath, existingCatalogItems);
+            yield row.parseCatalogRow(dscoSpreadsheet, supplierId, retailerId, categoryPath, warehouses, existingCatalogItems);
         }
     }
 }

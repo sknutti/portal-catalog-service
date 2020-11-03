@@ -1,9 +1,4 @@
-import { DscoEnv, DsError, DsRequest, DsResponse, ValidationMessage, XrayActionSeverity } from '@dsco/ts-models';
-
-export interface SpreadsheetRowMessage extends Partial<ValidationMessage> {
-    message: string;
-    messageType: XrayActionSeverity;
-}
+import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
 export interface PublishCategorySpreadsheetRequestBody {
     retailerId: number;
@@ -12,12 +7,12 @@ export interface PublishCategorySpreadsheetRequestBody {
      * Should be a binary string containing the gzipped file
      */
     gzippedFile: string;
-    startRowIdx?: number;
+    skippedRowIndexes: number[];
 }
 
 export interface PublishCategorySpreadsheetResponse extends DsResponse {
-    numSuccessfulRows: number;
-    numEmptyRows: number;
+    totalRowCount: number;
+
     rowWithError?: number;
     validationMessages?: string[];
 }

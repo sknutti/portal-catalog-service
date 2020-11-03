@@ -1,5 +1,6 @@
-import { ProductStatus } from '@dsco/ts-models';
+import { CatalogImage, ProductStatus } from '@dsco/ts-models';
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
+import { TinyWarehouse } from '@lib/requests';
 import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
 import { WarehousesLoader } from '@lib/utils';
 
@@ -25,36 +26,40 @@ export abstract class PhysicalSpreadsheetRow {
      * @param supplierId
      * @param retailerId
      * @param categoryPath
+     * @param warehouses The supplier's warehouses
      * @param existingCatalogItems Used to merge some fields from existing catalog items (such as the images array)
      */
-    async parseCatalogRow(
+    parseCatalogRow(
       dscoSpreadsheet: DscoSpreadsheet,
       supplierId: number,
       retailerId: number,
       categoryPath: string,
+      warehouses: TinyWarehouse[],
       existingCatalogItems: Record<string, CoreCatalog>
-    ): Promise<DscoCatalogRow> {
-        const {catalog, extended} = createCoreCatalog(supplierId, retailerId, categoryPath);
+    ): DscoCatalogRow {
+        const {catalog} = createCoreCatalog(supplierId, retailerId, categoryPath);
+
+        const row = new DscoCatalogRow(catalog, false, true);
 
         let filledFromExisting = false;
-        let hasExistingItem = false;
-        let emptyRow = true;
+        let existingItem: CoreCatalog | undefined;
         for (const [cellValue, column] of this.getCellValues(dscoSpreadsheet)) {
-            if (column.writeCellValueToCatalog(cellValue, catalog, extended) === 'hasValue') {
-                emptyRow = false;
-            }
+            column.writeCellValueToCatalog(cellValue, row, existingItem, retailerId);
 
             // Fill any necessary info from the existing catalog item as soon as we have a sku
             if (!filledFromExisting && catalog.sku) {
                 filledFromExisting = true;
-                const existingItem = existingCatalogItems[catalog.sku.toUpperCase()];
-                hasExistingItem = !!existingItem;
+                existingItem = existingCatalogItems[catalog.sku.toUpperCase()];
 
-                await this.fillCatalogFromExisting(dscoSpreadsheet, catalog, supplierId, existingItem);
+                if (!existingItem) {
+                    row.modified = true;
+                }
+
+                this.fillCatalogFromExisting(dscoSpreadsheet, catalog, supplierId, warehouses, existingItem);
             }
         }
 
-        return new DscoCatalogRow(catalog, true, hasExistingItem, emptyRow);
+        return row;
     }
 
     /**
@@ -63,13 +68,13 @@ export abstract class PhysicalSpreadsheetRow {
      *
      * Should be called immediately after the sku is read from the row
      */
-    private async fillCatalogFromExisting(dscoSpreadsheet: DscoSpreadsheet, catalog: CoreCatalog, supplierId: number, existing?: CoreCatalog): Promise<void> {
+    private fillCatalogFromExisting(dscoSpreadsheet: DscoSpreadsheet, catalog: CoreCatalog, supplierId: number, warehouses: TinyWarehouse[], existing?: CoreCatalog): void {
         // If they change the product status to anything but pending,
         // we must have both quantity_available and warehouses quantity.  This gives defaults of zero to both
         if (catalog.product_status !== ProductStatus.PENDING && (!existing || existing.product_status === ProductStatus.PENDING)) {
             catalog.quantity_available = existing?.quantity_available || 0;
 
-            await this.handleWarehouseQuantity(catalog, supplierId, existing);
+            this.handleWarehouseQuantity(catalog, supplierId, warehouses, existing);
         }
 
         // For every column in the spreadsheet that is an image, we need to be sure to copy that column's images array.
@@ -77,7 +82,13 @@ export abstract class PhysicalSpreadsheetRow {
         if (existing) {
             for (const imageColumn of dscoSpreadsheet.imageColumns) {
                 const arrayNameToCopy = imageColumn.imageNames[0];
-                catalog[arrayNameToCopy] = existing[arrayNameToCopy] || [];
+                const arrayToCopy: CatalogImage[] = existing[arrayNameToCopy] || [];
+
+                catalog[arrayNameToCopy] = arrayToCopy.map<CatalogImage>(image => ({
+                    source_url: image.source_url,
+                    reference: image.reference,
+                    name: image.name
+                }));
             }
         }
     }
@@ -87,9 +98,7 @@ export abstract class PhysicalSpreadsheetRow {
      *
      * If there is an existing catalog item, will use those values.
      */
-    private async handleWarehouseQuantity(item: CoreCatalog, supplierId: number, existing?: CoreCatalog): Promise<void> {
-        const supplierWarehouses = await WarehousesLoader.loadWarehouses(supplierId);
-
+    private handleWarehouseQuantity(item: CoreCatalog, supplierId: number, warehouses: TinyWarehouse[], existing?: CoreCatalog): void {
         const existingWarehouses = new Set<string>();
         const newWarehouses = item.warehouses = item.warehouses || [];
 
@@ -109,7 +118,7 @@ export abstract class PhysicalSpreadsheetRow {
 
         // TODO: Should all warehouses to be set to zero, or should they not be in the array at all?
         // Then add quantities for any remaining warehouses.
-        for (const warehouse of supplierWarehouses) {
+        for (const warehouse of warehouses) {
             if (existingWarehouses.has(warehouse.warehouseId)) {
                 continue;
             }

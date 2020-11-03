@@ -1,6 +1,7 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import { getDSFField } from '@lib/format-conversions';
+import { extractFieldFromCoreCatalog, getDSFField } from '@lib/format-conversions';
+import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';
 
 /**
@@ -54,14 +55,14 @@ export class DscoColumn {
     ) {
     }
 
-    writeCellValueToCatalog(cellValue: CellValue, catalog: CoreCatalog, extendedAttrs: Record<string, any>): 'empty' | 'hasValue' {
+    writeCellValueToCatalog(cellValue: CellValue, row: DscoCatalogRow, existingCatalog: CoreCatalog | undefined, retailerId: number): void {
         const valueToSet = this.coerceCatalogValueFromCellValue(cellValue);
 
         if (valueToSet === null) { // We don't actually write a null value to the catalog, at risk of overwriting fields that were set outside the catalog
-            // TODO: We require them to update when their catalog information is out of date,
-            //  so in theory we could treat the spreadsheet as the source of truth and get rid of this early return.
-            return 'empty';
+            return;
         }
+
+        const catalog = row.catalog;
 
         if (this.validation.format === 'image') { // Images need to be handled differently
             const [arrName, imgName] = this.imageNames;
@@ -74,20 +75,37 @@ export class DscoColumn {
                 arr.push(found);
             }
 
+            if (found.source_url !== valueToSet) {
+                row.modified = true;
+            }
+
             found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
+            const valToSave = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
+
+            if (existingCatalog && extractFieldFromCoreCatalog(this.fieldName, existingCatalog) != valueToSet) {
+                row.modified = true;
+            }
+
             // The core automatically uppercases all skus.  This ensures nothing goes out of date.
-            catalog[getDSFField(this.fieldName)] = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
+            catalog[getDSFField(this.fieldName)] = valToSave;
         } else if (this.type === 'extended') {
-            extendedAttrs[this.fieldName] = valueToSet;
+            const extended = catalog.extended_attributes![retailerId];
+            const existingExtended = existingCatalog?.extended_attributes?.[retailerId];
+
+            if (existingExtended && existingExtended[this.fieldName] !== valueToSet) {
+                row.modified = true;
+            }
+
+            extended[this.fieldName] = valueToSet;
         }
 
-        // Even though there is technically a value, the value is the default, so leave it empty
+        // Even though there is technically a value, the value is the default, so keep emptyRow true
         if (this.validation.format === 'boolean' && valueToSet === false) {
-            return 'empty';
+            return;
         }
 
-        return 'hasValue';
+        row.emptyRow = false;
     }
 
 
@@ -107,6 +125,14 @@ export class DscoColumn {
             case 'integer':
                 return +cellValue;
             case 'boolean':
+                if (typeof cellValue === 'string') {
+                    const upper = cellValue.toUpperCase();
+
+                    if (upper === 'NO' || upper === 'FALSE' || upper === '0') {
+                        return false;
+                    }
+                }
+
                 return !!cellValue;
             case 'array': {
                 const num = this.validation.arrayType !== 'string';

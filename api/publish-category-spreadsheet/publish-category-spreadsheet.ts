@@ -1,8 +1,9 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { keyBy, MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { DscoSpreadsheet, generateSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { catalogItemSearch } from '@lib/utils';
-import { gunzip, inflate } from 'zlib';
+import { catalogItemSearch, WarehousesLoader } from '@lib/utils';
+import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
+import { gunzip } from 'zlib';
 import { CatalogResolver } from './catalog-resolver';
 import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
 
@@ -27,62 +28,55 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     const supplierId = user.accountId;
     const {retailerId, categoryPath, gzippedFile} = event.body;
 
-    const catalogItems = await catalogItemSearch(supplierId, retailerId, categoryPath);
-
-    const dscoSpreadsheet = await generateSpreadsheet(supplierId, retailerId, categoryPath);
+    const [catalogItems, dscoSpreadsheet, warehouses, unzippedSpreadsheet] = await Promise.all([
+        catalogItemSearch(supplierId, retailerId, categoryPath),
+        generateSpreadsheet(supplierId, retailerId, categoryPath),
+        WarehousesLoader.loadWarehouses(supplierId),
+        gunzipAsync(gzippedFile)
+    ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
         return dscoSpreadsheet;
     }
 
-    const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(await gunzipAsync(gzippedFile));
+    const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(unzippedSpreadsheet);
 
     if (!excelSpreadsheet) {
         return {
             success: true,
-            numEmptyRows: 0,
-            numFailedRows: 0,
-            numSuccessfulRows: 0,
-            rowsWithErrors: {}
+            totalRowCount: 0
         };
     }
 
     // Pull the row data from the google spreadsheet
-    const catalogRows = excelSpreadsheet.extractCatalogRows(dscoSpreadsheet, supplierId, retailerId, categoryPath, keyBy(catalogItems, 'sku'), event.body.startRowIdx);
+    const catalogRows = excelSpreadsheet.extractCatalogRows(dscoSpreadsheet, supplierId, retailerId, categoryPath,
+        keyBy(catalogItems, 'sku'), warehouses);
 
     // Resolve the rows that were modified, giving progress updates
-    const resolver = new CatalogResolver(supplierId, user.userId);
+    const resolver = new CatalogResolver(supplierId, user.userId, new Set(event.body.skippedRowIndexes));
 
-    let rowIdx = event.body.startRowIdx || 1; // 1 for the header row
-    let numSuccessfulRows = 0;
-    let numEmptyRows = 0;
+    const skippedRows = new Set(event.body.skippedRowIndexes);
 
-    const resolvedCatalogBatcher = batch(catalogRows, 30, (row) => row.then((r) => resolver.resolveCatalogRow(r)));
+    // Enumerate all of the rows starting at 1 for the header.  Then filter out the skipped rows, rows without data, and unmodified rows
+    const rowsToSave = filter(enumerate(catalogRows, 1), ([row, rowIdx]) => !row.emptyRow && row.modified && !skippedRows.has(rowIdx));
 
-    for (const resolvedCatalogBatch of resolvedCatalogBatcher) {
-        for (const response of await Promise.all(resolvedCatalogBatch)) {
-            if (response === 'success') {
-                numSuccessfulRows++;
-            } else if (response === 'empty') {
-                numEmptyRows++;
-            } else {
-                return {
-                    success: true,
-                    numEmptyRows,
-                    numSuccessfulRows,
-                    rowWithError: rowIdx,
-                    validationMessages: response
-                };
-            }
+    // Save the rows in batches, collecting them to get the gearman requests running in parallel, even though we process them sequentially
+    const resolvedBatches = collect(map(batch(rowsToSave, 30), rows => resolver.resolveBatch(rows)));
 
-            rowIdx++;
+    for await (const resolvedBatchError of resolvedBatches) {
+        if (resolvedBatchError) {
+            return {
+                success: true,
+                totalRowCount: excelSpreadsheet.numDataRows(),
+                validationMessages: resolvedBatchError.messages,
+                rowWithError: resolvedBatchError.rowIdx
+            };
         }
     }
 
     return {
         success: true,
-        numSuccessfulRows,
-        numEmptyRows
+        totalRowCount: excelSpreadsheet.numDataRows()
     };
 });
 
@@ -96,21 +90,4 @@ function gunzipAsync(text: string): Promise<Buffer> {
             }
         });
     });
-}
-
-function *batch<T, U>(iterator: IterableIterator<T>, batchSize: number, mapper: (item: T) => U): Generator<U[]> {
-    let result: U[] = [];
-
-    for (const item of iterator) {
-        result.push(mapper(item));
-
-        if (result.length === batchSize) {
-            yield result;
-            result = [];
-        }
-    }
-
-    if (result.length) {
-        yield result;
-    }
 }

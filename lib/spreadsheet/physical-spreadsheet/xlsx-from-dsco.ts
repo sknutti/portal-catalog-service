@@ -2,7 +2,7 @@ import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { CellObject, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
+import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
@@ -14,8 +14,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         '!condfmt': [],
         '!validations': []
     };
-    const validationSheet: WorkSheet = {};
-    const validationSheetInfo: ValidationSheetInfo = {curColIdx: -1, maxRowIdx: -1};
+    const [validationSheet, validationSheetInfo] = getValidationWorksheet();
 
     utils.book_append_sheet(workBook, sheet, DscoSpreadsheet.USER_SHEET_NAME);
     utils.book_append_sheet(workBook, validationSheet, DscoSpreadsheet.DATA_SHEET_NAME);
@@ -62,12 +61,39 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
 }
 
 function createHeader(col: DscoColumn): CellObject {
+    let comments: Comments | undefined;
+
+    if (col.fieldDescription) {
+        comments = [{
+            R: [{
+                t: 's',
+                v: `\n${col.fieldName} (${getRequiredName(col.validation.required)})\n\n`,
+                s: {
+                    sz: 14,
+                    bold: true
+                }
+            }, {
+                t: 's', v: col.fieldDescription || '',
+                s: {
+                    sz: 12,
+                    bold: false
+                }
+            }], a: col.fieldName
+        }];
+        comments.hidden = true;
+        comments.s = {
+            fgColor: {rgb: getColor(col.validation.required === 'none' ? PipelineErrorType.info : col.validation.required, false)}
+        };
+        comments['!pos'] = {x: 0, y: 0, ...calcCommentSize(col.fieldDescription)};
+    }
+
     return {
         t: 's',
         v: col.name,
         s: {
             bold: true
-        }
+        },
+        c: comments
     };
 }
 
@@ -130,12 +156,8 @@ function addValidation(col: DscoColumn, curColIdx: number, validations: DataVali
         case 'boolean':
             validations.push({
                 ref,
-                t: 'Custom',
-                // input: {
-                //     title: 'Aidan Rocks',
-                //     message: 'This must be a boolean'
-                // },
-                f: 'OR(INDIRECT("RC", FALSE)=TRUE, INDIRECT("RC", FALSE)=FALSE)'
+                t: 'List',
+                f: `${DscoSpreadsheet.DATA_SHEET_NAME}!$A$1:$A$2`
             });
             return;
         case 'enum':
@@ -183,7 +205,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
 
     switch (col.validation.format) {
         case 'boolean':
-            return {t: 'b', v: !!data};
+            return {t: 's', v: data ? 'Yes' : 'No'};
         case 'array':
             return {t: 's', v: Array.isArray(data) ? data.join(',') : `${data}` };
         case 'date':
@@ -209,4 +231,69 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
 interface ValidationSheetInfo {
     maxRowIdx: number;
     curColIdx: number;
+}
+
+function calcCommentSize(text: string): {w: number, h: number} {
+    let maxW = 0;
+    let w = 0;
+    let h = 120;
+    const l = text.length;
+
+    for (let i = 0; i < l; i++) {
+        const char = text[i];
+
+        if (char === '\n') {
+            h += 20;
+
+            if (w > maxW) {
+                maxW = w;
+            }
+
+            w = 0;
+        } else {
+            w += 6;
+        }
+    }
+
+    if (w > maxW) {
+        maxW = w;
+    }
+
+    if (maxW < 200) {
+        maxW = 200;
+    }
+
+    return {w: maxW, h};
+}
+
+function getRequiredName(required: PipelineErrorType | 'none'): string {
+    switch (required) {
+        case PipelineErrorType.error:
+            return 'Required';
+        case PipelineErrorType.warn:
+            return 'Recommended';
+        case PipelineErrorType.info:
+        case 'none':
+            return 'Optional';
+    }
+}
+
+function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
+    const yes: CellObject = {
+        t: 's',
+        v: 'Yes'
+    };
+
+    const no: CellObject = {
+        t: 's',
+        v: 'No'
+    };
+
+    const validationSheet: WorkSheet = {
+        A1: yes,
+        A2: no,
+    };
+    const validationSheetInfo: ValidationSheetInfo = {curColIdx: 0, maxRowIdx: 1};
+
+    return [validationSheet, validationSheetInfo];
 }
