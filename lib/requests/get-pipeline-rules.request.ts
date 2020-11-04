@@ -7,10 +7,10 @@ export interface GetPipelineRulesResponse extends DsResponse {
 }
 
 export class GetPipelineRulesRequest extends DsRequest<null, GetPipelineRulesResponse, UnexpectedError> {
-  constructor(env: DscoEnv) {
+  constructor(env: DscoEnv, accountId: number) {
     super(
       'GET',
-      '/pipeline/api/rules',
+      `/pipeline/api/rules?accountId=${accountId}`,
       DsRequest.getHost(env, 'micro'),
       null
     );

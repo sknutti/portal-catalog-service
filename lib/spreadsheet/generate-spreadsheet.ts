@@ -58,7 +58,7 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
           process.env.AWS_REGION!
         ),
         axiosRequest(
-          new GetPipelineRulesRequest(env),
+          new GetPipelineRulesRequest(env, retailerId),
           env,
           AWS.config.credentials as Credentials,
           process.env.AWS_REGION!
