@@ -1,7 +1,7 @@
-import { DsError, PipelineErrorType, ProductStatus } from '@dsco/ts-models';
+import { PipelineErrorType, ProductStatus } from '@dsco/ts-models';
 import { createCoreCatalog } from '@lib/core-catalog';
-import { GetWarehousesGearmanResponse, TinyWarehouse } from '@lib/requests';
-import { DscoCatalogRow, DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
+import { TinyWarehouse } from '@lib/requests';
+import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 

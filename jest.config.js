@@ -13,6 +13,7 @@ module.exports = {
 	],
 	moduleNameMapper: {
 		'^@lib/(.*)$': '<rootDir>/lib/$1',
+		'^@api/(.*)$': '<rootDir>/api/$1',
 	},
 	testRegex: '/(api|bot|lib|test)/.*.test.ts',
 	// collectCoverage: true,

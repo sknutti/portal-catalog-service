@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { Transform } from 'stream';
-import { CatalogSpreadsheetWebsocketEvents } from 'api';
+import { CatalogSpreadsheetWebsocketEvents } from '@api/index';
 
 const config = require('leo-config');
 config.bootstrap(require('../../leo_config'));
