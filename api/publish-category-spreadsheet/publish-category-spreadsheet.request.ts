@@ -10,14 +10,8 @@ export interface PublishCategorySpreadsheetRequestBody {
     skippedRowIndexes: number[];
 }
 
-export interface PublishCategorySpreadsheetResponse extends DsResponse {
-    totalRowCount: number;
 
-    rowWithError?: number;
-    validationMessages?: string[];
-}
-
-export class PublishCategorySpreadsheetRequest extends DsRequest<PublishCategorySpreadsheetRequestBody, PublishCategorySpreadsheetResponse, DsError> {
+export class PublishCategorySpreadsheetRequest extends DsRequest<PublishCategorySpreadsheetRequestBody, DsResponse, DsError> {
     constructor(env: DscoEnv, body: PublishCategorySpreadsheetRequestBody) {
         super('POST', '/portal-catalog/spreadsheet/publish', DsRequest.getHost(env, 'micro'), body);
     }

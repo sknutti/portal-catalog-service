@@ -1,8 +1,9 @@
 publish-category-spreadsheet:
   handler: api/publish-category-spreadsheet/publish-category-spreadsheet.publishCategorySpreadsheet
   memorySize: 1024
-  timeout: 30
-  vpc: ${self:custom.environment.gearman-and-mongo-vpc}
+  timeout: 5
+  environment:
+    PUBLISH_BOT_NAME: ${self:custom.publishSpreadsheetBotName}
   events:
     - http:
         path: spreadsheet/publish

@@ -7,7 +7,7 @@ import { DscoCatalogRow } from '@lib/spreadsheet';
 
 export class CatalogResolver {
 
-    constructor(private supplierId: number, private userId: number, private skippedRowIndexes = new Set<number>()) {
+    constructor(private supplierId: number, private userId: number) {
     }
 
     async resolveBatch(rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>): Promise<CatalogResolveError | undefined> {
@@ -22,7 +22,8 @@ export class CatalogResolver {
             i++;
         }
 
-        const responses = await new CreateOrUpdateItemBulkGearmanApi(this.supplierId, this.userId.toString(10), catalogs).submit();
+        const api = new CreateOrUpdateItemBulkGearmanApi(this.supplierId, this.userId.toString(10), catalogs);
+        const responses = await api.submit();
 
         i = 0;
         for (const response of responses.data?.responses || []) {

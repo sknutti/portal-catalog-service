@@ -15,6 +15,7 @@ package:
 custom:
   environment: ${file(environments.yml):${self:provider.stage}}
   spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
+  publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet-bot
   customDomain:
     domainName: ${self:custom.environment.domain}
     basePath: portal-catalog
@@ -64,6 +65,11 @@ provider:
     - Effect: "Allow"
       Action: secretsmanager:GetSecretValue
       Resource: "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:mongo-${self:provider.stage}*"
+    - Effect: "Allow"
+        Action:
+          - lambda:InvokeFunction
+        Resource:
+          - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
     - ${file(./leo-iam.yml):kinesis}
     - ${file(./leo-iam.yml):firehose}
     - ${file(./leo-iam.yml):s3}
@@ -72,6 +78,7 @@ functions:
   - ${file(./api/get-assortments/serverless.yml)}
   - ${file(./api/generate-category-spreadsheet/serverless.yml)}
   - ${file(./api/publish-category-spreadsheet/serverless.yml)}
+  - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
 
 resources:
   Resources:
