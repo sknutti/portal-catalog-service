@@ -66,10 +66,10 @@ provider:
       Action: secretsmanager:GetSecretValue
       Resource: "arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:mongo-${self:provider.stage}*"
     - Effect: "Allow"
-        Action:
-          - lambda:InvokeFunction
-        Resource:
-          - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}"
     - ${file(./leo-iam.yml):kinesis}
     - ${file(./leo-iam.yml):firehose}
     - ${file(./leo-iam.yml):s3}
