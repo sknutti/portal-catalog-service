@@ -1,8 +1,9 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
 import { keyBy, UnexpectedError } from '@dsco/ts-models';
 import { DscoSpreadsheet, generateSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { catalogItemSearch, randomFloat, sendWebsocketEvent, WarehousesLoader } from '@lib/utils';
+import { catalogItemSearch, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
+import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
 import { Err, Ok, Result } from 'ts-results';
 import { gunzip } from 'zlib';
 import { CatalogSpreadsheetWebsocketEvents } from '../../api';
@@ -115,6 +116,11 @@ async function publishSpreadsheetImpl(
             });
         } else {
             remainingRowsToValidate -= batchSize;
+
+            // Can happen if skipped rows.
+            if (remainingRowsToValidate < 0) {
+                remainingRowsToValidate = 0;
+            }
             const validationPct = (totalRowCount - remainingRowsToValidate) / totalRowCount;
 
             await sendProgress(

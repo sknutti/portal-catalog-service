@@ -1,4 +1,4 @@
-import {
+import type {
     publishCategorySpreadsheet as publishSpreadsheetBot,
     PublishCategorySpreadsheetEvent
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
