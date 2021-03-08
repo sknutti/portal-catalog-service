@@ -45,7 +45,7 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 
 declare const __non_webpack_require__: typeof require;
 
-async function invokePublishBot(event: PublishCategorySpreadsheetEvent): Promise<void> {
+function invokePublishBot(event: PublishCategorySpreadsheetEvent): Promise<void> {
     if (process.env.LEO_LOCAL === 'true') {
         // This invokes the webpack output for the generate-category-spreadsheet function.
         const generateFn: typeof publishSpreadsheetBot = __non_webpack_require__('../../bot/publish-category-spreadsheet/publish-category-spreadsheet').publishCategorySpreadsheet;
@@ -54,11 +54,17 @@ async function invokePublishBot(event: PublishCategorySpreadsheetEvent): Promise
         } catch (e) {
             console.error(e);
         }
+        return Promise.resolve();
     } else {
-        await lambda.invoke({
-            FunctionName: process.env.PUBLISH_BOT_NAME!,
-            InvocationType: 'Event',
-            Payload: JSON.stringify(event)
-        }).promise();
+        // Invoke the lambda, resolving automatically after 5 seconds so the request can run in the background
+        return new Promise(resolve => {
+            lambda.invoke({
+                FunctionName: process.env.PUBLISH_BOT_NAME!,
+                InvocationType: 'RequestResponse',
+                Payload: JSON.stringify(event)
+            }).promise().then(() => resolve());
+
+            setTimeout(() => resolve(), 5000);
+        });
     }
 }
