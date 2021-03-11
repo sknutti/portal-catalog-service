@@ -81,7 +81,8 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
 
         let result = cols[type][name];
         if (!result) {
-            result = cols[type][name] = new DscoColumn(name, descriptions[name], type, {
+            const description = (rule as any).attributeDescription || descriptions[name];
+            result = cols[type][name] = new DscoColumn(name, description, type, {
                 // Custom attributes should default to info, not none
                 required: type === 'extended' ? PipelineErrorType.info : 'none'
             });
