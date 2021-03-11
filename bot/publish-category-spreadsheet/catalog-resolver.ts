@@ -22,11 +22,23 @@ export class CatalogResolver {
             i++;
         }
 
+        const callId = Math.random().toString(36).substring(6).toUpperCase();
         const api = new CreateOrUpdateItemBulkGearmanApi(this.supplierId, this.userId.toString(10), catalogs);
-        const responses = await api.submit();
+        (api.body as any).call_id = callId;
+
+        const gmResp = await api.submit();
 
         i = 0;
-        for (const response of responses.data?.responses || []) {
+        if (!gmResp.success && !gmResp.data?.responses?.length) {
+            console.error('Got bad gearman response: ', callId, JSON.stringify(gmResp));
+
+            return {
+                messages: [`Unexpected validation error. EID: ${callId}`, gmResp.reason],
+                rowIdx: indexMap[i]
+            };
+        }
+
+        for (const response of gmResp.data?.responses || []) {
             if (!response.success) {
                 return {
                     messages: this.findErrors(response.data?.messages || []),

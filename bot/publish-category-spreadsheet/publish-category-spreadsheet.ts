@@ -98,7 +98,7 @@ async function publishSpreadsheetImpl(
         return needsSave;
     });
 
-    const batchSize = 30;
+    const batchSize = 5;
     const startValidationPct = randomFloat(0.45, 0.55);
 
     // Save the rows in batches, collecting them to get the gearman requests running in parallel, even though we process them sequentially
