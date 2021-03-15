@@ -30,7 +30,14 @@ export class CatalogResolver {
 
         i = 0;
         if (!gmResp.success && !gmResp.data?.responses?.length) {
-            console.error('Got bad gearman response: ', callId, JSON.stringify(gmResp));
+            console.error(`
+Got bad gearman response: ${callId}
+
+REQUEST for ${callId}: --------------
+${JSON.stringify(api.body)}
+
+RESPONSE for ${callId}: -------------
+${JSON.stringify(gmResp)}`);
 
             return {
                 messages: [`Unexpected validation error. EID: ${callId}`, gmResp.reason],
