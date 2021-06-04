@@ -30,18 +30,10 @@ export class CatalogResolver {
 
         i = 0;
         if (!gmResp.success && !gmResp.data?.responses?.length) {
-            console.error(`
-Got bad gearman response: ${callId}
-
-REQUEST for ${callId}: --------------
-${JSON.stringify(api.body)}
-
-RESPONSE for ${callId}: -------------
-${JSON.stringify(gmResp)}`);
-
             return {
                 messages: [`Unexpected validation error. EID: ${callId}`, gmResp.reason],
-                rowIdx: indexMap[i]
+                rowIdx: indexMap[i],
+                sentRequest: api.body
             };
         }
 
@@ -49,7 +41,8 @@ ${JSON.stringify(gmResp)}`);
             if (!response.success) {
                 return {
                     messages: this.findErrors(response.data?.messages || []),
-                    rowIdx: indexMap[i]
+                    rowIdx: indexMap[i],
+                    sentRequest: api.body
                 };
             }
 
@@ -78,4 +71,5 @@ ${JSON.stringify(gmResp)}`);
 interface CatalogResolveError {
     rowIdx: number;
     messages: string[];
+    sentRequest: CreateOrUpdateItemBulkGearmanApi['body']
 }

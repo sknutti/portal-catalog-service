@@ -1,7 +1,7 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
 import { keyBy, UnexpectedError } from '@dsco/ts-models';
 import { DscoSpreadsheet, generateSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { catalogItemSearch, randomFloat, WarehousesLoader } from '@lib/utils';
+import { catalogItemSearch, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
 import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
 import { Err, Ok, Result } from 'ts-results';
@@ -112,6 +112,7 @@ async function publishSpreadsheetImpl(
                 totalRowCount,
                 validationMessages: resolvedBatchError.messages,
                 rowWithError: resolvedBatchError.rowIdx,
+                sentRequest: await gzipAsync(Buffer.from(JSON.stringify(resolvedBatchError.sentRequest), 'utf8')),
                 categoryPath
             });
         } else {

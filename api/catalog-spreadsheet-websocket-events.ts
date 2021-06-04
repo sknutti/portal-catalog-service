@@ -9,6 +9,8 @@ export interface CatalogSpreadsheetWebsocketEvents {
         rowWithError?: number;
         validationMessages?: string[];
         categoryPath: string;
+        // The request sent to gearman, if any, gzipped
+        sentRequest?: string;
     };
     error: {
         message: string;
