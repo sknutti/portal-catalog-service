@@ -16,7 +16,16 @@ interface MongoSecret {
 
 const mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${env}`, 60000);
 
-export async function catalogItemSearch(supplierId: number, retailerId: number, categoryPath: string): Promise<CoreCatalog[]> {
+let mongoClient: MongoClient | undefined;
+let connectString: string | undefined;
+
+export async function catalogItemSearch(
+  supplierId: number,
+  retailerId: number,
+  categoryPath: string,
+  // Other skus to directly ask mongo for, in case the sku exists and is in the spreadsheet, but not yet in the category
+  includeSkus: string[] = []
+): Promise<CoreCatalog[]> {
     // First we do an ES request to find all items in the category
     const searchResp = await axiosRequest(
       new ItemSearchRequest(env, {
@@ -37,19 +46,29 @@ export async function catalogItemSearch(supplierId: number, retailerId: number, 
     }
 
     // Then we load those ids from mongo
-
     const mongoSecret = await mongoSecretHelper.getValue();
-    const client = await MongoClient.connect(mongoSecret.portalCatalogConnectString, {
-        useNewUrlParser: true,
-        ssl: true,
-        sslValidate: true,
-        sslCA: [mongoSecret.ca]
-    });
+    if (!mongoClient || connectString !== mongoSecret.portalCatalogConnectString) {
+        connectString = mongoSecret.portalCatalogConnectString;
 
-    const mongoResp = await client.db().collection('Item').find<SnakeCase<Catalog>>({
-        item_id: {$in: searchResp.data.docs}
+        mongoClient = await MongoClient.connect(mongoSecret.portalCatalogConnectString, {
+            useNewUrlParser: true,
+            ssl: true,
+            sslValidate: true,
+            sslCA: [mongoSecret.ca],
+        });
+    }
+
+    const mongoResp = await mongoClient.db().collection('Item').find<SnakeCase<Catalog>>({
+        $or: [
+            {
+                item_id: {$in: searchResp.data.docs}
+            },
+            {
+                sku: {$in: includeSkus},
+                supplier_id: supplierId
+            }
+        ],
     }).toArray();
-
 
     return mongoResp as CoreCatalog[];
 }

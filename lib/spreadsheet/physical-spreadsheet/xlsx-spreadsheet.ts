@@ -1,3 +1,4 @@
+import { UnexpectedError } from '@dsco/ts-models';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
 import { PhysicalSpreadsheet } from './physical-spreadsheet';
 import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
@@ -8,6 +9,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     // a map from column number to the header for that column
     private readonly headerNames: Map<number, string>;
     private readonly colIterationOrder: number[];
+    private readonly skuHeaderIdx: number;
 
     constructor(
       private workbook: WorkBook,
@@ -15,10 +17,10 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     ) {
         super();
 
-        const [headerNames, colIterationOrder] = this.parseHeaderNames();
+        const [headerNames, colIterationOrder, skuHeaderIdx] = this.parseHeaderNames();
         this.headerNames = headerNames;
         this.colIterationOrder = colIterationOrder;
-
+        this.skuHeaderIdx = skuHeaderIdx;
     }
 
     static fromBuffer(buffer: Buffer): XlsxSpreadsheet | undefined {
@@ -50,7 +52,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     }
 
     *rows(startRowIdx?: number): IterableIterator<XlsxSpreadsheetRow> {
-        startRowIdx = startRowIdx ?? this.range.s.r + 1; // + 1 to skip the header row
+        startRowIdx = startRowIdx ?? this.range.s.r + 1;
 
         console.error(startRowIdx, this.range);
         for (let rowNum = startRowIdx; rowNum <= this.range.e.r; rowNum++) {
@@ -58,11 +60,32 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         }
     }
 
+    skus(): string[] {
+        const result: string[] = [];
+
+        // + 1 to skip the header row
+        let rowNum = this.range.s.r + 1;
+        for (; rowNum <= this.range.e.r; rowNum++) {
+            const skuCell = this.getCell(rowNum, this.skuHeaderIdx);
+            let sku;
+            if (skuCell) {
+                sku = String(skuCell.v);
+            }
+
+            if (sku) {
+                result.push(sku);
+            }
+
+        }
+
+        return result;
+    }
+
     /**
      * Returns a map from column number to the header for that column
      * Also returns the order to iterate the columns in, ensuring sku is always first
      */
-    private parseHeaderNames(): [names: Map<number, string>, colOrder: number[]] {
+    private parseHeaderNames(): [names: Map<number, string>, colOrder: number[], skuHeaderIdx: number] {
         const names = new Map<number, string>();
         const colOrder = [-1]; // This negative one is a placeholder to hold the sku column
 
@@ -82,10 +105,10 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
 
         // If we didn't find a sku column, remove the placeholder for it
         if (colOrder[0] === -1) {
-            colOrder.splice(0, 1);
+            throw new Error('Missing column `sku`');
         }
 
-        return [names, colOrder];
+        return [names, colOrder, colOrder[0]];
     }
 
     private getCell(rowNum: number, colNum: number): CellObject | undefined {

@@ -52,20 +52,21 @@ async function publishSpreadsheetImpl(
         return sendWebsocketEvent('progressUpdate', {progress, message, categoryPath}, supplierId);
     };
 
-    await sendProgress(0.34, 'Parsing Spreadsheet...');
-
-    const [catalogItems, dscoSpreadsheet, warehouses, unzippedSpreadsheet] = await Promise.all([
-        catalogItemSearch(supplierId, retailerId, categoryPath),
+    const [, dscoSpreadsheet, warehouses, [excelSpreadsheet, catalogItems]] = await Promise.all([
+        sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
         gunzipAsync(gzippedFile)
+          .then(async unzippedSpreadsheet => {
+            const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(unzippedSpreadsheet);
+
+            return [excelSpreadsheet, await catalogItemSearch(supplierId, retailerId, categoryPath, excelSpreadsheet?.skus())] as const;
+          })
     ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
         return Err(dscoSpreadsheet);
     }
-
-    const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(unzippedSpreadsheet);
 
     if (!excelSpreadsheet) {
         return Ok({
