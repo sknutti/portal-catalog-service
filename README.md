@@ -112,3 +112,6 @@ Build it as in Building above, although to make it faster you can run `npm run b
 
 Then cd build/lib and run `npm publish` or if it's an alpha build run `npm publish --tag alpha`.
 
+#### Typedoc Document
+* Run `npm run doc`
+* Goto `/docs/index.html` in your browser

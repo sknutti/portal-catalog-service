@@ -1,0 +1,8 @@
+{
+  "theme": "./node_modules/typedoc-vortex-theme/bin/default",
+  "readme": "README.md",
+  "entryPoints": [
+    "api",
+    "bot"
+  ]
+}

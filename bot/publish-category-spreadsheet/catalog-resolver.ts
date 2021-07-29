@@ -7,9 +7,15 @@ import { DscoCatalogRow } from '@lib/spreadsheet';
 
 export class CatalogResolver {
 
+    /**
+     * Sets supplierId and userId
+     */
     constructor(private supplierId: number, private userId: number) {
     }
 
+    /**
+     * Resolves any errors
+     */
     async resolveBatch(rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>): Promise<CatalogResolveError | undefined> {
         const indexMap: Record<number, number> = {};
         const catalogs: CoreCatalog[] = [];
@@ -57,7 +63,7 @@ export class CatalogResolver {
         let errors = messages.filter(m => m.type === 'error' || m.type === 'ERROR') || [];
 
         if (!errors.length) {
-           errors = messages.filter(m => m.type === 'RECORD_STATUS_MESSAGE') || [];
+            errors = messages.filter(m => m.type === 'RECORD_STATUS_MESSAGE') || [];
         }
 
         if (errors.length) {
@@ -68,6 +74,11 @@ export class CatalogResolver {
     }
 }
 
+/**
+ * Fun stuff here
+ * 
+ * @typedef
+ */
 interface CatalogResolveError {
     rowIdx: number;
     messages: string[];

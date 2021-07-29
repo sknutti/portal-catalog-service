@@ -9,7 +9,8 @@
     "build": "rm -rf build && npm run build:artifact && npm run build:lib",
     "build:artifact": "node --max_old_space_size=4096 ./node_modules/webpack/bin/webpack.js --config webpack.config.ts --progress",
     "build:lib": "npm run build:lib:ts && cp api/package.json build/lib/package.json && cp README.md build/lib/README.md",
-    "build:lib:ts": "tsc -p tsconfig.lib.json && tsc -p tsconfig.lib.json -m esnext --outDir build/lib/fesm2015 -d false"
+    "build:lib:ts": "tsc -p tsconfig.lib.json && tsc -p tsconfig.lib.json -m esnext --outDir build/lib/fesm2015 -d false",
+    "doc": "typedoc"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +42,7 @@
     "@typescript-eslint/parser": "^3.10.1",
     "eslint": "^7.7.0",
     "eslint-loader": "^4.0.2",
+    "eslint-plugin-tsdoc": "^0.2.14",
     "fork-ts-checker-webpack-plugin": "^5.0.7",
     "jest": "^26.0.1",
     "jest-bamboo-formatter": "^1.0.1",
@@ -55,6 +57,8 @@
     "ts-loader": "^8.0.5",
     "ts-node": "^9.0.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
+    "typedoc": "^0.21.4",
+    "typedoc-vortex-theme": "^0.0.2",
     "typescript": "^4.0.3",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12",

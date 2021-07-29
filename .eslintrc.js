@@ -9,6 +9,7 @@ module.exports = {
     },
     plugins: [
         '@typescript-eslint',
+        'eslint-plugin-tsdoc'
     ],
     extends: [
         'eslint:recommended',
@@ -18,10 +19,11 @@ module.exports = {
         '@typescript-eslint/no-non-null-assertion': 'off',
         semi: 'error',
         '@typescript-eslint/prefer-optional-chain': 'error',
-        quotes: ['error', 'single', {avoidEscape: true}],
+        quotes: ['error', 'single', { avoidEscape: true }],
         'prefer-template': ['error'],
         'quote-props': ['error', 'as-needed'],
         'no-case-declarations': 'off',
-        '@typescript-eslint/no-explicit-any': 'off'
+        '@typescript-eslint/no-explicit-any': 'off',
+        'tsdoc/syntax': 'error'
     },
 };
