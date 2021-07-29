@@ -14,54 +14,72 @@ export interface PublishCategorySpreadsheetEvent {
     userId: number;
     categoryPath: string;
     gzippedFile: string;
-    skippedRowIndexes?: number[]
+    skippedRowIndexes?: number[];
 }
-
 
 export async function publishCategorySpreadsheet(event: PublishCategorySpreadsheetEvent): Promise<void> {
     try {
         const resp = await Promise.race([publishSpreadsheetImpl(event), timeout()] as const);
         if (resp === 'timeout') {
-            await sendWebsocketEvent('error', {
-                error: null,
-                message: 'Response timed out',
-                categoryPath: event.categoryPath
-            }, event.supplierId);
+            await sendWebsocketEvent(
+                'error',
+                {
+                    error: null,
+                    message: 'Response timed out',
+                    categoryPath: event.categoryPath,
+                },
+                event.supplierId,
+            );
         } else if (resp.ok) {
             await sendWebsocketEvent('success', resp.val, event.supplierId);
         } else {
-            await sendWebsocketEvent('error', {
-                error: resp.val,
-                message: resp.val.message,
-                categoryPath: event.categoryPath
-            }, event.supplierId);
+            await sendWebsocketEvent(
+                'error',
+                {
+                    error: resp.val,
+                    message: resp.val.message,
+                    categoryPath: event.categoryPath,
+                },
+                event.supplierId,
+            );
         }
     } catch (error: any) {
-        await sendWebsocketEvent('error', {
-            error,
-            message: 'message' in error ? error.message : 'Unexpected error',
-            categoryPath: event.categoryPath
-        }, event.supplierId);
+        await sendWebsocketEvent(
+            'error',
+            {
+                error,
+                message: 'message' in error ? error.message : 'Unexpected error',
+                categoryPath: event.categoryPath,
+            },
+            event.supplierId,
+        );
     }
 }
 
-async function publishSpreadsheetImpl(
-  {categoryPath, retailerId, supplierId, userId, gzippedFile, skippedRowIndexes}: PublishCategorySpreadsheetEvent
-): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
+async function publishSpreadsheetImpl({
+    categoryPath,
+    retailerId,
+    supplierId,
+    userId,
+    gzippedFile,
+    skippedRowIndexes,
+}: PublishCategorySpreadsheetEvent): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
     const sendProgress = (progress: number, message: string) => {
-        return sendWebsocketEvent('progressUpdate', {progress, message, categoryPath}, supplierId);
+        return sendWebsocketEvent('progressUpdate', { progress, message, categoryPath }, supplierId);
     };
 
     const [, dscoSpreadsheet, warehouses, [excelSpreadsheet, catalogItems]] = await Promise.all([
         sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
-        gunzipAsync(gzippedFile)
-          .then(async unzippedSpreadsheet => {
+        gunzipAsync(gzippedFile).then(async (unzippedSpreadsheet) => {
             const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(unzippedSpreadsheet);
 
-            return [excelSpreadsheet, await catalogItemSearch(supplierId, retailerId, categoryPath, excelSpreadsheet?.skus())] as const;
-          })
+            return [
+                excelSpreadsheet,
+                await catalogItemSearch(supplierId, retailerId, categoryPath, excelSpreadsheet?.skus()),
+            ] as const;
+        }),
     ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
@@ -71,14 +89,19 @@ async function publishSpreadsheetImpl(
     if (!excelSpreadsheet) {
         return Ok({
             totalRowCount: 0,
-            categoryPath
+            categoryPath,
         });
     }
 
     // Pull the row data from the google spreadsheet
-    const catalogRows = excelSpreadsheet.extractCatalogRows(dscoSpreadsheet, supplierId, retailerId, categoryPath,
-      keyBy(catalogItems, 'sku'), warehouses);
-
+    const catalogRows = excelSpreadsheet.extractCatalogRows(
+        dscoSpreadsheet,
+        supplierId,
+        retailerId,
+        categoryPath,
+        keyBy(catalogItems, 'sku'),
+        warehouses,
+    );
 
     // Resolve the rows that were modified, giving progress updates
     const resolver = new CatalogResolver(supplierId, userId);
@@ -103,7 +126,7 @@ async function publishSpreadsheetImpl(
     const startValidationPct = randomFloat(0.45, 0.55);
 
     // Save the rows in batches, collecting them to get the gearman requests running in parallel, even though we process them sequentially
-    const resolvedBatches = collect(map(batch(rowsToSave, batchSize), rows => resolver.resolveBatch(rows)));
+    const resolvedBatches = collect(map(batch(rowsToSave, batchSize), (rows) => resolver.resolveBatch(rows)));
 
     await sendProgress(startValidationPct, `Validating ${remainingRowsToValidate} rows...`);
 
@@ -114,7 +137,7 @@ async function publishSpreadsheetImpl(
                 validationMessages: resolvedBatchError.messages,
                 rowWithError: resolvedBatchError.rowIdx,
                 sentRequest: await gzipAsync(Buffer.from(JSON.stringify(resolvedBatchError.sentRequest), 'utf8')),
-                categoryPath
+                categoryPath,
             });
         } else {
             remainingRowsToValidate -= batchSize;
@@ -126,13 +149,13 @@ async function publishSpreadsheetImpl(
             const validationPct = (totalRowCount - remainingRowsToValidate) / totalRowCount;
 
             await sendProgress(
-              ((1 - startValidationPct) * validationPct) + startValidationPct,
-              `Validating ${numberWithCommas(remainingRowsToValidate)} rows...`
+                (1 - startValidationPct) * validationPct + startValidationPct,
+                `Validating ${numberWithCommas(remainingRowsToValidate)} rows...`,
             );
         }
     }
 
-    return Ok({totalRowCount, categoryPath});
+    return Ok({ totalRowCount, categoryPath });
 }
 
 // Purposely 10 seconds before actual timeout
@@ -156,7 +179,6 @@ function gunzipAsync(text: string): Promise<Buffer> {
         });
     });
 }
-
 
 function numberWithCommas(x: number): string {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');

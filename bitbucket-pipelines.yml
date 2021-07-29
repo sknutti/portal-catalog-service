@@ -1,0 +1,62 @@
+image:
+    name: docker.cloudsmith.io/dsco/docker/dscopipe:11
+    username: $CLOUDSMITH_USER
+    password: $CLOUDSMITH_PASS
+
+pipelines:
+    default: # Runs for all branches
+        - step: &CheckCode
+              name: Install, Format, Lint, Test, Build
+              caches:
+                  - node
+              script:
+                  - npm install
+                  - npm run lint:prettier
+                  - npm run lint
+                  - npm run test
+                  - npm run build
+              artifacts:
+                  - dist/**
+
+    branches:
+        master: #Override, Runs for master branch
+            - step:
+                  <<: *CheckCode
+            - step:
+                  name: Test Deploy
+                  deployment: test
+                  trigger: automatic
+                  script:
+                      - cd build/artifact
+                      - aws-init.sh
+                      - npx sls deploy --stage test
+            - step:
+                  name: Staging Deploy
+                  caches:
+                      - node
+                  deployment: staging
+                  trigger: manual
+                  script:
+                      - cd build/artifact
+                      - aws-init.sh
+                      - npx sls deploy --stage staging
+            - step:
+                  name: Production Deploy
+                  caches:
+                      - node
+                  deployment: production
+                  trigger: manual
+                  script:
+                      - cd build/artifact
+                      - aws-init.sh
+                      - npx sls deploy --stage prod
+            - step:
+                  name: Library Deploy
+                  caches:
+                      - node
+                  deployment: production
+                  trigger: manual
+                  script:
+                      - cd build/lib
+                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+                      - npm publish --dry-run

@@ -5,7 +5,7 @@ import {
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
-    UnexpectedError
+    UnexpectedError,
 } from '@dsco/ts-models';
 import { descriptions } from '@lib/descriptions';
 import { GetPipelineCatalogRulesRequest, GetPipelineRulesRequest } from '@lib/requests';
@@ -19,7 +19,11 @@ const env = process.env.ENVIRONMENT! as DscoEnv;
 /**
  * Generates a spreadsheet with column data pulled from the simple rules.
  */
-export async function generateSpreadsheet(supplierId: number, retailerId: number, categoryPath: string): Promise<DscoSpreadsheet | UnexpectedError> {
+export async function generateSpreadsheet(
+    supplierId: number,
+    retailerId: number,
+    categoryPath: string,
+): Promise<DscoSpreadsheet | UnexpectedError> {
     const colsOrErr = await generateSpreadsheetCols(supplierId, retailerId, categoryPath);
     if (!Array.isArray(colsOrErr)) {
         return colsOrErr;
@@ -30,13 +34,13 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
     // If the first column isn't sku, sort to enforce it.
     if (colsOrErr[0].fieldName !== 'sku') {
         colsOrErr.sort((a, b) => {
-           if (a.fieldName === 'sku') {
-               return -1;
-           } else if (b.fieldName === 'sku') {
-               return 1;
-           } else {
-               return 0;
-           }
+            if (a.fieldName === 'sku') {
+                return -1;
+            } else if (b.fieldName === 'sku') {
+                return 1;
+            } else {
+                return 0;
+            }
         });
     }
     for (const colName in colsOrErr) {
@@ -49,20 +53,24 @@ export async function generateSpreadsheet(supplierId: number, retailerId: number
 /**
  * Generates column data using dsco's simple rules.
  */
-async function generateSpreadsheetCols(supplierId: number, retailerId: number, categoryPath: string): Promise<DscoColumn[] | UnexpectedError> {
+async function generateSpreadsheetCols(
+    supplierId: number,
+    retailerId: number,
+    categoryPath: string,
+): Promise<DscoColumn[] | UnexpectedError> {
     const [catalogRulesResp, allRulesResp] = await Promise.all([
         axiosRequest(
-          new GetPipelineCatalogRulesRequest(env, [categoryPath], retailerId.toString(10)),
-          env,
-          AWS.config.credentials as Credentials,
-          process.env.AWS_REGION!
+            new GetPipelineCatalogRulesRequest(env, [categoryPath], retailerId.toString(10)),
+            env,
+            AWS.config.credentials as Credentials,
+            process.env.AWS_REGION!,
         ),
         axiosRequest(
-          new GetPipelineRulesRequest(env, retailerId),
-          env,
-          AWS.config.credentials as Credentials,
-          process.env.AWS_REGION!
-        )
+            new GetPipelineRulesRequest(env, retailerId),
+            env,
+            AWS.config.credentials as Credentials,
+            process.env.AWS_REGION!,
+        ),
     ] as const);
 
     if (!catalogRulesResp.data.success) {
@@ -74,7 +82,7 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
     const allCols: DscoColumn[] = [];
     const cols = {
         core: {} as Record<string, DscoColumn>,
-        extended: {} as Record<string, DscoColumn>
+        extended: {} as Record<string, DscoColumn>,
     };
     const ensureCol = (name: string, rule: PipelineRule): DscoColumn => {
         const type = rule.attrType === 'custom' ? 'extended' : 'core';
@@ -84,7 +92,7 @@ async function generateSpreadsheetCols(supplierId: number, retailerId: number, c
             const description = (rule as any).attributeDescription || descriptions[name];
             result = cols[type][name] = new DscoColumn(name, description, type, {
                 // Custom attributes should default to info, not none
-                required: type === 'extended' ? PipelineErrorType.info : 'none'
+                required: type === 'extended' ? PipelineErrorType.info : 'none',
             });
             allCols.push(result);
         }
@@ -122,7 +130,11 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
         return;
     }
 
-    function setValidation<K extends keyof DscoColValidation>(field: string, key: K, value: DscoColValidation[K]): void {
+    function setValidation<K extends keyof DscoColValidation>(
+        field: string,
+        key: K,
+        value: DscoColValidation[K],
+    ): void {
         const col = ensureCol(field, rule);
         // Don't widen enums to strings
         if (key === 'format' && col.validation.format === 'enum' && value === 'string') {
@@ -178,21 +190,31 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
                 col.validation.arrayType = rule.arrayDataType;
                 break;
             }
-            default: return;
+            default:
+                return;
         }
     } else if (rule.type === 'range' && rule.severity !== PipelineErrorType.info) {
         const col = ensureCol(rule.field, rule);
         col.validation.min = rule.min;
         col.validation.max = rule.max;
-    } else if ((rule.type === 'length_range' || rule.type === 'catalog_length_range') && rule.severity !== PipelineErrorType.info) {
+    } else if (
+        (rule.type === 'length_range' || rule.type === 'catalog_length_range') &&
+        rule.severity !== PipelineErrorType.info
+    ) {
         const col = ensureCol(rule.field, rule);
         col.validation.minLength = rule.minLength;
         col.validation.maxLength = rule.maxLength;
-    } else if ((rule.type === 'pattern_match' || rule.type === 'catalog_pattern_match') && rule.severity !== PipelineErrorType.info) {
+    } else if (
+        (rule.type === 'pattern_match' || rule.type === 'catalog_pattern_match') &&
+        rule.severity !== PipelineErrorType.info
+    ) {
         const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.regexMessage = rule.description || rule.message;
-    }  else if ((rule.type === 'multi_pattern' || rule.type === 'catalog_multi_pattern') && rule.severity !== PipelineErrorType.info) {
+    } else if (
+        (rule.type === 'multi_pattern' || rule.type === 'catalog_multi_pattern') &&
+        rule.severity !== PipelineErrorType.info
+    ) {
         const col = ensureCol(rule.field, rule);
         col.validation.match = rule.pattern;
         col.validation.dontMatch = rule.notPatterns;
@@ -211,9 +233,19 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
 /**
  * These are columns that we don't want to show up in the final spreadsheet
  */
-const SKIPPED_COLS = new Set(['item_id', 'supplier_id', 'trading_partner_id', 'dsco_trading_partner_id',
-    'trading_partner_name', 'dsco_trading_partner_name', 'last_update_date', 'dsco_last_product_status_update_date',
-    'dsco_last_cost_update_date', 'extended_attributes', 'commission_amount']);
+const SKIPPED_COLS = new Set([
+    'item_id',
+    'supplier_id',
+    'trading_partner_id',
+    'dsco_trading_partner_id',
+    'trading_partner_name',
+    'dsco_trading_partner_name',
+    'last_update_date',
+    'dsco_last_product_status_update_date',
+    'dsco_last_cost_update_date',
+    'extended_attributes',
+    'commission_amount',
+]);
 
 function shouldSkipCol(name: string): boolean {
     //Should allow images.name fields

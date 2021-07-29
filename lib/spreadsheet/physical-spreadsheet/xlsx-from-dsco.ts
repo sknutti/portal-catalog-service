@@ -10,9 +10,12 @@ const EXCEL_MAX_ROW = 1048575;
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
     const workBook = utils.book_new();
     const sheet: WorkSheet = {
-        '!ref': utils.encode_range({s: {c: 0, r: 0}, e: {c: spreadsheet.numColumns, r: spreadsheet.rowData.length}}),
+        '!ref': utils.encode_range({
+            s: { c: 0, r: 0 },
+            e: { c: spreadsheet.numColumns, r: spreadsheet.rowData.length },
+        }),
         '!condfmt': [],
-        '!validations': []
+        '!validations': [],
     };
     const [validationSheet, validationSheetInfo] = getValidationWorksheet();
 
@@ -38,14 +41,14 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         curColIdx++;
 
         addValidation(col, curColIdx, validations, validationSheet, validationSheetInfo);
-        sheet[utils.encode_cell({r: 0, c: curColIdx})] = createHeader(col);
+        sheet[utils.encode_cell({ r: 0, c: curColIdx })] = createHeader(col);
 
         let curRowIdx = 1;
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
 
             if (cellData) {
-                const cell = utils.encode_cell({r: curRowIdx, c: curColIdx});
+                const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
                 sheet[cell] = cellData;
             }
 
@@ -55,7 +58,10 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
 
     highlightBanded(highlightStart, curColIdx, cur, sheet);
 
-    validationSheet['!ref'] = utils.encode_range({s: {r: 0, c: 0}, e: {r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx}});
+    validationSheet['!ref'] = utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
+    });
 
     return new XlsxSpreadsheet(workBook, sheet);
 }
@@ -64,49 +70,66 @@ function createHeader(col: DscoColumn): CellObject {
     let comments: Comments | undefined;
 
     if (col.fieldDescription) {
-        comments = [{
-            R: [{
-                t: 's',
-                v: `\n${col.fieldName} (${getRequiredName(col.validation.required)})\n\n`,
-                s: {
-                    sz: 14,
-                    bold: true
-                }
-            }, {
-                t: 's', v: col.fieldDescription || '',
-                s: {
-                    sz: 12,
-                    bold: false
-                }
-            }], a: col.fieldName
-        }];
+        comments = [
+            {
+                R: [
+                    {
+                        t: 's',
+                        v: `\n${col.fieldName} (${getRequiredName(col.validation.required)})\n\n`,
+                        s: {
+                            sz: 14,
+                            bold: true,
+                        },
+                    },
+                    {
+                        t: 's',
+                        v: col.fieldDescription || '',
+                        s: {
+                            sz: 12,
+                            bold: false,
+                        },
+                    },
+                ],
+                a: col.fieldName,
+            },
+        ];
         comments.hidden = true;
         comments.s = {
-            fgColor: {rgb: getColor(col.validation.required === 'none' ? PipelineErrorType.info : col.validation.required, false)}
+            fgColor: {
+                rgb: getColor(
+                    col.validation.required === 'none' ? PipelineErrorType.info : col.validation.required,
+                    false,
+                ),
+            },
         };
-        comments['!pos'] = {x: 0, y: 0, ...calcCommentSize(col.fieldDescription)};
+        comments['!pos'] = { x: 0, y: 0, ...calcCommentSize(col.fieldDescription) };
     }
 
     return {
         t: 's',
         v: col.name,
         s: {
-            bold: true
+            bold: true,
         },
-        c: comments
+        c: comments,
     };
 }
 
-function highlightBanded(highlightStart: number, highlightEnd: number, cur: PipelineErrorType | 'none', sheet: WorkSheet): void {
+function highlightBanded(
+    highlightStart: number,
+    highlightEnd: number,
+    cur: PipelineErrorType | 'none',
+    sheet: WorkSheet,
+): void {
     if (highlightEnd < highlightStart || cur === 'none') {
         return;
     }
 
-    const condfmt = sheet['!condfmt'] = sheet['!condfmt'] || [];
+    const condfmt = (sheet['!condfmt'] = sheet['!condfmt'] || []);
 
     const borderStyle: Partial<Style> = {
-        left: { style: 'thin', color: { rgb: 0xCACACA } },
-        right: { style: 'thin', color: { rgb: 0xCACACA } },
+        left: { style: 'thin', color: { rgb: 0xcacaca } },
+        right: { style: 'thin', color: { rgb: 0xcacaca } },
         // bottom: { style: 'thin', color: { rgb: 0xCACACA } },
         // top: { style: 'thin', color: { rgb: 0xCACACA } },
     };
@@ -114,12 +137,12 @@ function highlightBanded(highlightStart: number, highlightEnd: number, cur: Pipe
     // First style the header
     condfmt.push({
         ref: {
-            s: {r: 0, c: highlightStart},
-            e: {r: 0, c: highlightEnd}
+            s: { r: 0, c: highlightStart },
+            e: { r: 0, c: highlightEnd },
         },
         t: 'formula',
         f: 'TRUE',
-        s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle }
+        s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle },
     });
 
     // utils.sheet_set_range_style(sheet, {
@@ -129,35 +152,44 @@ function highlightBanded(highlightStart: number, highlightEnd: number, cur: Pipe
     // Then style the rows beneath
     condfmt.push({
         ref: {
-            s: {r: 1, c: highlightStart},
-            e: {r: EXCEL_MAX_ROW, c: highlightEnd}
+            s: { r: 1, c: highlightStart },
+            e: { r: EXCEL_MAX_ROW, c: highlightEnd },
         },
         t: 'formula',
         f: 'MOD(ROW(),2)=0',
-        s: { bgColor: { rgb: getColor(cur, false) }, ...borderStyle }
+        s: { bgColor: { rgb: getColor(cur, false) }, ...borderStyle },
     });
 }
 
 function getColor(type: PipelineErrorType, dark: boolean): number {
     switch (type) {
         case PipelineErrorType.error:
-            return dark ? 0x7CBE31 : 0xE8FFDF;
+            return dark ? 0x7cbe31 : 0xe8ffdf;
         case PipelineErrorType.warn:
-            return dark ? 0x67BBE7 : 0xE3F5FF;
+            return dark ? 0x67bbe7 : 0xe3f5ff;
         case PipelineErrorType.info:
-            return dark ? 0xD9D9D9 : 0xF5F5F5;
+            return dark ? 0xd9d9d9 : 0xf5f5f5;
     }
 }
 
-function addValidation(col: DscoColumn, curColIdx: number, validations: DataValidation[], validationSheet: WorkSheet, validationSheetInfo: ValidationSheetInfo) {
-    const ref = {s: {c: curColIdx, r: 1}, e: {c: curColIdx, r: EXCEL_MAX_ROW}};
+function addValidation(
+    col: DscoColumn,
+    curColIdx: number,
+    validations: DataValidation[],
+    validationSheet: WorkSheet,
+    validationSheetInfo: ValidationSheetInfo,
+) {
+    const ref = {
+        s: { c: curColIdx, r: 1 },
+        e: { c: curColIdx, r: EXCEL_MAX_ROW },
+    };
 
     switch (col.validation.format) {
         case 'boolean':
             validations.push({
                 ref,
                 t: 'List',
-                f: `${DscoSpreadsheet.DATA_SHEET_NAME}!$A$1:$A$2`
+                f: `${DscoSpreadsheet.DATA_SHEET_NAME}!$A$1:$A$2`,
             });
             return;
         case 'enum':
@@ -169,7 +201,7 @@ function addValidation(col: DscoColumn, curColIdx: number, validations: DataVali
             for (const enumVal of col.validation.enumVals!) {
                 validationSheet[colName + (i + 1)] = {
                     t: 's',
-                    v: enumVal
+                    v: enumVal,
                 } as CellObject;
 
                 i++;
@@ -178,7 +210,7 @@ function addValidation(col: DscoColumn, curColIdx: number, validations: DataVali
             validations.push({
                 ref,
                 t: 'List',
-                f: `${DscoSpreadsheet.DATA_SHEET_NAME}!$${colName}$1:$${colName}$${col.validation.enumVals!.size}`
+                f: `${DscoSpreadsheet.DATA_SHEET_NAME}!$${colName}$1:$${colName}$${col.validation.enumVals!.size}`,
             });
 
             return;
@@ -205,35 +237,34 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
 
     switch (col.validation.format) {
         case 'boolean':
-            return {t: 's', v: data ? 'Yes' : 'No'};
+            return { t: 's', v: data ? 'Yes' : 'No' };
         case 'array':
-            return {t: 's', v: Array.isArray(data) ? data.join(',') : `${data}` };
+            return { t: 's', v: Array.isArray(data) ? data.join(',') : `${data}` };
         case 'date':
         case 'date-time':
             const d = new Date(data);
-            return isNaN(d.getTime()) ? {t: 's', v: `${data}`} : {t: 'd', v: new Date(data)};
+            return isNaN(d.getTime()) ? { t: 's', v: `${data}` } : { t: 'd', v: new Date(data) };
         case 'time':
         case 'email':
         case 'enum':
         case 'image':
         case 'string':
         case 'uri':
-            return {t: 's', v: `${data}`};
+            return { t: 's', v: `${data}` };
 
         case 'integer':
         case 'number':
             const num = +data;
-            return {t: 'n', v: isNaN(num) ? undefined : num};
+            return { t: 'n', v: isNaN(num) ? undefined : num };
     }
 }
-
 
 interface ValidationSheetInfo {
     maxRowIdx: number;
     curColIdx: number;
 }
 
-function calcCommentSize(text: string): {w: number, h: number} {
+function calcCommentSize(text: string): { w: number; h: number } {
     let maxW = 0;
     let w = 0;
     let h = 120;
@@ -263,7 +294,7 @@ function calcCommentSize(text: string): {w: number, h: number} {
         maxW = 200;
     }
 
-    return {w: maxW, h};
+    return { w: maxW, h };
 }
 
 function getRequiredName(required: PipelineErrorType | 'none'): string {
@@ -281,19 +312,22 @@ function getRequiredName(required: PipelineErrorType | 'none'): string {
 function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
     const yes: CellObject = {
         t: 's',
-        v: 'Yes'
+        v: 'Yes',
     };
 
     const no: CellObject = {
         t: 's',
-        v: 'No'
+        v: 'No',
     };
 
     const validationSheet: WorkSheet = {
         A1: yes,
         A2: no,
     };
-    const validationSheetInfo: ValidationSheetInfo = {curColIdx: 0, maxRowIdx: 1};
+    const validationSheetInfo: ValidationSheetInfo = {
+        curColIdx: 0,
+        maxRowIdx: 1,
+    };
 
     return [validationSheet, validationSheetInfo];
 }

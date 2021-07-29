@@ -13,7 +13,7 @@ process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
 process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
 process.env.LEO_LOCAL = 'true';
 
-module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
+module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
     const isLocal = env?.local;
 
     const serverlessArtifactPlugin = new ServerlessArtifactWebpackPlugin('./serverless.yml', {
@@ -22,14 +22,12 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
         /**
          * This warning is expected because of the InjectPlugin beneath.
          */
-        suppressEntryWarning: true
+        suppressEntryWarning: true,
     });
 
     return {
         entry: serverlessArtifactPlugin.entry,
-        devtool: isLocal
-            ? 'cheap-module-eval-source-map'
-            : 'source-map',
+        devtool: isLocal ? 'cheap-module-eval-source-map' : 'source-map',
         target: 'node',
         mode: isLocal ? 'development' : 'production',
         // aws-sdk is provided by aws, saslprep and mongodb-client-encryption are optional and unused.
@@ -55,11 +53,11 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
                     loader: 'ts-loader',
                     options: {
                         configFile: 'tsconfig.artifact.json',
-                        transpileOnly: true
+                        transpileOnly: true,
                     },
-                    exclude: /node_modules/
-                }
-            ]
+                    exclude: /node_modules/,
+                },
+            ],
         },
         resolve: {
             extensions: ['.ts', '.js', '.tsx'],
@@ -67,14 +65,14 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
             alias: { './dist/cpexcel.js': '' },
             plugins: [
                 new TsconfigPathsPlugin({
-                    configFile: './tsconfig.json'
-                })
-            ]
+                    configFile: './tsconfig.json',
+                }),
+            ],
         },
         output: {
             // Filename: "index.js",
             path: resolve(__dirname, 'build/artifact'),
-            libraryTarget: 'commonjs'
+            libraryTarget: 'commonjs',
         },
         plugins: [
             serverlessArtifactPlugin,
@@ -86,7 +84,7 @@ module.exports = async (env?: { local:  boolean }): Promise<Configuration> => {
             // Huge kludge, essentially means we don't care about require_optional (used by mongodb).
             new NormalModuleReplacementPlugin(/require_optional/, resolve(__dirname, 'require-optional-kludge.js')),
             new ForkTsCheckerWebpackPlugin(),
-            new InjectPlugin(() => 'require("source-map-support").install();')
-        ]
+            new InjectPlugin(() => 'require("source-map-support").install();'),
+        ],
     };
 };

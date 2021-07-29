@@ -1,7 +1,7 @@
-export function *batch<T>(iterable: Iterable<T>, batchSize: number): Generator<Generator<T>> {
+export function* batch<T>(iterable: Iterable<T>, batchSize: number): Generator<Generator<T>> {
     const iterator = iterable[Symbol.iterator]();
 
-    function *innerBatch(firstItem: T): Generator<T> {
+    function* innerBatch(firstItem: T): Generator<T> {
         yield firstItem;
 
         let count = 1;
@@ -31,7 +31,10 @@ export function *batch<T>(iterable: Iterable<T>, batchSize: number): Generator<G
 
 export function filter<T, U extends T>(iterator: IterableIterator<T>, predicate: (item: T) => item is U): Generator<U>;
 export function filter<T>(iterator: IterableIterator<T>, predicate: (item: T) => boolean): Generator<T>;
-export function *filter<T, U extends T>(iterator: IterableIterator<T>, predicate: (item: T) => boolean): Generator<U | T> {
+export function* filter<T, U extends T>(
+    iterator: IterableIterator<T>,
+    predicate: (item: T) => boolean,
+): Generator<U | T> {
     for (const item of iterator) {
         if (predicate(item)) {
             yield item;
@@ -49,7 +52,7 @@ export function collect<T>(iterator: IterableIterator<T>): T[] {
     return result;
 }
 
-export function *enumerate<T>(iterator: IterableIterator<T>, startIdx= 0): Generator<[item: T, index: number]> {
+export function* enumerate<T>(iterator: IterableIterator<T>, startIdx = 0): Generator<[item: T, index: number]> {
     let i = startIdx;
     for (const item of iterator) {
         yield [item, i];
@@ -57,7 +60,7 @@ export function *enumerate<T>(iterator: IterableIterator<T>, startIdx= 0): Gener
     }
 }
 
-export function *map<T, U>(iterator: IterableIterator<T>, mapper: (item: T) => U): Generator<U> {
+export function* map<T, U>(iterator: IterableIterator<T>, mapper: (item: T) => U): Generator<U> {
     for (const item of iterator) {
         yield mapper(item);
     }

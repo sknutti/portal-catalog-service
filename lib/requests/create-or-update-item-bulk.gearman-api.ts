@@ -8,8 +8,8 @@ export interface CreateOrUpdateItemBulkGearmanApiRequest {
         user_id: string;
         data_type: string;
         from_portal: boolean;
-        items: CoreCatalog[]
-    }
+        items: CoreCatalog[];
+    };
 }
 
 export interface CreateOrUpdateItemBulkGearmanApiResponse {
@@ -18,10 +18,9 @@ export interface CreateOrUpdateItemBulkGearmanApiResponse {
         action: string;
         message: string;
 
-        responses: ItemResponse[]
-    }
+        responses: ItemResponse[];
+    };
 }
-
 
 export interface ItemResponse {
     success: boolean;
@@ -29,18 +28,28 @@ export interface ItemResponse {
         action: string;
         message: string;
         messages?: CreateOrUpdateItemMessage[];
-    }
+    };
 }
 
 export interface CreateOrUpdateItemMessage {
-    type: 'ERROR' | 'error' | 'WARNING' | 'warning' | 'INFO' | 'info' | 'RECORD_STATUS' | 'RECORD_INFO' | 'RECORD_STATUS_MESSAGE',
-    message: string
+    type:
+        | 'ERROR'
+        | 'error'
+        | 'WARNING'
+        | 'warning'
+        | 'INFO'
+        | 'info'
+        | 'RECORD_STATUS'
+        | 'RECORD_INFO'
+        | 'RECORD_STATUS_MESSAGE';
+    message: string;
 }
 
-export class CreateOrUpdateItemBulkGearmanApi extends GearmanApi<CreateOrUpdateItemBulkGearmanApiRequest,
+export class CreateOrUpdateItemBulkGearmanApi extends GearmanApi<
+    CreateOrUpdateItemBulkGearmanApiRequest,
     CreateOrUpdateItemBulkGearmanApiResponse & DsResponse,
-    CreateOrUpdateItemBulkGearmanApiResponse & DsError> {
-
+    CreateOrUpdateItemBulkGearmanApiResponse & DsError
+> {
     protected readonly endpoint = 'Operation';
     protected readonly requestType = 'PublicApiCreateOrUpdateItemBulk';
 
@@ -56,7 +65,7 @@ export class CreateOrUpdateItemBulkGearmanApi extends GearmanApi<CreateOrUpdateI
                 items,
                 data_type: 'Catalog',
                 from_portal: true,
-            }
+            },
         };
     }
 }

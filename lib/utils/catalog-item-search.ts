@@ -20,25 +20,25 @@ let mongoClient: MongoClient | undefined;
 let connectString: string | undefined;
 
 export async function catalogItemSearch(
-  supplierId: number,
-  retailerId: number,
-  categoryPath: string,
-  // Other skus to directly ask mongo for, in case the sku exists and is in the spreadsheet, but not yet in the category
-  includeSkus: string[] = []
+    supplierId: number,
+    retailerId: number,
+    categoryPath: string,
+    // Other skus to directly ask mongo for, in case the sku exists and is in the spreadsheet, but not yet in the category
+    includeSkus: string[] = [],
 ): Promise<CoreCatalog[]> {
     // First we do an ES request to find all items in the category
     const searchResp = await axiosRequest(
-      new ItemSearchRequest(env, {
-          full_detail: false,
-          supplier_id: supplierId,
-          exact_categories: {
-              [retailerId]: [categoryPath]
-          },
-          limit: 10_000
-      }),
-      env,
-      AWS.config.credentials as Credentials,
-      process.env.AWS_REGION!
+        new ItemSearchRequest(env, {
+            full_detail: false,
+            supplier_id: supplierId,
+            exact_categories: {
+                [retailerId]: [categoryPath],
+            },
+            limit: 10_000,
+        }),
+        env,
+        AWS.config.credentials as Credentials,
+        process.env.AWS_REGION!,
     );
 
     if (!searchResp.data.success) {
@@ -58,17 +58,21 @@ export async function catalogItemSearch(
         });
     }
 
-    const mongoResp = await mongoClient.db().collection('Item').find<SnakeCase<Catalog>>({
-        $or: [
-            {
-                item_id: {$in: searchResp.data.docs}
-            },
-            {
-                sku: {$in: includeSkus},
-                supplier_id: supplierId
-            }
-        ],
-    }).toArray();
+    const mongoResp = await mongoClient
+        .db()
+        .collection('Item')
+        .find<SnakeCase<Catalog>>({
+            $or: [
+                {
+                    item_id: { $in: searchResp.data.docs },
+                },
+                {
+                    sku: { $in: includeSkus },
+                    supplier_id: supplierId,
+                },
+            ],
+        })
+        .toArray();
 
     return mongoResp as CoreCatalog[];
 }

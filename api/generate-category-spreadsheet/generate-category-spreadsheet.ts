@@ -3,10 +3,9 @@ import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { DscoCatalogRow, DscoSpreadsheet, generateSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogItemSearch, gzipAsync } from '@lib/utils';
-import { gzip } from 'zlib';
 import { GenerateCategorySpreadsheetRequest } from './generate-category-spreadsheet.request';
 
-export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadsheetRequest>(async event => {
+export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadsheetRequest>(async (event) => {
     if (!event.body.retailerId) {
         return new MissingRequiredFieldError('retailerId');
     }
@@ -22,7 +21,7 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
     }
 
     const supplierId = user.accountId;
-    const {retailerId, categoryPath} = event.body;
+    const { retailerId, categoryPath } = event.body;
 
     const catalogItems = await catalogItemSearch(supplierId, retailerId, categoryPath);
 
@@ -32,7 +31,8 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
         return spreadsheet;
     }
 
-    for (const catalog of catalogItems) { // Populate the spreadsheet with all of their catalog items
+    for (const catalog of catalogItems) {
+        // Populate the spreadsheet with all of their catalog items
         spreadsheet.addCatalogRow(new DscoCatalogRow(catalog, false, true));
     }
 
@@ -40,6 +40,6 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
 
     return {
         success: true,
-        gzippedFile: await gzipAsync(workbook.toBuffer())
+        gzippedFile: await gzipAsync(workbook.toBuffer()),
     };
 });

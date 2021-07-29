@@ -1,10 +1,10 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "build/artifact",
-    "target": "es2018",
-    "module": "esnext"
-  },
-  "include": ["api/**/*.ts", "bot/**/*.ts"],
-  "exclude": ["api/**/*.test.ts", "bot/**/*.test.ts"]
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "build/artifact",
+        "target": "es2018",
+        "module": "esnext"
+    },
+    "include": ["api/**/*.ts", "bot/**/*.ts"],
+    "exclude": ["api/**/*.test.ts", "bot/**/*.test.ts"]
 }

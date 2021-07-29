@@ -7,10 +7,9 @@ import { CoreCatalog } from '@lib/core-catalog';
  */
 export class DscoCatalogRow {
     /**
-     * @param catalog The catalog the row represents
-     * @param modified if the catalog has been modified with respect to what's in dsco
-     * @param emptyRow If the entire row is empty
+     * @param catalog - The catalog the row represents
+     * @param modified - If the catalog has been modified with respect to what's in dsco
+     * @param emptyRow - If the entire row is empty
      */
-    constructor(public catalog: CoreCatalog, public modified: boolean, public emptyRow: boolean = false) {
-    }
+    constructor(public catalog: CoreCatalog, public modified: boolean, public emptyRow: boolean = false) {}
 }

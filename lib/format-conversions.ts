@@ -17,7 +17,7 @@ const MSF_TO_DSF: Record<string, string> = {
     dsco_last_touch_date: 'dsco_last_update_date',
     catalogs: 'assortments',
     last_cost_update: 'dsco_last_cost_update_date',
-    product_description: 'long_text_description'
+    product_description: 'long_text_description',
 };
 
 const DSF_TO_MSF: Record<string, string> = {

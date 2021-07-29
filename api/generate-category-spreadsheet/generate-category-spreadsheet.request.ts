@@ -12,7 +12,11 @@ export interface GenerateCategorySpreadsheetResponse extends DsResponse {
     gzippedFile: string;
 }
 
-export class GenerateCategorySpreadsheetRequest extends DsRequest<GenerateCategorySpreadsheetRequestBody, GenerateCategorySpreadsheetResponse, DsError> {
+export class GenerateCategorySpreadsheetRequest extends DsRequest<
+    GenerateCategorySpreadsheetRequestBody,
+    GenerateCategorySpreadsheetResponse,
+    DsError
+> {
     constructor(env: DscoEnv, body: GenerateCategorySpreadsheetRequestBody) {
         super('POST', '/portal-catalog/spreadsheet', DsRequest.getHost(env, 'micro'), body);
     }

@@ -1,8 +1,7 @@
-import { CatalogImage, ProductStatus } from '@dsco/ts-models';
+import { ProductStatus } from '@dsco/ts-models';
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';
 import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
-import { WarehousesLoader } from '@lib/utils';
 
 /**
  * This is an intermediate representation of a row in a physical spreadsheet (google sheet, xslx sheet)
@@ -18,26 +17,25 @@ export abstract class PhysicalSpreadsheetRow {
      */
     protected abstract getIsModified(): boolean;
 
-
     /**
      * Parses the SpreadsheetRow, turning it into a DscoCatalogRow.
      *
-     * @param dscoSpreadsheet Used to get column & validation information
-     * @param supplierId
-     * @param retailerId
-     * @param categoryPath
-     * @param warehouses The supplier's warehouses
-     * @param existingCatalogItems Used to merge some fields from existing catalog items (such as the images array)
+     * @param dscoSpreadsheet - Used to get column & validation information
+     * @param supplierId - Supplier
+     * @param retailerId - Retailer
+     * @param categoryPath - Path to Category
+     * @param warehouses - The supplier's warehouses
+     * @param existingCatalogItems - Used to merge some fields from existing catalog items (such as the images array)
      */
     parseCatalogRow(
-      dscoSpreadsheet: DscoSpreadsheet,
-      supplierId: number,
-      retailerId: number,
-      categoryPath: string,
-      warehouses: TinyWarehouse[],
-      existingCatalogItems: Record<string, CoreCatalog>
+        dscoSpreadsheet: DscoSpreadsheet,
+        supplierId: number,
+        retailerId: number,
+        categoryPath: string,
+        warehouses: TinyWarehouse[],
+        existingCatalogItems: Record<string, CoreCatalog>,
     ): DscoCatalogRow {
-        const {catalog} = createCoreCatalog(supplierId, retailerId, categoryPath);
+        const { catalog } = createCoreCatalog(supplierId, retailerId, categoryPath);
 
         const row = new DscoCatalogRow(catalog, false, true);
 
@@ -68,10 +66,19 @@ export abstract class PhysicalSpreadsheetRow {
      *
      * Should be called immediately after the sku is read from the row
      */
-    private fillCatalogFromExisting(dscoSpreadsheet: DscoSpreadsheet, catalog: CoreCatalog, supplierId: number, warehouses: TinyWarehouse[], existing?: CoreCatalog): void {
+    private fillCatalogFromExisting(
+        dscoSpreadsheet: DscoSpreadsheet,
+        catalog: CoreCatalog,
+        supplierId: number,
+        warehouses: TinyWarehouse[],
+        existing?: CoreCatalog,
+    ): void {
         // If they change the product status to anything but pending,
         // we must have both quantity_available and warehouses quantity.  This gives defaults of zero to both
-        if (catalog.product_status !== ProductStatus.PENDING && (!existing || existing.product_status === ProductStatus.PENDING)) {
+        if (
+            catalog.product_status !== ProductStatus.PENDING &&
+            (!existing || existing.product_status === ProductStatus.PENDING)
+        ) {
             catalog.quantity_available = existing?.quantity_available || 0;
 
             this.handleWarehouseQuantity(catalog, supplierId, warehouses, existing);
@@ -93,10 +100,14 @@ export abstract class PhysicalSpreadsheetRow {
      *
      * If there is an existing catalog item, will use those values.
      */
-    private handleWarehouseQuantity(item: CoreCatalog, supplierId: number, warehouses: TinyWarehouse[], existing?: CoreCatalog): void {
+    private handleWarehouseQuantity(
+        item: CoreCatalog,
+        supplierId: number,
+        warehouses: TinyWarehouse[],
+        existing?: CoreCatalog,
+    ): void {
         const existingWarehouses = new Set<string>();
-        const newWarehouses = item.warehouses = item.warehouses || [];
-
+        const newWarehouses = (item.warehouses = item.warehouses || []);
 
         // First loop through existing warehouses, adding warehouse quantities
         for (const existingWarehouse of existing?.warehouses || []) {
@@ -122,7 +133,7 @@ export abstract class PhysicalSpreadsheetRow {
             newWarehouses.push({
                 quantity: 0,
                 warehouse_id: warehouse.warehouseId,
-                code: warehouse.code
+                code: warehouse.code,
             });
         }
     }

@@ -2,7 +2,6 @@ import { CellValue, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
 import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
 import { CellObject } from '@sheet/image';
 
-
 /**
  * An intermediate representation of a row in a xlsx sheet,
  * can be parsed into a DscoCatalogRow
@@ -10,11 +9,9 @@ import { CellObject } from '@sheet/image';
  * @see PhysicalSpreadsheetRow.parseCatalogRow
  */
 export class XlsxSpreadsheetRow extends PhysicalSpreadsheetRow {
-
     constructor(protected cellValues: IterableIterator<[cell: CellObject, colName: string]>) {
         super();
     }
-
 
     protected *getCellValues(dscoSpreadsheet: DscoSpreadsheet): IterableIterator<[CellValue, DscoColumn]> {
         for (const [cell, colName] of this.cellValues) {
@@ -29,5 +26,4 @@ export class XlsxSpreadsheetRow extends PhysicalSpreadsheetRow {
     protected getIsModified(): boolean {
         return true; // we treat excel spreadsheet rows as always being modified
     }
-
 }

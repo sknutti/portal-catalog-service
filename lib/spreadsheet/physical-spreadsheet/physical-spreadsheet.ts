@@ -17,25 +17,32 @@ export abstract class PhysicalSpreadsheet {
     /**
      * Extracts the DscoCatalogRow information from the physical row data
      *
-     * @param dscoSpreadsheet Used to get column & validation information
-     * @param supplierId
-     * @param retailerId
-     * @param categoryPath
-     * @param existingCatalogItems Used to merge some fields from existing catalog items (such as the images array)
-     * @param warehouses The supplier's warehouses
-     * @param startRowIdx Used to optionally skip some rows
+     * @param dscoSpreadsheet - Used to get column & validation information
+     * @param supplierId - Supplier
+     * @param retailerId - Retailer
+     * @param categoryPath - Path to Category
+     * @param existingCatalogItems - Used to merge some fields from existing catalog items (such as the images array)
+     * @param warehouses - The supplier's warehouses
+     * @param startRowIdx - Used to optionally skip some rows
      */
     *extractCatalogRows(
-      dscoSpreadsheet: DscoSpreadsheet,
-      supplierId: number,
-      retailerId: number,
-      categoryPath: string,
-      existingCatalogItems: Record<string, CoreCatalog>,
-      warehouses: TinyWarehouse[],
-      startRowIdx?: number
+        dscoSpreadsheet: DscoSpreadsheet,
+        supplierId: number,
+        retailerId: number,
+        categoryPath: string,
+        existingCatalogItems: Record<string, CoreCatalog>,
+        warehouses: TinyWarehouse[],
+        startRowIdx?: number,
     ): IterableIterator<DscoCatalogRow> {
         for (const row of this.rows(startRowIdx)) {
-            yield row.parseCatalogRow(dscoSpreadsheet, supplierId, retailerId, categoryPath, warehouses, existingCatalogItems);
+            yield row.parseCatalogRow(
+                dscoSpreadsheet,
+                supplierId,
+                retailerId,
+                categoryPath,
+                warehouses,
+                existingCatalogItems,
+            );
         }
     }
 }

@@ -17,7 +17,11 @@ export interface TinyWarehouse {
     code: string;
 }
 
-export class GetWarehousesGearmanApi extends GearmanApi<GetWarehousesGearmanRequest, GetWarehousesGearmanResponse, DsError> {
+export class GetWarehousesGearmanApi extends GearmanApi<
+    GetWarehousesGearmanRequest,
+    GetWarehousesGearmanResponse,
+    DsError
+> {
     protected readonly body: GetWarehousesGearmanRequest;
     protected readonly endpoint = 'Service.AccountSettings';
     protected readonly requestType = 'getWarehouses';
@@ -26,8 +30,8 @@ export class GetWarehousesGearmanApi extends GearmanApi<GetWarehousesGearmanRequ
         super();
         this.body = {
             actor: {
-                accountId
-            }
+                accountId,
+            },
         };
     }
 }

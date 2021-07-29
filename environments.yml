@@ -1,50 +1,50 @@
 test:
-  domain: test-micro.dsco.io
-  endpointType: regional
-  authUserTable: TestAuth-LeoAuthUser-OZ7R6RHZIPDY
-  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/TestBus-LeoKinesisStream-*
-  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/TestBus-LeoFirehoseStream-*
-  s3Arn: arn:aws:s3:::testbus-leos3-*/*
-  currentCatalogTable: catalog-attribution-test-currentCatalog
-  gearman-and-mongo-vpc:
-    securityGroupIds:
-      - 'sg-95c611e9'
-      - 'sg-5e885f22'
-    subnetIds:
-      - 'subnet-457a0368'
-      - 'subnet-e9a28da0'
-      - 'subnet-a24433f9'
+    domain: test-micro.dsco.io
+    endpointType: regional
+    authUserTable: TestAuth-LeoAuthUser-OZ7R6RHZIPDY
+    kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/TestBus-LeoKinesisStream-*
+    firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/TestBus-LeoFirehoseStream-*
+    s3Arn: arn:aws:s3:::testbus-leos3-*/*
+    currentCatalogTable: catalog-attribution-test-currentCatalog
+    gearman-and-mongo-vpc:
+        securityGroupIds:
+            - 'sg-95c611e9'
+            - 'sg-5e885f22'
+        subnetIds:
+            - 'subnet-457a0368'
+            - 'subnet-e9a28da0'
+            - 'subnet-a24433f9'
 
 staging:
-  domain: staging-micro.dsco.io
-  endpointType: edge
-  authUserTable: StagingAuth-LeoAuthUser-1IVNIRH40AURC
-  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/StagingBus-LeoKinesisStream-*
-  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/StagingBus-LeoFirehoseStream-*
-  s3Arn: arn:aws:s3:::stagingbus-leos3-*/*
-  currentCatalogTable: catalog-attribution-staging-currentCatalog
-  gearman-and-mongo-vpc:
-    securityGroupIds:
-      - 'sg-57f28422'
-      - 'sg-34dcaa41'
-    subnetIds:
-      - 'subnet-48288767'
-      - 'subnet-7a14b127'
+    domain: staging-micro.dsco.io
+    endpointType: edge
+    authUserTable: StagingAuth-LeoAuthUser-1IVNIRH40AURC
+    kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/StagingBus-LeoKinesisStream-*
+    firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/StagingBus-LeoFirehoseStream-*
+    s3Arn: arn:aws:s3:::stagingbus-leos3-*/*
+    currentCatalogTable: catalog-attribution-staging-currentCatalog
+    gearman-and-mongo-vpc:
+        securityGroupIds:
+            - 'sg-57f28422'
+            - 'sg-34dcaa41'
+        subnetIds:
+            - 'subnet-48288767'
+            - 'subnet-7a14b127'
 
 prod:
-  domain: micro.dsco.io
-  endpointType: edge
-  authUserTable: ProdAuth-LeoAuthUser-SD8EQDNF542U
-  kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/ProdBus-LeoKinesisStream-*
-  firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/ProdBus-LeoFirehoseStream-*
-  s3Arn: arn:aws:s3:::prodbus-leos3-*/*
-  currentCatalogTable: catalog-attribution-prod-currentCatalog
-  gearman-and-mongo-vpc:
-    securityGroupIds:
-      - 'sg-fe78b299'
-      - 'sg-1694056c'
-    subnetIds:
-      - 'subnet-0f027c22'
-      - 'subnet-28d1fd61'
-      - 'subnet-bf11e5e4'
-      - 'subnet-ec30d9d0'
+    domain: micro.dsco.io
+    endpointType: edge
+    authUserTable: ProdAuth-LeoAuthUser-SD8EQDNF542U
+    kinesisArn: arn:aws:kinesis:${self:provider.region}:#{AWS::AccountId}:stream/ProdBus-LeoKinesisStream-*
+    firehoseArn: arn:aws:firehose:${self:provider.region}:#{AWS::AccountId}:deliverystream/ProdBus-LeoFirehoseStream-*
+    s3Arn: arn:aws:s3:::prodbus-leos3-*/*
+    currentCatalogTable: catalog-attribution-prod-currentCatalog
+    gearman-and-mongo-vpc:
+        securityGroupIds:
+            - 'sg-fe78b299'
+            - 'sg-1694056c'
+        subnetIds:
+            - 'subnet-0f027c22'
+            - 'subnet-28d1fd61'
+            - 'subnet-bf11e5e4'
+            - 'subnet-ec30d9d0'

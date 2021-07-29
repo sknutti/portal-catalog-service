@@ -5,35 +5,27 @@
  * The tsconfig.artifact.json file is used with the artifact itself
  */
 {
-  "compilerOptions": {
-    "strict": true,
-    "target": "es2018",
-    "module": "umd",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "isolatedModules": false,
-    "outDir": "build",
-    "typeRoots": ["node_modules/@types"],
-    "incremental": true,
-    "allowJs": true,
-    "importsNotUsedAsValues": "preserve",
-    "lib": [
-      "es2015"
-    ],
-    "paths": {
-      "@api/*": ["./api/*"],
-      "@bot/*": ["./bot/*"],
-      "@lib/*": ["./lib/*"]
-    }
-  },
-  "include": [
-    "api/**/*.ts",
-    "bot/**/*.ts",
-    "test/**/*.ts",
-    "lib/**/*.ts",
-    "webpack.config.ts"
-  ]
+    "compilerOptions": {
+        "strict": true,
+        "target": "es2018",
+        "module": "umd",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "baseUrl": ".",
+        "isolatedModules": false,
+        "outDir": "build",
+        "typeRoots": ["node_modules/@types"],
+        "incremental": true,
+        "allowJs": true,
+        "importsNotUsedAsValues": "preserve",
+        "lib": ["es2015"],
+        "paths": {
+            "@api/*": ["./api/*"],
+            "@bot/*": ["./bot/*"],
+            "@lib/*": ["./lib/*"]
+        }
+    },
+    "include": ["api/**/*.ts", "bot/**/*.ts", "test/**/*.ts", "lib/**/*.ts", "webpack.config.ts"]
 }

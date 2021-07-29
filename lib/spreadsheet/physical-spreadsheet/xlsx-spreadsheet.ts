@@ -1,4 +1,3 @@
-import { UnexpectedError } from '@dsco/ts-models';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
 import { PhysicalSpreadsheet } from './physical-spreadsheet';
 import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
@@ -11,10 +10,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private readonly colIterationOrder: number[];
     private readonly skuHeaderIdx: number;
 
-    constructor(
-      private workbook: WorkBook,
-      private sheet: WorkSheet
-    ) {
+    constructor(private workbook: WorkBook, private sheet: WorkSheet) {
         super();
 
         const [headerNames, colIterationOrder, skuHeaderIdx] = this.parseHeaderNames();
@@ -29,7 +25,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
             type: 'buffer',
             cellDates: true,
             cellFormula: false,
-            cellHTML: false
+            cellHTML: false,
         });
 
         const sheet = file?.SheetNames?.length ? file.Sheets[file.SheetNames[0]] : undefined;
@@ -75,7 +71,6 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
             if (sku) {
                 result.push(sku);
             }
-
         }
 
         return result;
@@ -114,7 +109,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private getCell(rowNum: number, colNum: number): CellObject | undefined {
         const nextCellAddr = utils.encode_cell({
             r: rowNum,
-            c: colNum
+            c: colNum,
         });
 
         return this.sheet[nextCellAddr] as CellObject | undefined;

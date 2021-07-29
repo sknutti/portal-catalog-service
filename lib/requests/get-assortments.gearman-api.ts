@@ -10,7 +10,7 @@ export interface GetAssortmentsGearmanRequest {
     params?: {
         fresh?: boolean;
         include_deleted?: boolean;
-    }
+    };
 }
 
 export interface GetAssortmentsGearmanResponse extends DsResponse {
@@ -21,13 +21,17 @@ export interface GetAssortmentsGearmanResponse extends DsResponse {
     }>;
 }
 
-export class GetAssortmentsGearmanApi extends GearmanApi<GetAssortmentsGearmanRequest, GetAssortmentsGearmanResponse, DsError> {
+export class GetAssortmentsGearmanApi extends GearmanApi<
+    GetAssortmentsGearmanRequest,
+    GetAssortmentsGearmanResponse,
+    DsError
+> {
     protected readonly body: GetAssortmentsGearmanRequest;
     protected readonly endpoint = 'Service.Assortment';
     protected readonly requestType = 'GetList';
 
     constructor(caller: GetAssortmentsGearmanRequest['caller'], params?: GetAssortmentsGearmanRequest['params']) {
         super();
-        this.body = {caller, params};
+        this.body = { caller, params };
     }
 }

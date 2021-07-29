@@ -8,7 +8,11 @@ config.bootstrap(require('../../leo_config'));
 const leo = require('leo-sdk');
 const ls = require('leo-streams');
 
-export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(type: K, data: CatalogSpreadsheetWebsocketEvents[K], accountId: number): Promise<void> {
+export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(
+    type: K,
+    data: CatalogSpreadsheetWebsocketEvents[K],
+    accountId: number,
+): Promise<void> {
     if (process.env.ENVIRONMENT === 'test' || process.env.LEO_LOCAL) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
     }
@@ -18,7 +22,7 @@ export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebso
         accountId,
         event: {
             type,
-            ...data
+            ...data,
         },
         timestamp: Date.now(),
     });
@@ -38,10 +42,7 @@ async function pushEventToLeo(botId: string, payload: any) {
         done(null, event);
     });
 
-    const myPipe = pipe(
-      through,
-      leo.load(botId, 'websocket-notify', {})
-    );
+    const myPipe = pipe(through, leo.load(botId, 'websocket-notify', {}));
 
     through.push(payload);
     through.push(null);
@@ -49,7 +50,7 @@ async function pushEventToLeo(botId: string, payload: any) {
     await myPipe;
 }
 
-function pipe (...args: any[]) : Promise<any> {
+function pipe(...args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
         args.push((err: any) => (err ? reject(err) : resolve()));
         ls.pipe(...args);

@@ -1,10 +1,10 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "build/lib",
-    "declaration": true,
-    "target": "es2018",
-    "module": "umd"
-  },
-  "include": ["api/index.ts"]
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "build/lib",
+        "declaration": true,
+        "target": "es2018",
+        "module": "umd"
+    },
+    "include": ["api/index.ts"]
 }

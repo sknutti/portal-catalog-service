@@ -1,22 +1,22 @@
 import { CoreCatalog } from '@lib/core-catalog';
 import {
     CreateOrUpdateItemBulkGearmanApi,
-    CreateOrUpdateItemMessage
+    CreateOrUpdateItemMessage,
 } from '@lib/requests/create-or-update-item-bulk.gearman-api';
 import { DscoCatalogRow } from '@lib/spreadsheet';
 
 export class CatalogResolver {
-
     /**
      * Sets supplierId and userId
      */
-    constructor(private supplierId: number, private userId: number) {
-    }
+    constructor(private supplierId: number, private userId: number) {}
 
     /**
      * Resolves any errors
      */
-    async resolveBatch(rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>): Promise<CatalogResolveError | undefined> {
+    async resolveBatch(
+        rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>,
+    ): Promise<CatalogResolveError | undefined> {
         const indexMap: Record<number, number> = {};
         const catalogs: CoreCatalog[] = [];
 
@@ -39,7 +39,7 @@ export class CatalogResolver {
             return {
                 messages: [`Unexpected validation error. EID: ${callId}`, gmResp.reason],
                 rowIdx: indexMap[i],
-                sentRequest: api.body
+                sentRequest: api.body,
             };
         }
 
@@ -48,7 +48,7 @@ export class CatalogResolver {
                 return {
                     messages: this.findErrors(response.data?.messages || []),
                     rowIdx: indexMap[i],
-                    sentRequest: api.body
+                    sentRequest: api.body,
                 };
             }
 
@@ -60,14 +60,14 @@ export class CatalogResolver {
      * Handles any errors in the gearman response, returning true if there was an error
      */
     private findErrors(messages: CreateOrUpdateItemMessage[]): string[] {
-        let errors = messages.filter(m => m.type === 'error' || m.type === 'ERROR') || [];
+        let errors = messages.filter((m) => m.type === 'error' || m.type === 'ERROR') || [];
 
         if (!errors.length) {
-            errors = messages.filter(m => m.type === 'RECORD_STATUS_MESSAGE') || [];
+            errors = messages.filter((m) => m.type === 'RECORD_STATUS_MESSAGE') || [];
         }
 
         if (errors.length) {
-            return Array.from(new Set(errors.map(e => e.message)));
+            return Array.from(new Set(errors.map((e) => e.message)));
         } else {
             return ['Unable to save item.'];
         }
@@ -75,12 +75,10 @@ export class CatalogResolver {
 }
 
 /**
- * Fun stuff here
- * 
- * @typedef
+ * Error from resolving the catalog
  */
 interface CatalogResolveError {
     rowIdx: number;
     messages: string[];
-    sentRequest: CreateOrUpdateItemBulkGearmanApi['body']
+    sentRequest: CreateOrUpdateItemBulkGearmanApi['body'];
 }

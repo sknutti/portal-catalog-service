@@ -46,31 +46,37 @@ export class DscoColumn {
     shouldHaveDscoPrefix = false;
 
     constructor(
-      public fieldName: string,
-      public fieldDescription: string | undefined,
-      public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
-      public validation: DscoColValidation = {
-          required: 'none'
-      },
-    ) {
-    }
+        public fieldName: string,
+        public fieldDescription: string | undefined,
+        public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
+        public validation: DscoColValidation = {
+            required: 'none',
+        },
+    ) {}
 
-    writeCellValueToCatalog(cellValue: CellValue, row: DscoCatalogRow, existingCatalog: CoreCatalog | undefined, retailerId: number): void {
+    writeCellValueToCatalog(
+        cellValue: CellValue,
+        row: DscoCatalogRow,
+        existingCatalog: CoreCatalog | undefined,
+        retailerId: number,
+    ): void {
         const valueToSet = this.coerceCatalogValueFromCellValue(cellValue);
 
-        if (valueToSet === null) { // We don't actually write a null value to the catalog, at risk of overwriting fields that were set outside the catalog
+        if (valueToSet === null) {
+            // We don't actually write a null value to the catalog, at risk of overwriting fields that were set outside the catalog
             return;
         }
 
         const catalog = row.catalog;
 
-        if (this.validation.format === 'image') { // Images need to be handled differently
+        if (this.validation.format === 'image') {
+            // Images need to be handled differently
             const [arrName, imgName] = this.imageNames;
-            const arr: CatalogImage[] = catalog[arrName] = catalog[arrName] || [];
-            let found = arr.find(img => img.name === imgName);
+            const arr: CatalogImage[] = (catalog[arrName] = catalog[arrName] || []);
+            let found = arr.find((img) => img.name === imgName);
             if (!found) {
                 found = {
-                    name: imgName
+                    name: imgName,
                 };
                 arr.push(found);
             }
@@ -81,7 +87,8 @@ export class DscoColumn {
 
             found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
-            const valToSave = this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
+            const valToSave =
+                this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
 
             if (existingCatalog && extractFieldFromCoreCatalog(this.fieldName, existingCatalog) != valueToSet) {
                 row.modified = true;
@@ -108,8 +115,9 @@ export class DscoColumn {
         row.emptyRow = false;
     }
 
-
-    private coerceCatalogValueFromCellValue(cellValue: CellValue): string | Date | number | boolean | null | Array<string | number> {
+    private coerceCatalogValueFromCellValue(
+        cellValue: CellValue,
+    ): string | Date | number | boolean | null | Array<string | number> {
         if (cellValue === null || cellValue === undefined || cellValue === '') {
             return null;
         }
@@ -144,7 +152,7 @@ export class DscoColumn {
                         return [cellValue.toString()];
                     }
                 } else {
-                    return cellValue.split(',').map(item => {
+                    return cellValue.split(',').map((item) => {
                         return num ? +item.trim() : item.trim();
                     });
                 }
@@ -152,7 +160,11 @@ export class DscoColumn {
             case 'date':
             case 'date-time':
                 // TODO: If the user specifies the date "January 1", should we store it as UTC Jan 1 or Jan 1 in their preferred timezone?
-                return cellValue instanceof Date ? cellValue : typeof cellValue === 'string' ? new Date(cellValue) : null;
+                return cellValue instanceof Date
+                    ? cellValue
+                    : typeof cellValue === 'string'
+                    ? new Date(cellValue)
+                    : null;
             case 'time': // TODO: Dsco doesn't really have a time format.  I'm just assuming it's going to be a string
                 return cellValue.toString();
             case undefined:
@@ -182,4 +194,16 @@ export interface DscoColValidation {
     minHeight?: number; // image
 }
 
-export type DscoColFormat = 'string' | 'integer' | 'date-time' | 'date' | 'time' | 'number' | 'boolean' | 'array' | 'enum' | 'uri' | 'email' | 'image';
+export type DscoColFormat =
+    | 'string'
+    | 'integer'
+    | 'date-time'
+    | 'date'
+    | 'time'
+    | 'number'
+    | 'boolean'
+    | 'array'
+    | 'enum'
+    | 'uri'
+    | 'email'
+    | 'image';
