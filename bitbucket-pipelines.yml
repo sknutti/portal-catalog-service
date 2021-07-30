@@ -10,6 +10,8 @@ pipelines:
               caches:
                   - node
               script:
+                  - npm config set @sheet:registry https://pylon.sheetjs.com:54111
+                  - npm config set //pylon.sheetjs.com:54111/:_authToken $SHEET_TOKEN # To get this token, successfully login to the site, and then look in .npmrc to find the token.
                   - npm install
                   - npm run lint:prettier
                   - npm run lint
@@ -58,5 +60,6 @@ pipelines:
                   trigger: manual
                   script:
                       - cd build/lib
+                      - npm config set @dsco:registry https://registry.npmjs.org
                       - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
                       - npm publish --dry-run

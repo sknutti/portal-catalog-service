@@ -20,6 +20,7 @@
     "license": "ISC",
     "dependencies": {
         "@dsco/aws-auth": "^1.0.12",
+        "@dsco/eslint-config": "0.0.4",
         "@dsco/gearman-apis": "0.0.18",
         "@dsco/search-apis": "^1.0.40",
         "@dsco/service-utils": "0.0.20",

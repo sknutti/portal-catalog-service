@@ -52,7 +52,7 @@ async function pushEventToLeo(botId: string, payload: any) {
 
 function pipe(...args: any[]): Promise<any> {
     return new Promise((resolve, reject) => {
-        args.push((err: any) => (err ? reject(err) : resolve()));
+        args.push((err: any) => (err ? reject(err) : resolve(null)));
         ls.pipe(...args);
     });
 }
