@@ -56,7 +56,7 @@ pipelines:
                   name: Library Deploy
                   caches:
                       - node
-                  deployment: production
+                  deployment: library
                   trigger: manual
                   script:
                       - cd build/lib
