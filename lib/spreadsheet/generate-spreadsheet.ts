@@ -29,7 +29,7 @@ export async function generateSpreadsheet(
         return colsOrErr;
     }
 
-    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`, retailerId);
+    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`);
 
     // If the first column isn't sku, sort to enforce it.
     if (colsOrErr[0].fieldName !== 'sku') {

@@ -27,7 +27,7 @@ class TestPhysicalSpreadsheetRow extends PhysicalSpreadsheetRow {
 const [retailerId, supplierId] = [1000, 2000];
 
 test('Images are merged with existing images, keeping only name and source_url', async () => {
-    const dscoSpreadsheet = new DscoSpreadsheet('test', retailerId);
+    const dscoSpreadsheet = new DscoSpreadsheet('test');
     dscoSpreadsheet.addColumn(new DscoColumn('sku', undefined, 'core'));
     dscoSpreadsheet.addColumn(
         new DscoColumn('images.icon', undefined, 'core', {

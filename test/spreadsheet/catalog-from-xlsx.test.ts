@@ -121,7 +121,7 @@ test('Can extract DscoCatalogRow from Xlsx File', async () => {
 });
 
 function generateSampleDscoSpreadsheet(retailerId: number): DscoSpreadsheet {
-    const dscoSpreadsheet = new DscoSpreadsheet('mySheet', retailerId);
+    const dscoSpreadsheet = new DscoSpreadsheet('mySheet');
     dscoSpreadsheet.addColumn(
         new DscoColumn('sku', '', 'core', {
             format: 'string',

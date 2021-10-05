@@ -1,4 +1,5 @@
-import { CellValue, DscoColumn, DscoSpreadsheet, PhysicalSpreadsheetRow } from '@lib/spreadsheet';
+import { CellValue, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
+import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
 import { CellObject } from '@sheet/image';
 
 /**

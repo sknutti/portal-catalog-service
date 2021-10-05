@@ -1,5 +1,6 @@
-import { PhysicalSpreadsheet, XlsxSpreadsheetRow } from '@lib/spreadsheet';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
+import { PhysicalSpreadsheet } from './physical-spreadsheet';
+import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
 
 export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private range: Range = utils.decode_range(this.sheet['!ref']!); // xlsx always have ref;
