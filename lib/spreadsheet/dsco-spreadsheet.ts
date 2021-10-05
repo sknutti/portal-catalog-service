@@ -3,11 +3,11 @@ import { DscoCatalogRow } from '@lib/spreadsheet';
 import { DscoColumn } from './dsco-column';
 
 /**
- * Represents a spreadsheet complete with:
- * • Catalogs as rows (\@see DscoCatalogRow)
- * • Columns with dsco data validation
+ * This is the "source of truth" spreadsheet for a given category.  It's used to parse, generate, and validate user spreadsheets.
  *
- * Can be turned into a GoogleSpreadsheet by using .intoGoogleSpreadsheet();
+ * A DscoSpreadsheet is primarily two pieces of data:
+ * • A list of DscoColumns that contain validation rules & field names
+ * • A list of DscoCatalogRows - the actual Catalog data stored in the spreadsheet
  */
 export class DscoSpreadsheet implements Iterable<DscoColumn> {
     static readonly USER_SHEET_NAME = 'Catalog Data';
@@ -47,7 +47,7 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
         yield* this.columns.none;
     }
 
-    constructor(public spreadsheetName: string, private retailerId: number) {}
+    constructor(public spreadsheetName: string) {}
 
     addColumn(col: DscoColumn): void {
         this.columns[col.validation.required].push(col);

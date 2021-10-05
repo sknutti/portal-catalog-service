@@ -76,14 +76,10 @@ test('Can extract DscoCatalogRow from Xlsx File', async () => {
                     {
                         source_url: 'http://hi.com/img.png',
                         name: 'hi',
-                        height: 32,
-                        width: 100,
                     },
                     {
                         source_url: 'http://shoe.img/front.png',
                         name: 'Front_Image',
-                        height: 500,
-                        width: 500,
                     },
                 ],
                 product_status: 'active',

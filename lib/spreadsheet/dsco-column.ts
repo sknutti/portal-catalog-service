@@ -48,7 +48,7 @@ export class DscoColumn {
     constructor(
         public fieldName: string,
         public fieldDescription: string | undefined,
-        public type: 'core' | 'extended' | 'transient', // Transient cols aren't directly mapped to dsco attributes.
+        public type: 'core' | 'extended',
         public validation: DscoColValidation = {
             required: 'none',
         },

@@ -1,4 +1,4 @@
-import { ProductStatus } from '@dsco/ts-models';
+import { CatalogImage, ProductStatus } from '@dsco/ts-models';
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';
 import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
@@ -6,24 +6,19 @@ import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spr
 /**
  * This is an intermediate representation of a row in a physical spreadsheet (google sheet, xslx sheet)
  *
- * Can be parsed into a DscoCatalogRow
+ * Catalog item data can be extracted from this row by converting it into a DscoCatalogRow
  * @see DscoCatalogRow
  */
 export abstract class PhysicalSpreadsheetRow {
     protected abstract getCellValues(dscoSpreadsheet: DscoSpreadsheet): IterableIterator<[CellValue, DscoColumn]>;
 
     /**
-     * Will be called after the row is finished parsing. Should return true if the row data indicates it has been modified
-     */
-    protected abstract getIsModified(): boolean;
-
-    /**
      * Parses the SpreadsheetRow, turning it into a DscoCatalogRow.
      *
      * @param dscoSpreadsheet - Used to get column & validation information
-     * @param supplierId - Supplier
-     * @param retailerId - Retailer
-     * @param categoryPath - Path to Category
+     * @param supplierId -
+     * @param retailerId -
+     * @param categoryPath -
      * @param warehouses - The supplier's warehouses
      * @param existingCatalogItems - Used to merge some fields from existing catalog items (such as the images array)
      */
@@ -90,9 +85,28 @@ export abstract class PhysicalSpreadsheetRow {
             for (const imageColumn of dscoSpreadsheet.imageColumns) {
                 const arrayNameToCopy = imageColumn.imageNames[0];
 
-                catalog[arrayNameToCopy] = existing[arrayNameToCopy] || [];
+                catalog[arrayNameToCopy] = this.copyImageArray(existing[arrayNameToCopy] || []);
             }
         }
+    }
+
+    /**
+     * The catalog images we load from Mongo have tons of metadata on them that the Gearman endpoint cant handle.
+     * This strips those images down to the bare minimum
+     */
+    private copyImageArray(images: CatalogImage[]): CatalogImage[] {
+        const result: CatalogImage[] = [];
+
+        for (const image of images) {
+            if (image.name && image.source_url) {
+                result.push({
+                    name: image.name,
+                    source_url: image.source_url,
+                });
+            }
+        }
+
+        return result;
     }
 
     /**

@@ -9,5 +9,6 @@ build
 /_cache
 .vscode
 coverage
+docs
 
 docs/*

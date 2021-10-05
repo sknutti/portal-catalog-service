@@ -1,5 +1,4 @@
-import { CellValue, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
-import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
+import { CellValue, DscoColumn, DscoSpreadsheet, PhysicalSpreadsheetRow } from '@lib/spreadsheet';
 import { CellObject } from '@sheet/image';
 
 /**
@@ -21,9 +20,5 @@ export class XlsxSpreadsheetRow extends PhysicalSpreadsheetRow {
                 yield [cell.v, col];
             }
         }
-    }
-
-    protected getIsModified(): boolean {
-        return true; // we treat excel spreadsheet rows as always being modified
     }
 }

@@ -1,6 +1,5 @@
+import { PhysicalSpreadsheet, XlsxSpreadsheetRow } from '@lib/spreadsheet';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
-import { PhysicalSpreadsheet } from './physical-spreadsheet';
-import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
 
 export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     private range: Range = utils.decode_range(this.sheet['!ref']!); // xlsx always have ref;
@@ -50,7 +49,6 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     *rows(startRowIdx?: number): IterableIterator<XlsxSpreadsheetRow> {
         startRowIdx = startRowIdx ?? this.range.s.r + 1;
 
-        console.error(startRowIdx, this.range);
         for (let rowNum = startRowIdx; rowNum <= this.range.e.r; rowNum++) {
             yield new XlsxSpreadsheetRow(this.rowIterator(rowNum));
         }
