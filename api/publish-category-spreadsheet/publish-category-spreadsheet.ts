@@ -3,7 +3,13 @@ import type {
     PublishCategorySpreadsheetEvent,
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { apiWrapper, getUser } from '@dsco/service-utils';
-import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { InvalidFieldError, MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import {
+    CatalogSpreadsheetS3Metadata,
+    getCatalogItemS3UploadPath,
+    getSignedS3Url,
+    parseCatalogItemS3UploadUrl
+} from '@lib/s3';
 import AWS from 'aws-sdk';
 import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
 
@@ -14,9 +20,6 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     }
     if (!event.body.categoryPath) {
         return new MissingRequiredFieldError('categoryPath');
-    }
-    if (!event.body.gzippedFile) {
-        return new MissingRequiredFieldError('gzippedFile');
     }
 
     const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
@@ -29,17 +32,26 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     const supplierId = user.accountId;
     const { retailerId, categoryPath, gzippedFile, skippedRowIndexes } = event.body;
 
-    await invokePublishBot({
-        retailerId,
-        categoryPath,
-        gzippedFile,
-        skippedRowIndexes,
-        supplierId,
-        userId: user.userId,
-    });
+    // gzippedFile used for backwards compatibility
+    if (gzippedFile) {
+        await invokePublishBot({
+            retailerId,
+            categoryPath,
+            gzippedFile,
+            skippedRowIndexes,
+            supplierId,
+            userId: user.userId,
+        });
+    }
+
+    const uploadMeta: CatalogSpreadsheetS3Metadata = {
+        category_path: categoryPath,
+        skipped_row_indexes: skippedRowIndexes?.join(',')
+    };
 
     return {
         success: true,
+        uploadUrl: await getSignedS3Url(getCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath), uploadMeta)
     };
 });
 

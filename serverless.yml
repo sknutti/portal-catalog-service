@@ -4,6 +4,7 @@ plugins:
     - serverless-domain-manager
     - serverless-pseudo-parameters
     - serverless-offline
+    - serverless-leo
 
 package:
     excludeDevDependencies: false
@@ -14,7 +15,14 @@ package:
 custom:
     environment: ${file(environments.yml):${self:provider.stage}}
     spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
+    s3BucketName: catalog-item-${self:provider.stage}
     publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet-bot
+    test:
+        leoStack: TestBus
+    staging:
+        leoStack: StagingBus
+    prod:
+        leoStack: ProdBus
     customDomain:
         domainName: ${self:custom.environment.domain}
         basePath: portal-catalog
@@ -32,7 +40,7 @@ provider:
         AUTH_USER_TABLE: ${self:custom.environment.authUserTable}
         CURRENT_CATALOG_TABLE: ${self:custom.environment.currentCatalogTable}
         ENVIRONMENT: ${self:provider.stage}
-        SPREADSHEET_TABLE: ${self:custom.spreadsheetTable}
+        S3_BUCKET: ${self:custom.s3BucketName}
         LEO_ENVIRONMENT: ${self:provider.stage}
     region: ${opt:region, 'us-east-1'}
     iamRoleStatements:
@@ -44,18 +52,10 @@ provider:
               - 'arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.environment.currentCatalogTable}'
         - Effect: 'Allow'
           Action:
-              - dynamodb:GetItem
-              - dynamodb:PutItem
-              - dynamodb:DeleteItem
-              - dynamodb:UpdateItem
-              - dynamodb:Query
+              - s3:PutObject
+              - s3:GetObject
           Resource:
-              - Fn::GetAtt: [PortalCatalogSpreadsheetTable, Arn]
-        - Effect: 'Allow'
-          Action:
-              - secretsmanager:GetSecretValue
-          Resource:
-              - 'arn:aws:secretsmanager:${self:provider.region}:#{AWS::AccountId}:secret:catalog-editor-google-api*'
+              - Fn::GetAtt: [S3BucketCatalogItem, Arn]
         - Effect: 'Allow'
           Action:
               - execute-api:Invoke
@@ -81,20 +81,25 @@ functions:
 
 resources:
     Resources:
-        PortalCatalogSpreadsheetTable:
-            Type: AWS::DynamoDB::Table
+        S3BucketCatalogItem:
+            Type: AWS::S3::Bucket
             Properties:
-                TableName: ${self:custom.spreadsheetTable}
-                AttributeDefinitions:
-                    - AttributeName: supplierId
-                      AttributeType: S
-                    - AttributeName: fullPath
-                      AttributeType: S
-                KeySchema:
-                    - AttributeName: supplierId
-                      KeyType: HASH
-                    - AttributeName: fullPath
-                      KeyType: RANGE
-                ProvisionedThroughput:
-                    ReadCapacityUnits: 1
-                    WriteCapacityUnits: 1
+                AccessControl: Private
+                BucketName: ${self:custom.s3BucketName}
+                CorsConfiguration:
+                    CorsRules:
+                        - AllowedHeaders: ['*']
+                          AllowedMethods: ['GET', 'HEAD', 'PUT']
+                          AllowedOrigins: ['*']
+                          MaxAge: 3000
+                LifecycleConfiguration:
+                    Rules:
+                        - Id: ExpireCatalogItemUploads
+                          ExpirationInDays: 90
+                          Prefix: 'uploads/'
+                          Status: 'Enabled'
+                PublicAccessBlockConfiguration:
+                    BlockPublicAcls: true
+                    BlockPublicPolicy: true
+                    IgnorePublicAcls: true
+                    RestrictPublicBuckets: true

@@ -1,9 +1,17 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
-import { keyBy, UnexpectedError } from '@dsco/ts-models';
+import { keyBy, keyWith, UnexpectedError } from '@dsco/ts-models';
+import { CoreCatalog, MINIMAL_CORE_CATALOG_PROJECTION, MinimalCoreCatalog } from '@lib/core-catalog';
+import {
+    CatalogSpreadsheetS3Metadata,
+    downloadS3Bucket,
+    downloadS3Metadata,
+    parseCatalogItemS3UploadUrl
+} from '@lib/s3';
 import { DscoSpreadsheet, generateSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { catalogItemSearch, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
 import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
+import type { S3CreateEvent } from 'aws-lambda';
 import { Err, Ok, Result } from 'ts-results';
 import { gunzip } from 'zlib';
 import { CatalogSpreadsheetWebsocketEvents } from '../../api';
@@ -13,23 +21,21 @@ export interface PublishCategorySpreadsheetEvent {
     retailerId: number;
     userId: number;
     categoryPath: string;
-    gzippedFile: string;
+    gzippedFile?: string;
+    s3Path?: string;
     skippedRowIndexes?: number[];
 }
 
-export async function publishCategorySpreadsheet(event: PublishCategorySpreadsheetEvent): Promise<void> {
+export async function publishCategorySpreadsheet(event: PublishCategorySpreadsheetEvent | S3CreateEvent): Promise<void> {
+    if (!('supplierId' in event)){
+        event = await getEventFromS3(event);
+        console.log('Publish event extracted from s3 metadata: ', event);
+    }
+
     try {
         const resp = await Promise.race([publishSpreadsheetImpl(event), timeout()] as const);
         if (resp === 'timeout') {
-            await sendWebsocketEvent(
-                'error',
-                {
-                    error: null,
-                    message: 'Response timed out',
-                    categoryPath: event.categoryPath,
-                },
-                event.supplierId,
-            );
+            throw new Error('Timeout occurred publishing spreadsheet.');
         } else if (resp.ok) {
             await sendWebsocketEvent('success', resp.val, event.supplierId);
         } else {
@@ -53,7 +59,31 @@ export async function publishCategorySpreadsheet(event: PublishCategorySpreadshe
             },
             event.supplierId,
         );
+        throw error;
     }
+}
+
+async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCategorySpreadsheetEvent> {
+    console.log('Handling s3 object created: ', createEvent.Records[0]);
+
+    const s3Path = createEvent.Records[0].s3.object.key;
+    const meta = await downloadS3Metadata<CatalogSpreadsheetS3Metadata>(s3Path);
+    const skippedRowIndexes = meta.skipped_row_indexes?.split(',').map(parseInt).filter(idx => !isNaN(idx));
+
+    const parsed = parseCatalogItemS3UploadUrl(createEvent.Records[0].s3.object.key);
+    if (parsed === 'error') {
+        throw new Error(`Failed parsing catalog s3 metadata. Url: ${createEvent.Records[0].s3.object.key}`);
+    }
+    const {supplierId, retailerId, userId} = parsed;
+
+    return {
+        s3Path,
+        skippedRowIndexes,
+        supplierId,
+        retailerId,
+        userId,
+        categoryPath: meta.category_path
+    };
 }
 
 async function publishSpreadsheetImpl({
@@ -62,24 +92,18 @@ async function publishSpreadsheetImpl({
     supplierId,
     userId,
     gzippedFile,
+    s3Path,
     skippedRowIndexes,
 }: PublishCategorySpreadsheetEvent): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
     const sendProgress = (progress: number, message: string) => {
         return sendWebsocketEvent('progressUpdate', { progress, message, categoryPath }, supplierId);
     };
 
-    const [, dscoSpreadsheet, warehouses, [excelSpreadsheet, catalogItems]] = await Promise.all([
+    const [, dscoSpreadsheet, warehouses, [excelSpreadsheet, existingCatalogItems]] = await Promise.all([
         sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
-        gunzipAsync(gzippedFile).then(async (unzippedSpreadsheet) => {
-            const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(unzippedSpreadsheet);
-
-            return [
-                excelSpreadsheet,
-                await catalogItemSearch(supplierId, retailerId, categoryPath, excelSpreadsheet?.skus()),
-            ] as const;
-        }),
+        loadSpreadsheetAndCatalogItems(categoryPath, userId, supplierId, retailerId, gzippedFile, s3Path),
     ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
@@ -99,7 +123,7 @@ async function publishSpreadsheetImpl({
         supplierId,
         retailerId,
         categoryPath,
-        keyBy(catalogItems, 'sku'),
+        keyWith(existingCatalogItems, (item) => [item.sku!, item]),
         warehouses,
     );
 
@@ -158,8 +182,29 @@ async function publishSpreadsheetImpl({
     return Ok({ totalRowCount, categoryPath });
 }
 
+/**
+ * For every sku in the spreadsheet, we try loading the existing catalog items.  This allows us to merge uploaded data with existing catalog data
+ */
+async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, gzippedFile?: string, s3Path?: string): Promise<[XlsxSpreadsheet | undefined, MinimalCoreCatalog[]]> {
+    let buffer;
+    if (gzippedFile) {
+        buffer = await gunzipAsync(gzippedFile);
+    } else if (s3Path) {
+        buffer = await downloadS3Bucket(s3Path);
+    } else {
+        throw new Error('Missing upload body');
+    }
+
+    const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(buffer);
+
+    return [
+        excelSpreadsheet,
+        await catalogItemSearch<MinimalCoreCatalog>(supplierId, retailerId, categoryPath, MINIMAL_CORE_CATALOG_PROJECTION, excelSpreadsheet?.skus()),
+    ];
+}
+
 // Purposely 10 seconds before actual timeout
-const LAMBDA_TIMEOUT = 230 * 1_000;
+const LAMBDA_TIMEOUT = 890 * 1_000;
 
 // Resolves just before the lambda would time out.  This allows us to send it back to the user over the socket
 function timeout(): Promise<'timeout'> {

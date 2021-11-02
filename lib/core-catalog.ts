@@ -26,6 +26,19 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     [key: string]: any;
 }
 
+export const MINIMAL_CORE_CATALOG_PROJECTION = [
+  'sku',
+  'product_status',
+  'quantity_available',
+  'images',
+  'brand_logo_images',
+  'product_images',
+  'swatch_images',
+  'warehouses'
+] as const;
+
+export type MinimalCoreCatalog = Pick<CoreCatalog, typeof MINIMAL_CORE_CATALOG_PROJECTION[number]>
+
 export function createCoreCatalog(
     supplierId: number,
     retailerId: number,

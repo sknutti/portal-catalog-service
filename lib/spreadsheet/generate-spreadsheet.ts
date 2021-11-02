@@ -5,7 +5,7 @@ import {
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
-    UnexpectedError,
+    UnexpectedError
 } from '@dsco/ts-models';
 import { descriptions } from '@lib/descriptions';
 import { GetPipelineCatalogRulesRequest, GetPipelineRulesRequest } from '@lib/requests';
@@ -114,6 +114,43 @@ async function generateSpreadsheetCols(
     for (const rule of catalogRulesResp.data.rules) {
         parsePipelineRule(rule, ensureCol);
     }
+
+    // const output = {
+    //     required: [] as any[],
+    //     recommended: [] as any[],
+    //     optional: [] as any[],
+    // };
+    //
+    // for (const col of allCols) {
+    //     const obj = {
+    //         column_name: col.name,
+    //         description: col.fieldDescription,
+    //         validations: {...col.validation},
+    //         owner: col.type === 'core' ? 'Dsco' : 'Nordstrom',
+    //
+    //     };
+    //     if (obj.validations?.required) {
+    //         (obj.validations.required as any) = undefined;
+    //     }
+    //     if (obj.validations?.enumVals) {
+    //         (obj.validations as any).enumVals = Array.from(obj.validations.enumVals);
+    //     }
+    //     if (obj.validations && !Object.keys(obj.validations).length) {
+    //         (obj as any).validations = undefined;
+    //     }
+    //
+    //     if (col.validation?.required === PipelineErrorType.error) {
+    //         output.required.push(obj);
+    //     } else if (col.validation?.required === PipelineErrorType.warn) {
+    //         output.recommended.push(obj);
+    //     } else {
+    //         output.optional.push(obj);
+    //     }
+    // }
+    //
+    // [output.required, output.recommended, output.optional].forEach(arr => arr.sort((a, b) => a.owner > b.owner ? -1 : 1));
+    //
+    // require('fs').writeFileSync("/Users/aidan/temp/test.json", JSON.stringify(output));
 
     return allCols;
 }
