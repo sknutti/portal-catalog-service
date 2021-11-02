@@ -7,7 +7,8 @@ import {
     downloadS3Metadata,
     parseCatalogItemS3UploadUrl
 } from '@lib/s3';
-import { DscoSpreadsheet, generateSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
+import { DscoSpreadsheet, generateSpreadsheet, PhysicalSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
+import { CsvSpreadsheet } from '@lib/spreadsheet/physical-spreadsheet/csv-spreadsheet';
 import { catalogItemSearch, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
 import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
@@ -99,7 +100,7 @@ async function publishSpreadsheetImpl({
         return sendWebsocketEvent('progressUpdate', { progress, message, categoryPath }, supplierId);
     };
 
-    const [, dscoSpreadsheet, warehouses, [excelSpreadsheet, existingCatalogItems]] = await Promise.all([
+    const [, dscoSpreadsheet, warehouses, [supplierSpreadsheet, existingCatalogItems]] = await Promise.all([
         sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
@@ -110,7 +111,7 @@ async function publishSpreadsheetImpl({
         return Err(dscoSpreadsheet);
     }
 
-    if (!excelSpreadsheet) {
+    if (!supplierSpreadsheet) {
         return Ok({
             totalRowCount: 0,
             categoryPath,
@@ -118,7 +119,7 @@ async function publishSpreadsheetImpl({
     }
 
     // Pull the row data from the google spreadsheet
-    const catalogRows = excelSpreadsheet.extractCatalogRows(
+    const catalogRows = supplierSpreadsheet.extractCatalogRows(
         dscoSpreadsheet,
         supplierId,
         retailerId,
@@ -132,7 +133,7 @@ async function publishSpreadsheetImpl({
 
     const skippedRows = new Set(skippedRowIndexes);
 
-    const totalRowCount = excelSpreadsheet.numDataRows();
+    const totalRowCount = supplierSpreadsheet.numDataRows();
     let remainingRowsToValidate = totalRowCount;
 
     // Enumerate all of the rows starting at 1 for the header.  Then filter out the skipped rows, rows without data, and unmodified rows
@@ -185,7 +186,7 @@ async function publishSpreadsheetImpl({
 /**
  * For every sku in the spreadsheet, we try loading the existing catalog items.  This allows us to merge uploaded data with existing catalog data
  */
-async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, gzippedFile?: string, s3Path?: string): Promise<[XlsxSpreadsheet | undefined, MinimalCoreCatalog[]]> {
+async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, gzippedFile?: string, s3Path?: string): Promise<[PhysicalSpreadsheet | undefined, MinimalCoreCatalog[]]> {
     let buffer;
     if (gzippedFile) {
         buffer = await gunzipAsync(gzippedFile);
@@ -195,11 +196,11 @@ async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: numb
         throw new Error('Missing upload body');
     }
 
-    const excelSpreadsheet = XlsxSpreadsheet.fromBuffer(buffer);
+    const supplierSpreadsheet = XlsxSpreadsheet.isXlsx(buffer) ? XlsxSpreadsheet.fromBuffer(buffer) : new CsvSpreadsheet(buffer);
 
     return [
-        excelSpreadsheet,
-        await catalogItemSearch<MinimalCoreCatalog>(supplierId, retailerId, categoryPath, MINIMAL_CORE_CATALOG_PROJECTION, excelSpreadsheet?.skus()),
+        supplierSpreadsheet,
+        await catalogItemSearch<MinimalCoreCatalog>(supplierId, retailerId, categoryPath, MINIMAL_CORE_CATALOG_PROJECTION, supplierSpreadsheet?.skus()),
     ];
 }
 

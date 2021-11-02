@@ -33,6 +33,10 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         return sheet ? new XlsxSpreadsheet(file, sheet) : undefined;
     }
 
+    static isXlsx(buffer: Buffer): boolean {
+        return buffer.slice(0, 4).compare(new Buffer('504B0304', 'hex')) === 0;
+    }
+
     numDataRows(): number {
         return this.range.e.r - this.range.s.r; // minus 1 for the header
     }
@@ -47,10 +51,8 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}`);
     }
 
-    *rows(startRowIdx?: number): IterableIterator<XlsxSpreadsheetRow> {
-        startRowIdx = startRowIdx ?? this.range.s.r + 1;
-
-        for (let rowNum = startRowIdx; rowNum <= this.range.e.r; rowNum++) {
+    *rows(): IterableIterator<XlsxSpreadsheetRow> {
+        for (let rowNum = this.range.s.r + 1; rowNum <= this.range.e.r; rowNum++) {
             yield new XlsxSpreadsheetRow(this.rowIterator(rowNum));
         }
     }

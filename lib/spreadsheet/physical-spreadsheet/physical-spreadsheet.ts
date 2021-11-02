@@ -12,7 +12,17 @@ export abstract class PhysicalSpreadsheet {
     /**
      * Provides an iterator to read the rows from the sheet
      */
-    abstract rows(startRowIdx?: number): IterableIterator<PhysicalSpreadsheetRow>;
+    abstract rows(): IterableIterator<PhysicalSpreadsheetRow>;
+
+    /**
+     * Provides a list of all skus in the spreadsheet
+     */
+    abstract skus(): string[];
+
+    /**
+     * Number of rows containing data in the spreadsheet
+     */
+    abstract numDataRows(): number;
 
     /**
      * Extracts the DscoCatalogRow information from the physical row data
@@ -23,7 +33,6 @@ export abstract class PhysicalSpreadsheet {
      * @param categoryPath - Path to Category
      * @param existingCatalogItems - Used to merge some fields from existing catalog items (such as the images array)
      * @param warehouses - The supplier's warehouses
-     * @param startRowIdx - Used to optionally skip some rows
      */
     *extractCatalogRows(
         dscoSpreadsheet: DscoSpreadsheet,
@@ -32,9 +41,8 @@ export abstract class PhysicalSpreadsheet {
         categoryPath: string,
         existingCatalogItems: Record<string, MinimalCoreCatalog>,
         warehouses: TinyWarehouse[],
-        startRowIdx?: number,
     ): IterableIterator<DscoCatalogRow> {
-        for (const row of this.rows(startRowIdx)) {
+        for (const row of this.rows()) {
             yield row.parseCatalogRow(
                 dscoSpreadsheet,
                 supplierId,

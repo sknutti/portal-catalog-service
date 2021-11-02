@@ -11,12 +11,12 @@ import * as uuid from 'uuid';
 process.env.S3_BUCKET = 'catalog-item-test';
 
 test('Parsing s3 upload url works', () => {
-    const [supplierId, retailerId, userId, path] = [1234, 5678, 9101112, 'My || Custom & Weird || Path', uuid.v4()];
+    const [supplierId, retailerId, userId, path] = [1234, 5678, 9101112, 'My 😋 || Custom & Weird || Path'];
 
-    const uploadUrl = getCatalogItemS3UploadPath(supplierId, userId, retailerId, path);
+    const uploadUrl = getCatalogItemS3UploadPath(supplierId, retailerId, userId, path);
     const parsed = parseCatalogItemS3UploadUrl(`https://aws.s3.test.bla/bla/${uploadUrl}?a=b`);
 
-    expect(parsed).toMatchObject({supplierId, retailerId, userId, path});
+    expect(parsed).toMatchObject({supplierId, retailerId, userId});
 });
 
 test('Signed upload url works', async () => {
