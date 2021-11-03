@@ -1,7 +1,7 @@
 # If you change this lambda name, update the root serverless.yml
 publish-category-spreadsheet-bot:
     handler: bot/publish-category-spreadsheet/publish-category-spreadsheet.publishCategorySpreadsheet
-    memorySize: 4096 # 4GB of memory in case of huge catalog item upload - excel files need to be entirely in memory to parse
+    memorySize: 8192 # 8GB of memory in case of huge catalog item upload - excel files need to be entirely in memory to parse, and we also pull large amounts of data from Mongodb
     timeout: 900
     vpc: ${self:custom.environment.gearman-and-mongo-vpc}
     layers:
@@ -10,7 +10,7 @@ publish-category-spreadsheet-bot:
         - leo:
               register: true
         - s3:
-              bucket: S3BucketCatalogItem
+              bucket: CatalogItemBucket
               event: s3:ObjectCreated:*
               rules:
                   - prefix: uploads/

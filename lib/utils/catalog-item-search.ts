@@ -1,7 +1,7 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
-import { Catalog, DscoEnv, keyWith, SnakeCase } from '@dsco/ts-models';
+import { Catalog, DscoEnv, SnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
@@ -19,14 +19,13 @@ const mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${env}`, 
 let mongoClient: MongoClient | undefined;
 let connectString: string | undefined;
 
-export async function catalogItemSearch<I extends Partial<CoreCatalog> = CoreCatalog>(
+export async function catalogItemSearch(
   supplierId: number,
   retailerId: number,
   categoryPath: string,
-  projection?: ReadonlyArray<keyof CoreCatalog>,
   // Optionally, directly ask mongo for a set of skus.  If not provided, an ES search will occur
   directlyLoadSkus?: string[]
-): Promise<I[]> {
+): Promise<CoreCatalog[]> {
     let itemIdsFromMongo: number[] = [];
 
     if (!directlyLoadSkus) {
@@ -70,20 +69,17 @@ export async function catalogItemSearch<I extends Partial<CoreCatalog> = CoreCat
       .db()
       .collection('Item')
       .find<SnakeCase<Catalog>>({
-            $or: [
-                {
-                    item_id: {$in: itemIdsFromMongo}
-                },
-                {
-                    sku: {$in: directlyLoadSkus},
-                    supplier_id: supplierId
-                }
-            ]
-        },
-        {
-            projection: projection ? keyWith(projection as string[], (key) => [key, 1]) : undefined
-        })
+          $or: [
+              {
+                  item_id: {$in: itemIdsFromMongo}
+              },
+              {
+                  sku: {$in: directlyLoadSkus},
+                  supplier_id: supplierId
+              }
+          ]
+      })
       .toArray();
 
-    return mongoResp as I[];
+    return mongoResp as CoreCatalog[];
 }

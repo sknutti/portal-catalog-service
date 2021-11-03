@@ -1,15 +1,10 @@
 import type {
     publishCategorySpreadsheet as publishSpreadsheetBot,
-    PublishCategorySpreadsheetEvent,
+    PublishCategorySpreadsheetEvent
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { apiWrapper, getUser } from '@dsco/service-utils';
-import { InvalidFieldError, MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
-import {
-    CatalogSpreadsheetS3Metadata,
-    getCatalogItemS3UploadPath,
-    getSignedS3Url,
-    parseCatalogItemS3UploadUrl
-} from '@lib/s3';
+import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { CatalogSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3Url } from '@lib/s3';
 import AWS from 'aws-sdk';
 import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
 
@@ -34,6 +29,8 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 
     // gzippedFile used for backwards compatibility
     if (gzippedFile) {
+        console.log('Found gzipped file, directly invoking publish bot');
+
         await invokePublishBot({
             retailerId,
             categoryPath,
@@ -42,6 +39,8 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
             supplierId,
             userId: user.userId,
         });
+    } else {
+        console.log('No gzipped file, generating s3 event');
     }
 
     const uploadMeta: CatalogSpreadsheetS3Metadata = {
@@ -51,7 +50,7 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 
     return {
         success: true,
-        uploadUrl: await getSignedS3Url(getCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath), uploadMeta)
+        uploadUrl: await getSignedS3Url(createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath), uploadMeta)
     };
 });
 

@@ -1,5 +1,5 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
-import { CoreCatalog, MinimalCoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog, getDSFField } from '@lib/format-conversions';
 import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';

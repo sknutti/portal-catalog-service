@@ -1,4 +1,4 @@
-import { CoreCatalog, MinimalCoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';
 import { DscoCatalogRow, DscoSpreadsheet } from '@lib/spreadsheet';
 import { PhysicalSpreadsheetRow } from './physical-spreadsheet-row';
@@ -39,7 +39,7 @@ export abstract class PhysicalSpreadsheet {
         supplierId: number,
         retailerId: number,
         categoryPath: string,
-        existingCatalogItems: Record<string, MinimalCoreCatalog>,
+        existingCatalogItems: Record<string, CoreCatalog>,
         warehouses: TinyWarehouse[],
     ): IterableIterator<DscoCatalogRow> {
         for (const row of this.rows()) {

@@ -4,9 +4,24 @@ import * as uuid from 'uuid';
 const s3 = new AWS.S3({ region: process.env.AWS_REGION, signatureVersion: 'v4', });
 
 export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
+    const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: path,
+        Expires: 60 * 60, // expire the link in 1 hour
+        Metadata: prepareMetadata(metadata)
+    };
+
+    return s3.getSignedUrlPromise('putObject', params);
+}
+
+function prepareMetadata<M>(metadata: M): Record<string, string> {
     const meta: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(metadata)) {
+        if (!value) {
+            continue;
+        }
+
         if (key.match(/[A-Z]/)) {
             throw new Error('Tried storing capitalized s3 metadata key - these must be lowercase only');
         } else if (typeof value !== 'string') {
@@ -15,14 +30,7 @@ export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
         meta[key] = encodeURIComponent(value);
     }
 
-    const params = {
-        Bucket: process.env.S3_BUCKET,
-        Key: path,
-        Expires: 60 * 60, // expire the link in 1 hour
-        Metadata: meta
-    };
-
-    return s3.getSignedUrlPromise('putObject', params);
+    return meta;
 }
 
 export async function downloadS3Bucket(path: string): Promise<Buffer> {
@@ -34,6 +42,24 @@ export async function downloadS3Bucket(path: string): Promise<Buffer> {
         .promise();
 
     return resp.Body as Buffer;
+}
+
+interface S3File {
+    bucket: string;
+    path: string;
+}
+
+/**
+ * @param from - The location to copy from - *MUST ALREADY BE URL ENCODED*
+ */
+export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata: Metadata) {
+    await s3.copyObject({
+        CopySource: `${from.bucket}/${from.path}`,
+        Bucket: to.bucket,
+        Key: to.path,
+        Metadata: prepareMetadata(metadata),
+        MetadataDirective: 'REPLACE'
+    }).promise();
 }
 
 export async function downloadS3Metadata<Metadata>(
@@ -54,21 +80,21 @@ export async function downloadS3Metadata<Metadata>(
     return meta as any as Metadata;
 }
 
-export function getCatalogItemS3UploadPath(
+export function createCatalogItemS3UploadPath(
   supplierId: number,
   retailerId: number,
   userId: number,
   path: string,
 ): string {
     const uploadId = uuid.v4();
-    return `upload/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
+    return `uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
 }
 
 export function parseCatalogItemS3UploadUrl(
   url: string,
 ): { supplierId: number; retailerId: number; userId: number; } | 'error' {
     url = url.split('?')[0];
-    const regex = /upload\/(\d+)\/(\d+)\/(\d+)\/.*$/;
+    const regex = /uploads\/(\d+)\/(\d+)\/(\d+)\/.*$/;
     const match = regex.exec(url);
 
     if (match) {

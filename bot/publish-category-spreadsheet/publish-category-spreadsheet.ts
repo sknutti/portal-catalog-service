@@ -1,6 +1,6 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
 import { keyBy, keyWith, UnexpectedError } from '@dsco/ts-models';
-import { CoreCatalog, MINIMAL_CORE_CATALOG_PROJECTION, MinimalCoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
 import {
     CatalogSpreadsheetS3Metadata,
     downloadS3Bucket,
@@ -153,7 +153,7 @@ async function publishSpreadsheetImpl({
     // Save the rows in batches, collecting them to get the gearman requests running in parallel, even though we process them sequentially
     const resolvedBatches = collect(map(batch(rowsToSave, batchSize), (rows) => resolver.resolveBatch(rows)));
 
-    await sendProgress(startValidationPct, `Validating ${remainingRowsToValidate} rows...`);
+    await sendProgress(startValidationPct, `Validating ${remainingRowsToValidate} modified rows...`);
 
     for await (const resolvedBatchError of resolvedBatches) {
         if (resolvedBatchError) {
@@ -184,9 +184,9 @@ async function publishSpreadsheetImpl({
 }
 
 /**
- * For every sku in the spreadsheet, we try loading the existing catalog items.  This allows us to merge uploaded data with existing catalog data
+ * For every sku in the spreadsheet, we try loading the existing catalog items.  This allows us to merge uploaded data with existing catalog data, and detect which rows have changed
  */
-async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, gzippedFile?: string, s3Path?: string): Promise<[PhysicalSpreadsheet | undefined, MinimalCoreCatalog[]]> {
+async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, gzippedFile?: string, s3Path?: string): Promise<[PhysicalSpreadsheet | undefined, CoreCatalog[]]> {
     let buffer;
     if (gzippedFile) {
         buffer = await gunzipAsync(gzippedFile);
@@ -200,7 +200,7 @@ async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: numb
 
     return [
         supplierSpreadsheet,
-        await catalogItemSearch<MinimalCoreCatalog>(supplierId, retailerId, categoryPath, MINIMAL_CORE_CATALOG_PROJECTION, supplierSpreadsheet?.skus()),
+        await catalogItemSearch(supplierId, retailerId, categoryPath, supplierSpreadsheet?.skus()),
     ];
 }
 

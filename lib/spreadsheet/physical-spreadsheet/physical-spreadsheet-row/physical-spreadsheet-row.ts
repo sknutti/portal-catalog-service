@@ -1,5 +1,5 @@
 import { CatalogImage, ProductStatus } from '@dsco/ts-models';
-import { CoreCatalog, createCoreCatalog, MinimalCoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';
 import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
 
@@ -31,14 +31,14 @@ export abstract class PhysicalSpreadsheetRow {
         retailerId: number,
         categoryPath: string,
         warehouses: TinyWarehouse[],
-        existingCatalogItems: Record<string, MinimalCoreCatalog>,
+        existingCatalogItems: Record<string, CoreCatalog>,
     ): DscoCatalogRow {
         const { catalog } = createCoreCatalog(supplierId, retailerId, categoryPath);
 
         const row = new DscoCatalogRow(catalog, false, true);
 
         let filledFromExisting = false;
-        let existingItem: MinimalCoreCatalog | undefined;
+        let existingItem: CoreCatalog | undefined;
         for (const [cellValue, column] of this.getCellValues(dscoSpreadsheet)) {
             column.writeCellValueToCatalog(cellValue, row, existingItem, retailerId);
 
@@ -69,7 +69,7 @@ export abstract class PhysicalSpreadsheetRow {
         catalog: CoreCatalog,
         supplierId: number,
         warehouses: TinyWarehouse[],
-        existing?: MinimalCoreCatalog,
+        existing?: CoreCatalog,
     ): void {
         // If they change the product status to anything but pending,
         // we must have both quantity_available and warehouses quantity.  This gives defaults of zero to both
@@ -121,7 +121,7 @@ export abstract class PhysicalSpreadsheetRow {
         item: CoreCatalog,
         supplierId: number,
         warehouses: TinyWarehouse[],
-        existing?: MinimalCoreCatalog,
+        existing?: CoreCatalog,
     ): void {
         const existingWarehouses = new Set<string>();
         const newWarehouses = (item.warehouses = item.warehouses || []);

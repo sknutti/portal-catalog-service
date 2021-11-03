@@ -15,7 +15,8 @@ package:
 custom:
     environment: ${file(environments.yml):${self:provider.stage}}
     spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
-    s3BucketName: catalog-item-${self:provider.stage}
+    s3BucketName: ${self:service}-${self:provider.stage}
+    fanaticsBucketName: fanatics-short-term-project-01
     publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet-bot
     test:
         leoStack: TestBus
@@ -43,6 +44,29 @@ provider:
         S3_BUCKET: ${self:custom.s3BucketName}
         LEO_ENVIRONMENT: ${self:provider.stage}
     region: ${opt:region, 'us-east-1'}
+    s3:
+        CatalogItemBucket:
+            name: ${self:custom.s3BucketName}
+            bucketName: ${self:custom.s3BucketName}
+            accessControl: BucketOwnerFullControl
+            corsConfiguration:
+                CorsRules:
+                    - AllowedHeaders: [ '*' ]
+                      AllowedMethods: [ 'GET', 'HEAD', 'PUT' ]
+                      AllowedOrigins: [ '*' ]
+                      MaxAge: 3000
+            lifecycleConfiguration:
+                Rules:
+                    - Id: ExpireCatalogItemUploads
+                      ExpirationInDays: 90
+                      Prefix: 'uploads/'
+                      Status: 'Enabled'
+            publicAccessBlockConfiguration:
+                BlockPublicAcls: true
+                BlockPublicPolicy: true
+                IgnorePublicAcls: true
+                RestrictPublicBuckets: true
+
     iamRoleStatements:
         - Effect: 'Allow'
           Action:
@@ -53,9 +77,11 @@ provider:
         - Effect: 'Allow'
           Action:
               - s3:PutObject
+              - s3:ListBucket
               - s3:GetObject
           Resource:
-              - Fn::GetAtt: [S3BucketCatalogItem, Arn]
+              - 'arn:aws:s3:::${self:custom.s3BucketName}/*'
+              - 'arn:aws:s3:::${self:custom.fanaticsBucketName}/*'
         - Effect: 'Allow'
           Action:
               - execute-api:Invoke
@@ -77,29 +103,5 @@ functions:
     - ${file(./api/get-assortments/serverless.yml)}
     - ${file(./api/generate-category-spreadsheet/serverless.yml)}
     - ${file(./api/publish-category-spreadsheet/serverless.yml)}
+    - ${file(./bot/fanatics-upload-handler/serverless.yml)}
     - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
-
-resources:
-    Resources:
-        S3BucketCatalogItem:
-            Type: AWS::S3::Bucket
-            Properties:
-                AccessControl: Private
-                BucketName: ${self:custom.s3BucketName}
-                CorsConfiguration:
-                    CorsRules:
-                        - AllowedHeaders: ['*']
-                          AllowedMethods: ['GET', 'HEAD', 'PUT']
-                          AllowedOrigins: ['*']
-                          MaxAge: 3000
-                LifecycleConfiguration:
-                    Rules:
-                        - Id: ExpireCatalogItemUploads
-                          ExpirationInDays: 90
-                          Prefix: 'uploads/'
-                          Status: 'Enabled'
-                PublicAccessBlockConfiguration:
-                    BlockPublicAcls: true
-                    BlockPublicPolicy: true
-                    IgnorePublicAcls: true
-                    RestrictPublicBuckets: true

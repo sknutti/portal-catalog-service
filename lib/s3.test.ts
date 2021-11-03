@@ -1,19 +1,20 @@
 import {
+    copyS3Object,
     downloadS3Bucket,
-    getCatalogItemS3UploadPath,
     downloadS3Metadata,
+    createCatalogItemS3UploadPath,
     getSignedS3Url,
     parseCatalogItemS3UploadUrl
 } from '@lib/s3';
 import axios from 'axios';
 import * as uuid from 'uuid';
 
-process.env.S3_BUCKET = 'catalog-item-test';
+process.env.S3_BUCKET = 'portal-catalog-test';
 
 test('Parsing s3 upload url works', () => {
     const [supplierId, retailerId, userId, path] = [1234, 5678, 9101112, 'My 😋 || Custom & Weird || Path'];
 
-    const uploadUrl = getCatalogItemS3UploadPath(supplierId, retailerId, userId, path);
+    const uploadUrl = createCatalogItemS3UploadPath(supplierId, retailerId, userId, path);
     const parsed = parseCatalogItemS3UploadUrl(`https://aws.s3.test.bla/bla/${uploadUrl}?a=b`);
 
     expect(parsed).toMatchObject({supplierId, retailerId, userId});
@@ -31,4 +32,28 @@ test('Signed upload url works', async () => {
     const [body, meta] = await Promise.all([downloadS3Bucket(path), downloadS3Metadata<{ custom_meta: string }>(path)]);
     expect(body.toString('utf8')).toEqual(id);
     expect(meta.custom_meta).toEqual(custom_meta);
+});
+
+test('Copy s3 object works', async () => {
+    const source_meta = 'My custom meta with all sorts of emojis! 😋 ✂️ 📋 👌';
+    const source_path = 'test/unit-test-copy-source-😋 ✂️.txt';
+    const dest_meta = 'Destination meta';
+    const dest_path = 'test/unit-test-copy-dest-😋 ✂️.txt';
+
+    // First setup a source file
+    const url = await getSignedS3Url(source_path, {custom_meta: source_meta});
+
+    const id = uuid.v4();
+    await axios.put(url, id);
+
+    // Then copy that file
+    await copyS3Object({bucket: process.env.S3_BUCKET!, path: encodeURIComponent(source_path)}, {
+        bucket: process.env.S3_BUCKET!,
+        path: dest_path
+    }, {custom_meta: dest_meta});
+
+    // Download the copied file and verify it's correct
+    const [body, meta] = await Promise.all([downloadS3Bucket(dest_path), downloadS3Metadata<{ custom_meta: string }>(dest_path)]);
+    expect(body.toString('utf8')).toEqual(id);
+    expect(meta.custom_meta).toEqual(dest_meta);
 });
