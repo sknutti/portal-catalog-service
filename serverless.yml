@@ -42,6 +42,7 @@ provider:
         CURRENT_CATALOG_TABLE: ${self:custom.environment.currentCatalogTable}
         ENVIRONMENT: ${self:provider.stage}
         S3_BUCKET: ${self:custom.s3BucketName}
+        FANATICS_BUCKET: ${self:custom.fanaticsBucketName}
         LEO_ENVIRONMENT: ${self:provider.stage}
     region: ${opt:region, 'us-east-1'}
     s3:

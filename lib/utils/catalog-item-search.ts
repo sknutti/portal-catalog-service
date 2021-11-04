@@ -3,6 +3,7 @@ import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
 import { Catalog, DscoEnv, SnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { getApiCredentials } from '@lib/utils/api-credentials';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
 import { MongoClient } from 'mongodb';
@@ -40,7 +41,7 @@ export async function catalogItemSearch(
               limit: 10_000
           }),
           env,
-          AWS.config.credentials as Credentials,
+          getApiCredentials(),
           process.env.AWS_REGION!
         );
 
@@ -74,7 +75,7 @@ export async function catalogItemSearch(
                   item_id: {$in: itemIdsFromMongo}
               },
               {
-                  sku: {$in: directlyLoadSkus},
+                  sku: {$in: directlyLoadSkus || []},
                   supplier_id: supplierId
               }
           ]

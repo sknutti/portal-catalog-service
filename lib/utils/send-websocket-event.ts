@@ -1,20 +1,28 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import { Transform } from 'stream';
 import { CatalogSpreadsheetWebsocketEvents } from '@api/index';
+import { Transform } from 'stream';
 
 const config = require('leo-config');
 config.bootstrap(require('../../leo_config'));
 const leo = require('leo-sdk');
 const ls = require('leo-streams');
 
+
+let testWebsocketHandler: WebsocketHandler | undefined;
+
 export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(
-    type: K,
-    data: CatalogSpreadsheetWebsocketEvents[K],
-    accountId: number,
+  type: K,
+  data: CatalogSpreadsheetWebsocketEvents[K],
+  accountId: number
 ): Promise<void> {
     if (process.env.ENVIRONMENT === 'test' || process.env.LEO_LOCAL) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
+    }
+
+    if (testWebsocketHandler) {
+        testWebsocketHandler(type, data, accountId);
+        return;
     }
 
     await pushEventToLeo('portalCategoryBotId', {
@@ -22,9 +30,9 @@ export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebso
         accountId,
         event: {
             type,
-            ...data,
+            ...data
         },
-        timestamp: Date.now(),
+        timestamp: Date.now()
     });
 }
 
@@ -35,9 +43,9 @@ async function pushEventToLeo(botId: string, payload: any) {
             id: botId,
             correlation_id: {
                 source: botId,
-                start: 1,
+                start: 1
             },
-            payload,
+            payload
         };
         done(null, event);
     });
@@ -55,4 +63,13 @@ function pipe(...args: any[]): Promise<any> {
         args.push((err: any) => (err ? reject(err) : resolve(null)));
         ls.pipe(...args);
     });
+}
+
+type WebsocketHandler = <K extends keyof CatalogSpreadsheetWebsocketEvents> (type: K, data: CatalogSpreadsheetWebsocketEvents[K], accountId: number) => void;
+
+/**
+ * Allows us to intercept & handle websocket events in tests
+ */
+export function setTestWebsocketHandler(handler: WebsocketHandler): void {
+    testWebsocketHandler = handler;
 }

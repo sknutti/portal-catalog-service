@@ -45,7 +45,8 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 
     const uploadMeta: CatalogSpreadsheetS3Metadata = {
         category_path: categoryPath,
-        skipped_row_indexes: skippedRowIndexes?.join(',')
+        skipped_row_indexes: skippedRowIndexes?.join(','),
+        is_local_test: process.env.LEO_LOCAL === 'true' ? 'true' : undefined
     };
 
     return {

@@ -80,6 +80,14 @@ export async function downloadS3Metadata<Metadata>(
     return meta as any as Metadata;
 }
 
+export async function writeS3Object(bucket: string, path: string, body: string): Promise<void> {
+    await s3.putObject({
+        Bucket: bucket,
+        Key: path,
+        Body: body
+    }).promise();
+}
+
 export function createCatalogItemS3UploadPath(
   supplierId: number,
   retailerId: number,
@@ -116,4 +124,6 @@ export interface CatalogSpreadsheetS3Metadata {
     category_path: string;
     // Comma separated
     skipped_row_indexes?: string;
+    // Signifies this file was uploaded via a local test and should be skipped from automated processing
+    is_local_test?: 'true' | 'false';
 }

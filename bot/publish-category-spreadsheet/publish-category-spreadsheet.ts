@@ -1,20 +1,21 @@
 import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resolver';
-import { keyBy, keyWith, UnexpectedError } from '@dsco/ts-models';
+import { keyWith, UnexpectedError } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { getFanaticsAccountForEnv } from '@lib/fanatics';
 import {
     CatalogSpreadsheetS3Metadata,
     downloadS3Bucket,
     downloadS3Metadata,
-    parseCatalogItemS3UploadUrl
+    parseCatalogItemS3UploadUrl,
+    writeS3Object
 } from '@lib/s3';
 import { DscoSpreadsheet, generateSpreadsheet, PhysicalSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CsvSpreadsheet } from '@lib/spreadsheet/physical-spreadsheet/csv-spreadsheet';
-import { catalogItemSearch, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
+import { catalogItemSearch, gunzipAsync, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
 import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
 import type { S3CreateEvent } from 'aws-lambda';
 import { Err, Ok, Result } from 'ts-results';
-import { gunzip } from 'zlib';
 import { CatalogSpreadsheetWebsocketEvents } from '../../api';
 
 export interface PublishCategorySpreadsheetEvent {
@@ -25,12 +26,18 @@ export interface PublishCategorySpreadsheetEvent {
     gzippedFile?: string;
     s3Path?: string;
     skippedRowIndexes?: number[];
+    // Signifies this file was uploaded via a local test and should be skipped from automated processing
+    isLocalTest?: boolean;
 }
 
 export async function publishCategorySpreadsheet(event: PublishCategorySpreadsheetEvent | S3CreateEvent): Promise<void> {
     if (!('supplierId' in event)){
         event = await getEventFromS3(event);
         console.log('Publish event extracted from s3 metadata: ', event);
+    }
+
+    if (event.isLocalTest && process.env.LEO_LOCAL !== 'true') {
+        return;
     }
 
     try {
@@ -40,6 +47,8 @@ export async function publishCategorySpreadsheet(event: PublishCategorySpreadshe
         } else if (resp.ok) {
             await sendWebsocketEvent('success', resp.val, event.supplierId);
         } else {
+            await publishResultIfFanatics({success: false, error: resp.val, message: resp.val.message}, event.supplierId);
+
             await sendWebsocketEvent(
                 'error',
                 {
@@ -51,6 +60,7 @@ export async function publishCategorySpreadsheet(event: PublishCategorySpreadshe
             );
         }
     } catch (error: any) {
+        await publishResultIfFanatics({success: false, error, message: 'message' in error ? error.message : 'Unexpected error',}, event.supplierId);
         await sendWebsocketEvent(
             'error',
             {
@@ -71,9 +81,9 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
     const meta = await downloadS3Metadata<CatalogSpreadsheetS3Metadata>(s3Path);
     const skippedRowIndexes = meta.skipped_row_indexes?.split(',').map(parseInt).filter(idx => !isNaN(idx));
 
-    const parsed = parseCatalogItemS3UploadUrl(createEvent.Records[0].s3.object.key);
+    const parsed = parseCatalogItemS3UploadUrl(s3Path);
     if (parsed === 'error') {
-        throw new Error(`Failed parsing catalog s3 metadata. Url: ${createEvent.Records[0].s3.object.key}`);
+        throw new Error(`Failed parsing catalog s3 metadata. Url: ${s3Path}`);
     }
     const {supplierId, retailerId, userId} = parsed;
 
@@ -83,7 +93,8 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
         supplierId,
         retailerId,
         userId,
-        categoryPath: meta.category_path
+        categoryPath: meta.category_path,
+        isLocalTest: meta.is_local_test === 'true'
     };
 }
 
@@ -157,6 +168,12 @@ async function publishSpreadsheetImpl({
 
     for await (const resolvedBatchError of resolvedBatches) {
         if (resolvedBatchError) {
+            await publishResultIfFanatics({
+                success: false,
+                rowWithError: resolvedBatchError.rowIdx,
+                validationMessages: resolvedBatchError.messages,
+            }, supplierId);
+
             return Ok({
                 totalRowCount,
                 validationMessages: resolvedBatchError.messages,
@@ -179,6 +196,11 @@ async function publishSpreadsheetImpl({
             );
         }
     }
+
+    await publishResultIfFanatics({
+        success: true,
+        numUploadedItems: totalRowCount
+    }, supplierId);
 
     return Ok({ totalRowCount, categoryPath });
 }
@@ -204,6 +226,17 @@ async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: numb
     ];
 }
 
+/**
+ * Fanatis is using an s3 bucket to communicate with us - this writes the results back to that bucket so they can pick it up
+ */
+async function publishResultIfFanatics(message: any, supplierId: number) {
+    if (supplierId !== getFanaticsAccountForEnv()?.supplierId) {
+        return;
+    }
+
+    await writeS3Object(process.env.FANATICS_BUCKET!, `${process.env.ENVIRONMENT!}-result.json`, JSON.stringify(message));
+}
+
 // Purposely 10 seconds before actual timeout
 const LAMBDA_TIMEOUT = 890 * 1_000;
 
@@ -211,18 +244,6 @@ const LAMBDA_TIMEOUT = 890 * 1_000;
 function timeout(): Promise<'timeout'> {
     return new Promise((resolve) => {
         setTimeout(() => resolve('timeout'), LAMBDA_TIMEOUT);
-    });
-}
-
-function gunzipAsync(text: string): Promise<Buffer> {
-    return new Promise<Buffer>((resolve, reject) => {
-        gunzip(Buffer.from(text, 'binary'), (error, result) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(result);
-            }
-        });
     });
 }
 

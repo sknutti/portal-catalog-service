@@ -4,7 +4,7 @@ import {
     downloadS3Metadata,
     createCatalogItemS3UploadPath,
     getSignedS3Url,
-    parseCatalogItemS3UploadUrl
+    parseCatalogItemS3UploadUrl, writeS3Object
 } from '@lib/s3';
 import axios from 'axios';
 import * as uuid from 'uuid';
@@ -34,17 +34,14 @@ test('Signed upload url works', async () => {
     expect(meta.custom_meta).toEqual(custom_meta);
 });
 
-test('Copy s3 object works', async () => {
-    const source_meta = 'My custom meta with all sorts of emojis! 😋 ✂️ 📋 👌';
+test('Write & copy s3 object works', async () => {
     const source_path = 'test/unit-test-copy-source-😋 ✂️.txt';
     const dest_meta = 'Destination meta';
     const dest_path = 'test/unit-test-copy-dest-😋 ✂️.txt';
 
     // First setup a source file
-    const url = await getSignedS3Url(source_path, {custom_meta: source_meta});
-
     const id = uuid.v4();
-    await axios.put(url, id);
+    await writeS3Object(process.env.S3_BUCKET!, source_path, id);
 
     // Then copy that file
     await copyS3Object({bucket: process.env.S3_BUCKET!, path: encodeURIComponent(source_path)}, {
