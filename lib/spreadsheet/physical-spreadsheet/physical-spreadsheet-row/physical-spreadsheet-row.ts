@@ -10,6 +10,9 @@ import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spr
  * @see DscoCatalogRow
  */
 export abstract class PhysicalSpreadsheetRow {
+    /**
+     * Returns an iterator over the values of this spreadsheet.  Note: SKU must be the first cell value returned from this iterator
+     */
     protected abstract getCellValues(dscoSpreadsheet: DscoSpreadsheet): IterableIterator<[CellValue, DscoColumn]>;
 
     /**
@@ -85,7 +88,7 @@ export abstract class PhysicalSpreadsheetRow {
             for (const imageColumn of dscoSpreadsheet.imageColumns) {
                 const arrayNameToCopy = imageColumn.imageNames[0];
 
-                catalog[arrayNameToCopy] = this.copyImageArray(existing[arrayNameToCopy] || []);
+                catalog[arrayNameToCopy] = this.copyImageArray(existing[arrayNameToCopy as 'images'] || []);
             }
         }
     }

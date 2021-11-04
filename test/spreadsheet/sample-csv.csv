@@ -1,0 +1,3 @@
+﻿sku,product_status,Supplier_Number,Shoe_Color,Bad_Column,estimated_availability_date,images.Front_Image,
+mySku2123,active,12345,Red,A,3-Dec-33,http://shoe.img/front.png,
+mySku2124,inactive,12348.5,Blue,24693.5,10/10/10,http://shoe.img/back.png,

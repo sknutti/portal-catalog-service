@@ -6,7 +6,7 @@ export interface Assortment {
     status: 'active' | 'deleted';
 }
 
-interface GetAssortmentsResponse extends DsResponse {
+export interface GetAssortmentsResponse extends DsResponse {
     assortments: Assortment[];
 }
 

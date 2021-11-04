@@ -3,6 +3,7 @@ import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
 import { Catalog, DscoEnv, SnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { getApiCredentials } from '@lib/utils/api-credentials';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
 import { MongoClient } from 'mongodb';
@@ -20,29 +21,36 @@ let mongoClient: MongoClient | undefined;
 let connectString: string | undefined;
 
 export async function catalogItemSearch(
-    supplierId: number,
-    retailerId: number,
-    categoryPath: string,
-    // Other skus to directly ask mongo for, in case the sku exists and is in the spreadsheet, but not yet in the category
-    includeSkus: string[] = [],
+  supplierId: number,
+  retailerId: number,
+  categoryPath: string,
+  // Optionally, directly ask mongo for a set of skus.  If not provided, an ES search will occur
+  directlyLoadSkus?: string[]
 ): Promise<CoreCatalog[]> {
-    // First we do an ES request to find all items in the category
-    const searchResp = await axiosRequest(
-        new ItemSearchRequest(env, {
-            full_detail: false,
-            supplier_id: supplierId,
-            exact_categories: {
-                [retailerId]: [categoryPath],
-            },
-            limit: 10_000,
-        }),
-        env,
-        AWS.config.credentials as Credentials,
-        process.env.AWS_REGION!,
-    );
+    let itemIdsFromMongo: number[] = [];
 
-    if (!searchResp.data.success) {
-        throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data)}`);
+    if (!directlyLoadSkus) {
+        // First we do an ES request to find all items in the category
+        const searchResp = await axiosRequest(
+          new ItemSearchRequest(env, {
+              full_detail: false,
+              supplier_id: supplierId,
+              exact_categories: {
+                  [retailerId]: [categoryPath]
+              },
+              limit: 10_000
+          }),
+          env,
+          getApiCredentials(),
+          process.env.AWS_REGION!
+        );
+
+
+        if (!searchResp.data.success) {
+            throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data)}`);
+        }
+
+        itemIdsFromMongo = searchResp.data.docs;
     }
 
     // Then we load those ids from mongo
@@ -54,25 +62,25 @@ export async function catalogItemSearch(
             useNewUrlParser: true,
             ssl: true,
             sslValidate: true,
-            sslCA: [mongoSecret.ca],
+            sslCA: [mongoSecret.ca]
         });
     }
 
     const mongoResp = await mongoClient
-        .db()
-        .collection('Item')
-        .find<SnakeCase<Catalog>>({
-            $or: [
-                {
-                    item_id: { $in: searchResp.data.docs },
-                },
-                {
-                    sku: { $in: includeSkus },
-                    supplier_id: supplierId,
-                },
-            ],
-        })
-        .toArray();
+      .db()
+      .collection('Item')
+      .find<SnakeCase<Catalog>>({
+          $or: [
+              {
+                  item_id: {$in: itemIdsFromMongo}
+              },
+              {
+                  sku: {$in: directlyLoadSkus || []},
+                  supplier_id: supplierId
+              }
+          ]
+      })
+      .toArray();
 
     return mongoResp as CoreCatalog[];
 }

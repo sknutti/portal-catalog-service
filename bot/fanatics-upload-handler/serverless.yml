@@ -1,0 +1,16 @@
+# If you change this lambda name, update the root serverless.yml
+fanatics-upload-handler-bot:
+  handler: bot/fanatics-upload-handler/fanatics-upload-handler.fanaticsUploadHandler
+  memorySize: 512
+  timeout: 900
+  layers:
+    - ${cf:layer-leo-${self:provider.stage}.LeoLambdaLayerQualifiedArn}
+  events:
+    - leo:
+        register: true
+    - s3:
+        bucket: ${self:custom.fanaticsBucketName}
+        existing: true
+        event: s3:ObjectCreated:*
+        rules:
+          - prefix: ${self:provider.stage}/

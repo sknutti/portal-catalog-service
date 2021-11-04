@@ -57,7 +57,7 @@ export class DscoColumn {
     writeCellValueToCatalog(
         cellValue: CellValue,
         row: DscoCatalogRow,
-        existingCatalog: CoreCatalog | undefined,
+        existingCatalog: Partial<CoreCatalog> | undefined,
         retailerId: number,
     ): void {
         const valueToSet = this.coerceCatalogValueFromCellValue(cellValue);

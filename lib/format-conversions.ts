@@ -35,7 +35,7 @@ const DSF_TO_MSF: Record<string, string> = {
     long_text_description: 'product_description',
 };
 
-export function extractFieldFromCoreCatalog(field: string, catalog: CoreCatalog): any {
+export function extractFieldFromCoreCatalog(field: string, catalog: Partial<CoreCatalog>): any {
     if (field in catalog) {
         return catalog[field];
     }

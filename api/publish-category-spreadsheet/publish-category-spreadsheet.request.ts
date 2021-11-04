@@ -6,13 +6,17 @@ export interface PublishCategorySpreadsheetRequestBody {
     /**
      * Should be a binary string containing the gzipped file
      */
-    gzippedFile: string;
+    gzippedFile?: string;
     skippedRowIndexes: number[];
+}
+
+export interface PublishCategoryResponse extends DsResponse {
+    uploadUrl: string;
 }
 
 export class PublishCategorySpreadsheetRequest extends DsRequest<
     PublishCategorySpreadsheetRequestBody,
-    DsResponse,
+    PublishCategoryResponse,
     DsError
 > {
     constructor(env: DscoEnv, body: PublishCategorySpreadsheetRequestBody) {

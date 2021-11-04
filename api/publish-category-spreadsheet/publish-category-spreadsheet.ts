@@ -1,9 +1,10 @@
 import type {
     publishCategorySpreadsheet as publishSpreadsheetBot,
-    PublishCategorySpreadsheetEvent,
+    PublishCategorySpreadsheetEvent
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { CatalogSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3Url } from '@lib/s3';
 import AWS from 'aws-sdk';
 import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
 
@@ -14,9 +15,6 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     }
     if (!event.body.categoryPath) {
         return new MissingRequiredFieldError('categoryPath');
-    }
-    if (!event.body.gzippedFile) {
-        return new MissingRequiredFieldError('gzippedFile');
     }
 
     const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
@@ -29,17 +27,31 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     const supplierId = user.accountId;
     const { retailerId, categoryPath, gzippedFile, skippedRowIndexes } = event.body;
 
-    await invokePublishBot({
-        retailerId,
-        categoryPath,
-        gzippedFile,
-        skippedRowIndexes,
-        supplierId,
-        userId: user.userId,
-    });
+    // gzippedFile used for backwards compatibility
+    if (gzippedFile) {
+        console.log('Found gzipped file, directly invoking publish bot');
+
+        await invokePublishBot({
+            retailerId,
+            categoryPath,
+            gzippedFile,
+            skippedRowIndexes,
+            supplierId,
+            userId: user.userId,
+        });
+    } else {
+        console.log('No gzipped file, generating s3 event');
+    }
+
+    const uploadMeta: CatalogSpreadsheetS3Metadata = {
+        category_path: categoryPath,
+        skipped_row_indexes: skippedRowIndexes?.join(','),
+        is_local_test: process.env.LEO_LOCAL === 'true' ? 'true' : undefined
+    };
 
     return {
         success: true,
+        uploadUrl: await getSignedS3Url(createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath), uploadMeta)
     };
 });
 

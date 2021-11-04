@@ -8,9 +8,9 @@ import InjectPlugin from 'webpack-inject-plugin';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
 
-const stage = 'prod' as 'test' | 'staging' | 'prod';
+const stage = 'staging' as 'test' | 'staging' | 'prod';
 process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
-process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:4f0ca0fa-1dd2-4872-b118-41cb20813329';
+process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:71336b2f-2239-47db-b675-3295b87bde3e';
 process.env.LEO_LOCAL = 'true';
 
 module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
