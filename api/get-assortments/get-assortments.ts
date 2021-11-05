@@ -1,10 +1,11 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { UnauthorizedError } from '@dsco/ts-models';
+import { getLeoAuthUserTable } from '@lib/environment';
 import { GetAssortmentsGearmanApi } from '@lib/requests/get-assortments.gearman-api';
 import { GetAssortmentsRequest } from './get-assortments.request';
 
 export const getAssortments = apiWrapper<GetAssortmentsRequest>(async (event) => {
-    const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
+    const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
     // Must be logged in
     if (!user?.accountId) {

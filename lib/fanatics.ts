@@ -1,9 +1,8 @@
 import { DscoEnv } from '@dsco/ts-models';
-
-const env = process.env.ENVIRONMENT! as DscoEnv;
+import { getDscoEnv } from '@lib/environment';
 
 export function getFanaticsAccountForEnv(): Account | undefined {
-    return accounts[env];
+    return accounts[getDscoEnv()];
 }
 
 const accounts: Partial<Record<DscoEnv, Account>> = {

@@ -1,40 +1,36 @@
+import { generateCategorySpreadsheet } from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
 import {
-    generateCategorySpreadsheet
-} from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
-import {
+    CatalogSpreadsheetWebsocketEvents,
     GenerateCategorySpreadsheetRequestBody,
     GenerateCategorySpreadsheetResponse,
     PublishCategoryResponse,
-    PublishCategorySpreadsheetRequestBody,
-    CatalogSpreadsheetWebsocketEvents,
+    PublishCategorySpreadsheetRequestBody
 } from '@api/index';
 import { publishCategorySpreadsheet } from '@api/publish-category-spreadsheet/publish-category-spreadsheet';
 import { publishCategorySpreadsheet as publishCategorySpreadsheetBot } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { axiosRequest } from '@dsco/aws-auth';
-import { createContext } from '@dsco/service-utils';
 import { AttributionCategory } from '@dsco/ts-models';
+import { LoadCatalogAttributionsRequest } from '@lib/requests';
 import { XlsxSpreadsheet } from '@lib/spreadsheet';
 import { getApiCredentials, gunzipAsync, randomInt } from '@lib/utils';
 import { setTestWebsocketHandler } from '@lib/utils/send-websocket-event';
-import type { APIGatewayProxyEvent, S3CreateEvent } from 'aws-lambda';
+import type { S3CreateEvent } from 'aws-lambda';
 import axios from 'axios';
-import { initAWSCredentials } from '../test-utils';
-import { LoadCatalogAttributionsRequest } from './load-catalog-attributions.request';
+import { initAWSCredentials, invokeHandlerLocally } from '../test-utils';
 
 // Aidan Test Retailer
 const retailerId = 1000012301;
 // Aidan Test Supplier
-const userId = '26366';
-const identityId = 'us-east-1:575be63f-b373-49c6-8113-b3558b418200';
+const userId = 26366;
 
 // Note: This test requires the dsco vpn to run as it uses both Mongo and Gearman
-test('it successfully generates parsable catalog spreadsheet', async () => {
-    await initAWSCredentials(userId);
+test('it successfully generates a catalog spreadsheet that can be re-uploaded', async () => {
+    const identityId = await initAWSCredentials(userId);
 
     const categoryPath = await getTestCatalogCategoryPath();
-    const generatedSpreadsheet = await generateSpreadsheet(categoryPath);
+    const generatedSpreadsheet = await generateSpreadsheet(categoryPath, identityId);
 
-    const uploadUrl = await getSpreadsheetUploadUrl(categoryPath);
+    const uploadUrl = await getSpreadsheetUploadUrl(categoryPath, identityId);
 
     // Write the generated spreadsheet to the s3 bucket
     await axios.put(uploadUrl, generatedSpreadsheet);
@@ -42,25 +38,16 @@ test('it successfully generates parsable catalog spreadsheet', async () => {
     // Invoke the publish bot and wait for websocket success at the same time
     await Promise.all([invokePublishBot(uploadUrl), waitForWebsocketSuccess()]);
 
-}, 60_000);
+}, 120_000);
 
 
-async function generateSpreadsheet(categoryPath: string): Promise<Buffer> {
+async function generateSpreadsheet(categoryPath: string, identityId: string): Promise<Buffer> {
     const body: GenerateCategorySpreadsheetRequestBody = {
         retailerId,
         categoryPath
     };
 
-    const apiGwResp = await generateCategorySpreadsheet({
-        body: JSON.stringify(body),
-        requestContext: {
-            identity: {
-                cognitoIdentityId: identityId
-            }
-        }
-    } as APIGatewayProxyEvent, createContext());
-
-    const resp: GenerateCategorySpreadsheetResponse = JSON.parse(apiGwResp.body);
+    const resp = await invokeHandlerLocally<GenerateCategorySpreadsheetResponse>(generateCategorySpreadsheet, body, identityId);
 
     expect(resp).toBeTruthy();
     expect(resp.gzippedFile).toBeTruthy();
@@ -71,23 +58,14 @@ async function generateSpreadsheet(categoryPath: string): Promise<Buffer> {
     return unzipped;
 }
 
-async function getSpreadsheetUploadUrl(categoryPath: string): Promise<string> {
+async function getSpreadsheetUploadUrl(categoryPath: string, identityId: string): Promise<string> {
     const body: PublishCategorySpreadsheetRequestBody = {
         retailerId,
         categoryPath,
         skippedRowIndexes: []
     };
 
-    const apiGwResp = await publishCategorySpreadsheet({
-        body: JSON.stringify(body),
-        requestContext: {
-            identity: {
-                cognitoIdentityId: identityId
-            }
-        }
-    } as APIGatewayProxyEvent, createContext());
-
-    const resp: PublishCategoryResponse = JSON.parse(apiGwResp.body);
+    const resp = await invokeHandlerLocally<PublishCategoryResponse>(publishCategorySpreadsheet, body, identityId);
 
     expect(resp).toBeTruthy();
     expect(resp.uploadUrl).toBeTruthy();

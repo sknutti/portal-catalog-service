@@ -1,13 +1,7 @@
 process.env.JEST_FILE = 'coverage/jest.json';
-process.env.ENVIRONMENT = 'test';
-process.env.LEO_ENVIRONMENT = 'test';
-process.env.LEO_LOCAL = 'true';
-process.env.AWS_REGION = 'us-east-1';
-process.env.ENVIRONMENT = 'test';
-process.env.LEO_ENVIRONMENT = 'test';
-process.env.AUTH_USER_TABLE = 'TestAuth-LeoAuthUser-OZ7R6RHZIPDY';
-process.env.GEARMAN_HOST = 'gearman.local';
-process.env.S3_BUCKET = 'portal-catalog-test';
+require('ts-node/register');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('lib/environment').setupEnvironmentForRunningLocally('test');
 
 module.exports = {
     preset: 'ts-jest',

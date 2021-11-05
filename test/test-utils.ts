@@ -1,28 +1,33 @@
 import { CognitoIdentityClient } from '@aws-sdk/client-cognito-identity/';
 import { CognitoIdentityCredentials, fromCognitoIdentity } from '@aws-sdk/credential-provider-cognito-identity';
+import { createContext } from '@dsco/service-utils';
+import { getAwsRegion, getDscoEnv } from '@lib/environment';
 import { setApiCredentials } from '@lib/utils';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
-import { CognitoIdentity, SharedIniFileCredentials } from 'aws-sdk';
-
-const credentials = new SharedIniFileCredentials();
+import { CognitoIdentity } from 'aws-sdk';
 
 const defaultUserPrefix = 'user_'; // user_ or admin_
-const identityPoolId = 'us-east-1:80b3d91e-563f-4eda-a70b-d85140e2125a'; // hard coded for test
 const tokenDuration = 15000;
-const region = 'us-east-1';
 
-export async function initAWSCredentials(userId: string): Promise<void> {
-    AWS.config.region = region;
-    const creds = new AWS.Credentials(await getCredentials(userId));
-    setApiCredentials(creds);
+/**
+ * Inits the aws credentials, returning the user's identityId
+ */
+export async function initAWSCredentials(userId: number): Promise<string> {
+    AWS.config.region = getAwsRegion();
     AWS.config.credentials = new AWS.SharedIniFileCredentials();
+
+    const creds = await getCredentials(userId);
+    setApiCredentials(new AWS.Credentials(creds));
+
+    return creds.identityId;
 }
 
-export const getCredentials = async (userId: string): Promise<CognitoIdentityCredentials> => {
+export const getCredentials = async (userId: number): Promise<CognitoIdentityCredentials> => {
     const auth = await getAuth(userId);
     return fromCognitoIdentity({
         client: new CognitoIdentityClient({
-            region,
+            region: getAwsRegion(),
             serviceId: 'execute-api',
             credentials: new AWS.SharedIniFileCredentials()
         }),
@@ -34,16 +39,22 @@ export const getCredentials = async (userId: string): Promise<CognitoIdentityCre
 };
 
 export const getAuth = async (
-  userId: string,
+  userId: number,
   userPrefix: 'user_' | 'admin_' = defaultUserPrefix,
 ): Promise<CognitoIdentity.Types.GetOpenIdTokenForDeveloperIdentityResponse> => {
     const cognitoIdentity = new CognitoIdentity({
-        region,
+        region: getAwsRegion(),
         credentials: {
-            accessKeyId: credentials.accessKeyId,
-            secretAccessKey: credentials.secretAccessKey,
+            accessKeyId: AWS.config.credentials!.accessKeyId,
+            secretAccessKey: AWS.config.credentials!.secretAccessKey,
         },
     });
+
+    const identityPoolId = {
+        test: 'us-east-1:80b3d91e-563f-4eda-a70b-d85140e2125a',
+        staging: 'us-east-1:dc79ebb9-3313-47dd-b31d-2ffe60c7f21c',
+        prod: 'us-east-1:4b960ed4-82ac-42d0-ae3e-ec2d1a5a6e1f'
+    }[getDscoEnv()];
 
     return cognitoIdentity
       .getOpenIdTokenForDeveloperIdentity({
@@ -55,3 +66,16 @@ export const getAuth = async (
       })
       .promise();
 };
+
+export async function invokeHandlerLocally<T>(handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>, body: any, identityId: string): Promise<T> {
+    const result = await handler({
+        body: JSON.stringify(body),
+        requestContext: {
+            identity: {
+                cognitoIdentityId: identityId
+            }
+        }
+    } as APIGatewayProxyEvent, createContext());
+
+    return JSON.parse(result.body);
+}

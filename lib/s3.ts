@@ -1,17 +1,28 @@
+import { getAwsRegion, getPortalCatalogS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
-const s3 = new AWS.S3({ region: process.env.AWS_REGION, signatureVersion: 'v4', });
+
+let s3: AWS.S3 | undefined;
+
+function getS3Client(): AWS.S3 {
+    if (s3) {
+        return s3;
+    } else {
+        s3 = new AWS.S3({ region: getAwsRegion(), signatureVersion: 'v4', });
+        return s3;
+    }
+}
 
 export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
     const params = {
-        Bucket: process.env.S3_BUCKET,
+        Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
         Metadata: prepareMetadata(metadata)
     };
 
-    return s3.getSignedUrlPromise('putObject', params);
+    return getS3Client().getSignedUrlPromise('putObject', params);
 }
 
 function prepareMetadata<M>(metadata: M): Record<string, string> {
@@ -34,9 +45,9 @@ function prepareMetadata<M>(metadata: M): Record<string, string> {
 }
 
 export async function downloadS3Bucket(path: string): Promise<Buffer> {
-    const resp = await s3
+    const resp = await getS3Client()
         .getObject({
-            Bucket: process.env.S3_BUCKET!,
+            Bucket: getPortalCatalogS3BucketName(),
             Key: path,
         })
         .promise();
@@ -53,7 +64,7 @@ interface S3File {
  * @param from - The location to copy from - *MUST ALREADY BE URL ENCODED*
  */
 export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata: Metadata) {
-    await s3.copyObject({
+    await getS3Client().copyObject({
         CopySource: `${from.bucket}/${from.path}`,
         Bucket: to.bucket,
         Key: to.path,
@@ -65,9 +76,9 @@ export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata:
 export async function downloadS3Metadata<Metadata>(
   path: string
 ): Promise<Metadata> {
-    const resp = await s3
+    const resp = await getS3Client()
       .headObject({
-          Bucket: process.env.S3_BUCKET!,
+          Bucket: getPortalCatalogS3BucketName(),
           Key: path,
       })
       .promise();
@@ -81,7 +92,7 @@ export async function downloadS3Metadata<Metadata>(
 }
 
 export async function writeS3Object(bucket: string, path: string, body: string): Promise<void> {
-    await s3.putObject({
+    await getS3Client().putObject({
         Bucket: bucket,
         Key: path,
         Body: body

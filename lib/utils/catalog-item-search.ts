@@ -1,21 +1,18 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
-import { Catalog, DscoEnv, SnakeCase } from '@dsco/ts-models';
+import { Catalog, SnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
+import { getAwsRegion, getDscoEnv } from '@lib/environment';
 import { getApiCredentials } from '@lib/utils/api-credentials';
-import * as AWS from 'aws-sdk';
-import { Credentials } from 'aws-sdk';
 import { MongoClient } from 'mongodb';
-
-const env = process.env.ENVIRONMENT! as DscoEnv;
 
 interface MongoSecret {
     portalCatalogConnectString: string;
     ca: string;
 }
 
-const mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${env}`, 60000);
+const mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${getDscoEnv()}`, 60000);
 
 let mongoClient: MongoClient | undefined;
 let connectString: string | undefined;
@@ -30,6 +27,7 @@ export async function catalogItemSearch(
     let itemIdsFromMongo: number[] = [];
 
     if (!directlyLoadSkus) {
+        const env = getDscoEnv();
         // First we do an ES request to find all items in the category
         const searchResp = await axiosRequest(
           new ItemSearchRequest(env, {
@@ -42,7 +40,7 @@ export async function catalogItemSearch(
           }),
           env,
           getApiCredentials(),
-          process.env.AWS_REGION!
+          getAwsRegion()
         );
 
 

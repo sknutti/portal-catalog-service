@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import { CatalogSpreadsheetWebsocketEvents } from '@api/index';
+import { getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { Transform } from 'stream';
 
 const config = require('leo-config');
@@ -16,7 +17,7 @@ export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebso
   data: CatalogSpreadsheetWebsocketEvents[K],
   accountId: number
 ): Promise<void> {
-    if (process.env.ENVIRONMENT === 'test' || process.env.LEO_LOCAL) {
+    if (getDscoEnv() === 'test' || getIsRunningLocally()) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
     }
 

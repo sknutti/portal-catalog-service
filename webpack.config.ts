@@ -1,4 +1,6 @@
 import { ServerlessArtifactWebpackPlugin } from '@dsco/service-utils';
+import { DscoEnv } from '@dsco/ts-models';
+import { setupEnvironmentForRunningLocally } from '@lib/environment';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import { resolve } from 'path';
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
@@ -8,10 +10,8 @@ import InjectPlugin from 'webpack-inject-plugin';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const { StatsWriterPlugin } = require('webpack-stats-plugin');
 
-const stage = 'staging' as 'test' | 'staging' | 'prod';
-process.env.GEARMAN_HOST = `gearman.${stage === 'prod' ? 'local' : stage}`;
-process.env.SLS_COGNITO_IDENTITY_ID = 'us-east-1:71336b2f-2239-47db-b675-3295b87bde3e';
-process.env.LEO_LOCAL = 'true';
+const stage: DscoEnv = 'test';
+setupEnvironmentForRunningLocally(stage);
 
 module.exports = async (env?: { local: boolean }): Promise<Configuration> => {
     const isLocal = env?.local;

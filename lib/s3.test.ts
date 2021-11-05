@@ -1,3 +1,4 @@
+import { getPortalCatalogS3BucketName } from '@lib/environment';
 import {
     copyS3Object,
     downloadS3Bucket,
@@ -41,11 +42,12 @@ test('Write & copy s3 object works', async () => {
 
     // First setup a source file
     const id = uuid.v4();
-    await writeS3Object(process.env.S3_BUCKET!, source_path, id);
+    const s3Bucket = getPortalCatalogS3BucketName();
+    await writeS3Object(s3Bucket, source_path, id);
 
     // Then copy that file
-    await copyS3Object({bucket: process.env.S3_BUCKET!, path: encodeURIComponent(source_path)}, {
-        bucket: process.env.S3_BUCKET!,
+    await copyS3Object({bucket: s3Bucket, path: encodeURIComponent(source_path)}, {
+        bucket: s3Bucket,
         path: dest_path
     }, {custom_meta: dest_meta});
 

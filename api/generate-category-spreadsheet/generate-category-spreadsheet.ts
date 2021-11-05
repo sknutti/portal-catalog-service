@@ -1,5 +1,6 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { getLeoAuthUserTable } from '@lib/environment';
 import { DscoCatalogRow, DscoSpreadsheet, generateSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogItemSearch, gzipAsync } from '@lib/utils';
@@ -13,7 +14,7 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
         return new MissingRequiredFieldError('categoryPath');
     }
 
-    const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
+    const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
     // Must be logged in
     if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {

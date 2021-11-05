@@ -27,5 +27,8 @@
             "@lib/*": ["./lib/*"]
         }
     },
-    "include": ["api/**/*.ts", "bot/**/*.ts", "test/**/*.ts", "lib/**/*.ts", "webpack.config.ts"]
+    "include": ["api/**/*.ts", "bot/**/*.ts", "test/**/*.ts", "lib/**/*.ts", "webpack.config.ts"],
+    "ts-node": {
+        "require": ["tsconfig-paths/register"]
+    }
 }

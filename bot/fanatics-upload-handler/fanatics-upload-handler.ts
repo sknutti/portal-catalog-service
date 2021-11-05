@@ -1,3 +1,4 @@
+import { getPortalCatalogS3BucketName } from '@lib/environment';
 import { getFanaticsAccountForEnv } from '@lib/fanatics';
 import { CatalogSpreadsheetS3Metadata, copyS3Object, createCatalogItemS3UploadPath } from '@lib/s3';
 import type { S3CreateEvent } from 'aws-lambda';
@@ -22,7 +23,7 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
         path: record.object.key
     };
     const to = {
-        bucket: process.env.S3_BUCKET!,
+        bucket: getPortalCatalogS3BucketName(),
         path: createCatalogItemS3UploadPath(account.supplierId, account.retailerId, account.userId, account.categoryPath)
     };
 

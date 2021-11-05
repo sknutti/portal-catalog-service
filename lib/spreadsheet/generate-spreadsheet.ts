@@ -8,13 +8,13 @@ import {
     UnexpectedError
 } from '@dsco/ts-models';
 import { descriptions } from '@lib/descriptions';
+import { getAwsRegion } from '@lib/environment';
 import { GetPipelineCatalogRulesRequest, GetPipelineRulesRequest } from '@lib/requests';
+import { getDscoEnv } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import { Credentials } from 'aws-sdk';
 import { DscoColumn, DscoColValidation } from './dsco-column';
 import { DscoSpreadsheet } from './dsco-spreadsheet';
-
-const env = process.env.ENVIRONMENT! as DscoEnv;
 
 /**
  * Generates a spreadsheet with column data pulled from the simple rules.
@@ -29,7 +29,7 @@ export async function generateSpreadsheet(
         return colsOrErr;
     }
 
-    const spreadsheet = new DscoSpreadsheet(`${env}||${supplierId}||${retailerId}||${categoryPath}`);
+    const spreadsheet = new DscoSpreadsheet(`${getDscoEnv()}||${supplierId}||${retailerId}||${categoryPath}`);
 
     // If the first column isn't sku, sort to enforce it.
     if (colsOrErr[0].fieldName !== 'sku') {
@@ -58,18 +58,20 @@ async function generateSpreadsheetCols(
     retailerId: number,
     categoryPath: string,
 ): Promise<DscoColumn[] | UnexpectedError> {
+    const env = getDscoEnv();
+
     const [catalogRulesResp, allRulesResp] = await Promise.all([
         axiosRequest(
             new GetPipelineCatalogRulesRequest(env, [categoryPath], retailerId.toString(10)),
             env,
             AWS.config.credentials as Credentials,
-            process.env.AWS_REGION!,
+            getAwsRegion(),
         ),
         axiosRequest(
             new GetPipelineRulesRequest(env, retailerId),
             env,
             AWS.config.credentials as Credentials,
-            process.env.AWS_REGION!,
+            getAwsRegion(),
         ),
     ] as const);
 

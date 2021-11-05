@@ -4,6 +4,7 @@ import type {
 } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { getIsRunningLocally, getLeoAuthUserTable, getPublishBotName } from '@lib/environment';
 import { CatalogSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3Url } from '@lib/s3';
 import AWS from 'aws-sdk';
 import { PublishCategorySpreadsheetRequest } from './publish-category-spreadsheet.request';
@@ -17,7 +18,7 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
         return new MissingRequiredFieldError('categoryPath');
     }
 
-    const user = await getUser(event.requestContext, process.env.AUTH_USER_TABLE!);
+    const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
     // Must be logged in
     if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {
@@ -46,7 +47,7 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
     const uploadMeta: CatalogSpreadsheetS3Metadata = {
         category_path: categoryPath,
         skipped_row_indexes: skippedRowIndexes?.join(','),
-        is_local_test: process.env.LEO_LOCAL === 'true' ? 'true' : undefined
+        is_local_test: getIsRunningLocally() ? 'true' : undefined
     };
 
     return {
@@ -58,7 +59,7 @@ export const publishCategorySpreadsheet = apiWrapper<PublishCategorySpreadsheetR
 declare const __non_webpack_require__: typeof require;
 
 function invokePublishBot(event: PublishCategorySpreadsheetEvent): Promise<void> {
-    if (process.env.LEO_LOCAL === 'true') {
+    if (getIsRunningLocally()) {
         // This invokes the webpack output for the generate-category-spreadsheet function.
         const generateFn: typeof publishSpreadsheetBot = __non_webpack_require__(
             '../../bot/publish-category-spreadsheet/publish-category-spreadsheet',
@@ -74,7 +75,7 @@ function invokePublishBot(event: PublishCategorySpreadsheetEvent): Promise<void>
         return new Promise((resolve) => {
             lambda
                 .invoke({
-                    FunctionName: process.env.PUBLISH_BOT_NAME!,
+                    FunctionName: getPublishBotName(),
                     InvocationType: 'RequestResponse',
                     Payload: JSON.stringify(event),
                 })
