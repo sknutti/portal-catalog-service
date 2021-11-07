@@ -2,33 +2,9 @@
 
 Contains a set of catalog-related apis designed to be called directly from the portal.
 
-## Notes On Auth
-
-**This service uses an oauth refresh token to programmatically access `dsco.catalog.editor@dsco.io`
-using the Google Sheets and Google Drive apis.**
-
-**If this refresh token expires (changed password, inactive for 6 months), follow these instructions to obtain a new one:**
-
-1. Note the `clientId`, `clientSecret`, and `scopes` from [this AWS secret](https://console.aws.amazon.com/secretsmanager/home?region=us-east-1#/secret?name=catalog-editor-google-api).
-2. Go to [The Google Oauth Playground](https://developers.google.com/oauthplayground/)
-3. In Settings (Click the Gear Icon), Set
-    - OAuth flow: Server-side
-    - Access type: Offline
-    - Use your own OAuth credentials: TICK
-    - Client Id and Client Secret: from step 1
-4. In the "Select and Authorize APIs" section add the `scopes` from step 1.
-5. Click Authorize APIs. You will be prompted to choose your Google account.
-    - Log in as `dsco.catalog.editor@dsco.io`
-    - The password is in LastPass and can be shared with you via Aidan, Brett, or Bruce
-6. In the "Exchange authorization code for tokens" section, click the button "Exchange authorization code for tokens"
-7. Copy the Refresh Token and Access Token fields and save them as `refreshToken` and `accessToken` in the [same AWS secret from step 1](https://console.aws.amazon.com/secretsmanager/home?region=us-east-1#/secret?name=catalog-editor-google-api).
-    - If changing permissions, don't forget to copy the `scope` value over to the `scopes` secret value.
-
-More info can be found [here](https://stackoverflow.com/questions/19766912/how-do-i-authorise-an-app-web-or-installed-without-user-intervention).
-
 ## Usage
 
-Each api exports a request object that can be used to query the api.
+Each api exports a request object that can be used to invoke the api.
 
 Example web use:
 
@@ -66,20 +42,31 @@ Updates are distributed through NPM. To download the latest version, run `npm in
 
 ## Project Layout
 
-The source for each of the apid lambdas can be found in `/api/function_name/`
+The source for each of the apis lambdas can be found in `/api/function_name/`
 The source for each of the bot lambdas can be found in `/bot/function_name/`
 
 Shared code and helper code can be found under `/lib`
 
 ## Running Locally
+_Note: Running locally requires you are connected to the dsco vpn_
 
+There's two methods of running locally: 
+- A manual test script that allows you to quickly test most operations
+- Use serverless-offline to run a local http server allowing you to invoke lambdas
+
+#### Manual Test Script
+This is the easiest method to get started.  Simply run `npm run manual-test`.  For more info, view the README in the scripts directory
+
+#### Serverless-Offline Server
 To start, run `npm start` which will watch for changes to your apis and
 start a server so you can test them under [localhost:3000](localhost:3000)
 
-To set which user is logged in, head on over to `webpack.config.ts` and you'll need to change the
-process.env.SLS_COGNITO_IDENTITY_ID value. To get an identity value for a specific account and
-user...
+To set which environment you're running against, head on over to `webpack.config.ts` and change the `stage` variable at the top of the file.
+You'll need to restart the server anytime you change this value.
 
+To invoke a lambda as a specific user, you'll need to provide a
+`cognito-identity-i` header value on your requests. To get an identity value for a specific account and
+user:
 1. Go to Dsco internal tools
 2. Log in as the account that you want into the Dsco portal
 3. Open up a javascript console in the browser

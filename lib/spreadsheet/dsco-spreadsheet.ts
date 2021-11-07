@@ -4,6 +4,7 @@ import { DscoColumn } from './dsco-column';
 
 /**
  * This is the "source of truth" spreadsheet for a given category.  It's used to parse, generate, and validate user spreadsheets.
+ * Can be converted to or from a `PhysicalSpreadsheet` (csv or xlsx)
  *
  * A DscoSpreadsheet is primarily two pieces of data:
  * • A list of DscoColumns that contain validation rules & field names

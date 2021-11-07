@@ -2,7 +2,6 @@ import { getAwsRegion, getPortalCatalogS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
-
 let s3: AWS.S3 | undefined;
 
 function getS3Client(): AWS.S3 {

@@ -1,4 +1,4 @@
-import { DscoEnv } from "@dsco/ts-models";
+import { DscoEnv } from '@dsco/ts-models';
 
 export function getDscoEnv(): Exclude<DscoEnv, 'dev'> {
     const env = process.env.ENVIRONMENT;
@@ -22,10 +22,6 @@ export function getAwsRegion(): string {
 
 export function getFanaticsBucketName(): string {
     return ensureEnvironmentVar('FANATICS_BUCKET');
-}
-
-export function getPublishBotName(): string {
-    return ensureEnvironmentVar('PUBLISH_BOT_NAME');
 }
 
 export function getIsRunningLocally(): boolean {

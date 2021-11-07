@@ -19,7 +19,7 @@
         "typeRoots": ["node_modules/@types"],
         "incremental": true,
         "allowJs": true,
-        "importsNotUsedAsValues": "preserve",
+        "importsNotUsedAsValues": "remove",
         "lib": ["es2015"],
         "paths": {
             "@api/*": ["./api/*"],

@@ -10,5 +10,6 @@ build
 .vscode
 coverage
 docs
+generated-spreadsheet.xlsx
 
 docs/*

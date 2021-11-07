@@ -19,7 +19,7 @@ import { DscoSpreadsheet } from './dsco-spreadsheet';
 /**
  * Generates a spreadsheet with column data pulled from the simple rules.
  */
-export async function generateSpreadsheet(
+export async function generateDscoSpreadsheet(
     supplierId: number,
     retailerId: number,
     categoryPath: string,

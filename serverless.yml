@@ -103,6 +103,6 @@ provider:
 functions:
     - ${file(./api/get-assortments/serverless.yml)}
     - ${file(./api/generate-category-spreadsheet/serverless.yml)}
-    - ${file(./api/publish-category-spreadsheet/serverless.yml)}
+    - ${file(./api/get-category-spreadsheet-upload-url/serverless.yml)}
     - ${file(./bot/fanatics-upload-handler/serverless.yml)}
     - ${file(./bot/publish-category-spreadsheet/serverless.yml)}

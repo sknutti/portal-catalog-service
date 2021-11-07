@@ -11,7 +11,7 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
 
     const account = getFanaticsAccountForEnv();
     if (!account) {
-        throw new Error(`Unexpected dsco env: ${process.env.ENVIRONMENT}`);
+        throw new Error(`No fanatics account for dsco env: ${process.env.ENVIRONMENT}`);
     }
 
     const meta: CatalogSpreadsheetS3Metadata = {

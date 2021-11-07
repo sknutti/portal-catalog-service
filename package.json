@@ -12,7 +12,7 @@
         "build:lib:ts": "tsc -p tsconfig.lib.json && tsc -p tsconfig.lib.json -m esnext --outDir build/lib/fesm2015 -d false",
         "lint": "eslint .",
         "lint:prettier": "prettier . --check",
-        "runit": "ts-node scripts/upload-test.ts",
+        "manual-test": "npx ts-node scripts/manual-test.ts",
         "format": "prettier . --write",
         "doc": "typedoc"
     },
@@ -22,7 +22,7 @@
     "dependencies": {
         "@dsco/aws-auth": "^1.0.12",
         "@dsco/eslint-config": "0.0.4",
-        "@dsco/gearman-apis": "0.0.18",
+        "@dsco/gearman-apis": "0.0.21",
         "@dsco/search-apis": "^1.0.40",
         "@dsco/service-utils": "0.0.20",
         "@dsco/ts-models": "^1.0.82",

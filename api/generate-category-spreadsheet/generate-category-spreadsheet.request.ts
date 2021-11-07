@@ -12,6 +12,9 @@ export interface GenerateCategorySpreadsheetResponse extends DsResponse {
     gzippedFile: string;
 }
 
+/**
+ * Generates an xlsx spreadsheet for a given catalog attribution category
+ */
 export class GenerateCategorySpreadsheetRequest extends DsRequest<
     GenerateCategorySpreadsheetRequestBody,
     GenerateCategorySpreadsheetResponse,

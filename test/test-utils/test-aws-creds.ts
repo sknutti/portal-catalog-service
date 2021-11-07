@@ -66,16 +66,3 @@ export const getAuth = async (
       })
       .promise();
 };
-
-export async function invokeHandlerLocally<T>(handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>, body: any, identityId: string): Promise<T> {
-    const result = await handler({
-        body: JSON.stringify(body),
-        requestContext: {
-            identity: {
-                cognitoIdentityId: identityId
-            }
-        }
-    } as APIGatewayProxyEvent, createContext());
-
-    return JSON.parse(result.body);
-}

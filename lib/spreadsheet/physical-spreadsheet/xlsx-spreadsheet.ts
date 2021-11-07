@@ -34,7 +34,7 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
     }
 
     static isXlsx(buffer: Buffer): boolean {
-        return buffer.slice(0, 4).compare(new Buffer('504B0304', 'hex')) === 0;
+        return buffer.slice(0, 4).compare(Buffer.alloc(4, '504B0304', 'hex')) === 0;
     }
 
     numDataRows(): number {

@@ -3,7 +3,7 @@ import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
 import { Catalog, SnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import { getAwsRegion, getDscoEnv } from '@lib/environment';
+import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { getApiCredentials } from '@lib/utils/api-credentials';
 import { MongoClient } from 'mongodb';
 
@@ -12,7 +12,7 @@ interface MongoSecret {
     ca: string;
 }
 
-const mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${getDscoEnv()}`, 60000);
+let mongoSecretHelper: SecretsManagerHelper<MongoSecret> | undefined;
 
 let mongoClient: MongoClient | undefined;
 let connectString: string | undefined;
@@ -51,6 +51,10 @@ export async function catalogItemSearch(
         itemIdsFromMongo = searchResp.data.docs;
     }
 
+    if (!mongoSecretHelper) {
+        mongoSecretHelper = new SecretsManagerHelper<MongoSecret>(`mongo-${getDscoEnv()}`, 60000);
+    }
+
     // Then we load those ids from mongo
     const mongoSecret = await mongoSecretHelper.getValue();
     if (!mongoClient || connectString !== mongoSecret.portalCatalogConnectString) {
@@ -60,6 +64,7 @@ export async function catalogItemSearch(
             useNewUrlParser: true,
             ssl: true,
             sslValidate: true,
+            useUnifiedTopology: true,
             sslCA: [mongoSecret.ca]
         });
     }
@@ -79,6 +84,12 @@ export async function catalogItemSearch(
           ]
       })
       .toArray();
+
+    // Close the mongo client when running locally to prevent process from hanging
+    if (getIsRunningLocally()) {
+        mongoClient.close();
+        mongoClient = undefined;
+    }
 
     return mongoResp as CoreCatalog[];
 }

@@ -1,7 +1,7 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getLeoAuthUserTable } from '@lib/environment';
-import { DscoCatalogRow, DscoSpreadsheet, generateSpreadsheet } from '@lib/spreadsheet';
+import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogItemSearch, gzipAsync } from '@lib/utils';
 import { GenerateCategorySpreadsheetRequest } from './generate-category-spreadsheet.request';
@@ -26,7 +26,7 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
 
     const catalogItems = await catalogItemSearch(supplierId, retailerId, categoryPath);
 
-    const spreadsheet = await generateSpreadsheet(supplierId, retailerId, categoryPath);
+    const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
 
     if (!(spreadsheet instanceof DscoSpreadsheet)) {
         return spreadsheet;
@@ -34,7 +34,7 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
 
     for (const catalog of catalogItems) {
         // Populate the spreadsheet with all of their catalog items
-        spreadsheet.addCatalogRow(new DscoCatalogRow(catalog, false, true));
+        spreadsheet.addCatalogRow(new DscoCatalogRow(catalog, false, false));
     }
 
     const workbook = xlsxFromDsco(spreadsheet, retailerId);
