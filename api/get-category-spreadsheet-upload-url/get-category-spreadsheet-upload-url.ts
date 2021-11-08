@@ -24,11 +24,14 @@ export const getCategorySpreadsheetUploadUrl = apiWrapper<GetCategorySpreadsheet
     const uploadMeta: CatalogSpreadsheetS3Metadata = {
         category_path: categoryPath,
         skipped_row_indexes: skippedRowIndexes?.join(','),
-        is_local_test: getIsRunningLocally() ? 'true' : undefined
+        is_local_test: getIsRunningLocally() ? 'true' : undefined,
     };
 
     return {
         success: true,
-        uploadUrl: await getSignedS3Url(createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath), uploadMeta)
+        uploadUrl: await getSignedS3Url(
+            createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath),
+            uploadMeta,
+        ),
     };
 });

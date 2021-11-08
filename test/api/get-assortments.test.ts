@@ -12,14 +12,17 @@ const identityId = 'us-east-1:575be63f-b373-49c6-8113-b3558b418200';
 test('get assortments works', async () => {
     await initAWSCredentials(userId);
 
-    const apiGwResp = await getAssortments({
-        body: '',
-        requestContext: {
-            identity: {
-                cognitoIdentityId: identityId
-            }
-        }
-    } as APIGatewayProxyEvent, createContext());
+    const apiGwResp = await getAssortments(
+        {
+            body: '',
+            requestContext: {
+                identity: {
+                    cognitoIdentityId: identityId,
+                },
+            },
+        } as APIGatewayProxyEvent,
+        createContext(),
+    );
 
     const resp: GetAssortmentsResponse = JSON.parse(apiGwResp.body);
 

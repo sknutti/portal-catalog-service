@@ -5,8 +5,8 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
         test: {
             supplierId: 1000012302,
             userId: 26366,
-            retailerId: 1000012301
-        }
+            retailerId: 1000012301,
+        },
     },
     Fanatics: {
         staging: {
@@ -14,16 +14,16 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             supplierId: 1000007967,
             retailerId: 1000007220,
             userId: 1000011189,
-            defaultCategoryPath: 'Fan Gear'
+            defaultCategoryPath: 'Fan Gear',
         },
         prod: {
             isRealCustomer: true,
             supplierId: 1000043924,
             retailerId: 1000003564,
             userId: 31615,
-            defaultCategoryPath: 'Fan Gear'
-        }
-    }
+            defaultCategoryPath: 'Fan Gear',
+        },
+    },
 };
 
 export type TestAccount = Partial<Record<Exclude<DscoEnv, 'dev'>, TestAccountInfo>>;

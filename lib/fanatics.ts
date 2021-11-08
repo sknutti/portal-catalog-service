@@ -17,14 +17,14 @@ const accounts: Partial<Record<DscoEnv, Account>> = {
         supplierId: 1000007967,
         retailerId: 1000007220,
         userId: 1000011189,
-        categoryPath: 'Fan Gear'
+        categoryPath: 'Fan Gear',
     },
     prod: {
         supplierId: 1000043924,
         retailerId: 1000003564,
         userId: 31615,
-        categoryPath: 'Fan Gear'
-    }
+        categoryPath: 'Fan Gear',
+    },
 };
 
 interface Account {

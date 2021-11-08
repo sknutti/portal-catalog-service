@@ -15,16 +15,21 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     }
 
     const meta: CatalogSpreadsheetS3Metadata = {
-        category_path: account.categoryPath
+        category_path: account.categoryPath,
     };
 
     const from = {
         bucket: record.bucket.name,
-        path: record.object.key
+        path: record.object.key,
     };
     const to = {
         bucket: getPortalCatalogS3BucketName(),
-        path: createCatalogItemS3UploadPath(account.supplierId, account.retailerId, account.userId, account.categoryPath)
+        path: createCatalogItemS3UploadPath(
+            account.supplierId,
+            account.retailerId,
+            account.userId,
+            account.categoryPath,
+        ),
     };
 
     console.log('Copying s3 file from: ', from);

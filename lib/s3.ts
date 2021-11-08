@@ -8,7 +8,7 @@ function getS3Client(): AWS.S3 {
     if (s3) {
         return s3;
     } else {
-        s3 = new AWS.S3({ region: getAwsRegion(), signatureVersion: 'v4', });
+        s3 = new AWS.S3({ region: getAwsRegion(), signatureVersion: 'v4' });
         return s3;
     }
 }
@@ -18,7 +18,7 @@ export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
-        Metadata: prepareMetadata(metadata)
+        Metadata: prepareMetadata(metadata),
     };
 
     return getS3Client().getSignedUrlPromise('putObject', params);
@@ -63,24 +63,24 @@ interface S3File {
  * @param from - The location to copy from - *MUST ALREADY BE URL ENCODED*
  */
 export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata: Metadata) {
-    await getS3Client().copyObject({
-        CopySource: `${from.bucket}/${from.path}`,
-        Bucket: to.bucket,
-        Key: to.path,
-        Metadata: prepareMetadata(metadata),
-        MetadataDirective: 'REPLACE'
-    }).promise();
+    await getS3Client()
+        .copyObject({
+            CopySource: `${from.bucket}/${from.path}`,
+            Bucket: to.bucket,
+            Key: to.path,
+            Metadata: prepareMetadata(metadata),
+            MetadataDirective: 'REPLACE',
+        })
+        .promise();
 }
 
-export async function downloadS3Metadata<Metadata>(
-  path: string
-): Promise<Metadata> {
+export async function downloadS3Metadata<Metadata>(path: string): Promise<Metadata> {
     const resp = await getS3Client()
-      .headObject({
-          Bucket: getPortalCatalogS3BucketName(),
-          Key: path,
-      })
-      .promise();
+        .headObject({
+            Bucket: getPortalCatalogS3BucketName(),
+            Key: path,
+        })
+        .promise();
 
     const meta: Record<string, string> = {};
     for (const [key, val] of Object.entries(resp.Metadata || {})) {
@@ -91,26 +91,28 @@ export async function downloadS3Metadata<Metadata>(
 }
 
 export async function writeS3Object(bucket: string, path: string, body: string): Promise<void> {
-    await getS3Client().putObject({
-        Bucket: bucket,
-        Key: path,
-        Body: body
-    }).promise();
+    await getS3Client()
+        .putObject({
+            Bucket: bucket,
+            Key: path,
+            Body: body,
+        })
+        .promise();
 }
 
 export function createCatalogItemS3UploadPath(
-  supplierId: number,
-  retailerId: number,
-  userId: number,
-  path: string,
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
 ): string {
     const uploadId = uuid.v4();
     return `uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
 }
 
 export function parseCatalogItemS3UploadUrl(
-  url: string,
-): { supplierId: number; retailerId: number; userId: number; } | 'error' {
+    url: string,
+): { supplierId: number; retailerId: number; userId: number } | 'error' {
     url = url.split('?')[0];
     const regex = /uploads\/(\d+)\/(\d+)\/(\d+)\/.*$/;
     const match = regex.exec(url);
@@ -125,7 +127,6 @@ export function parseCatalogItemS3UploadUrl(
         return 'error';
     }
 }
-
 
 /**
  * These keys are snake_case as metadata keys must be lowercase

@@ -5,7 +5,8 @@ import {
     downloadS3Metadata,
     createCatalogItemS3UploadPath,
     getSignedS3Url,
-    parseCatalogItemS3UploadUrl, writeS3Object
+    parseCatalogItemS3UploadUrl,
+    writeS3Object,
 } from '@lib/s3';
 import axios from 'axios';
 import * as uuid from 'uuid';
@@ -18,14 +19,14 @@ test('Parsing s3 upload url works', () => {
     const uploadUrl = createCatalogItemS3UploadPath(supplierId, retailerId, userId, path);
     const parsed = parseCatalogItemS3UploadUrl(`https://aws.s3.test.bla/bla/${uploadUrl}?a=b`);
 
-    expect(parsed).toMatchObject({supplierId, retailerId, userId});
+    expect(parsed).toMatchObject({ supplierId, retailerId, userId });
 });
 
 test('Signed upload url works', async () => {
     const custom_meta = 'My custom meta with all sorts of emojis! 😋 ✂️ 📋 👌';
     const path = 'test/unit-test-😋 ✂️.txt';
 
-    const url = await getSignedS3Url(path, {custom_meta});
+    const url = await getSignedS3Url(path, { custom_meta });
 
     const id = uuid.v4();
     await axios.put(url, id);
@@ -46,13 +47,20 @@ test('Write & copy s3 object works', async () => {
     await writeS3Object(s3Bucket, source_path, id);
 
     // Then copy that file
-    await copyS3Object({bucket: s3Bucket, path: encodeURIComponent(source_path)}, {
-        bucket: s3Bucket,
-        path: dest_path
-    }, {custom_meta: dest_meta});
+    await copyS3Object(
+        { bucket: s3Bucket, path: encodeURIComponent(source_path) },
+        {
+            bucket: s3Bucket,
+            path: dest_path,
+        },
+        { custom_meta: dest_meta },
+    );
 
     // Download the copied file and verify it's correct
-    const [body, meta] = await Promise.all([downloadS3Bucket(dest_path), downloadS3Metadata<{ custom_meta: string }>(dest_path)]);
+    const [body, meta] = await Promise.all([
+        downloadS3Bucket(dest_path),
+        downloadS3Metadata<{ custom_meta: string }>(dest_path),
+    ]);
     expect(body.toString('utf8')).toEqual(id);
     expect(meta.custom_meta).toEqual(dest_meta);
 });

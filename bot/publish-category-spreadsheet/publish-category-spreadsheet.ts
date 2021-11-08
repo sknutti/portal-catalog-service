@@ -8,11 +8,11 @@ import {
     downloadS3Bucket,
     downloadS3Metadata,
     parseCatalogItemS3UploadUrl,
-    writeS3Object
+    writeS3Object,
 } from '@lib/s3';
 import { DscoSpreadsheet, generateDscoSpreadsheet, PhysicalSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CsvSpreadsheet } from '@lib/spreadsheet/physical-spreadsheet/csv-spreadsheet';
-import { catalogItemSearch, gzipAsync, randomFloat, WarehousesLoader } from '@lib/utils';
+import { gzipAsync, loadCatalogItemsFromMongo, randomFloat, WarehousesLoader } from '@lib/utils';
 import { batch, collect, enumerate, filter, map } from '@lib/utils/iter-tools';
 import { sendWebsocketEvent } from '@lib/utils/send-websocket-event';
 import type { S3CreateEvent } from 'aws-lambda';
@@ -50,36 +50,42 @@ export async function publishCategorySpreadsheet(s3Event: S3CreateEvent): Promis
         } else if (resp.ok) {
             await sendWebsocketEvent('success', resp.val, event.supplierId);
         } else {
-            await publishResultIfFanatics({
-                success: false,
-                error: resp.val,
-                message: resp.val.message
-            }, event.supplierId);
+            await publishResultIfFanatics(
+                {
+                    success: false,
+                    error: resp.val,
+                    message: resp.val.message,
+                },
+                event.supplierId,
+            );
 
             await sendWebsocketEvent(
-              'error',
-              {
-                  error: resp.val,
-                  message: resp.val.message,
-                  categoryPath: event.categoryPath
-              },
-              event.supplierId
+                'error',
+                {
+                    error: resp.val,
+                    message: resp.val.message,
+                    categoryPath: event.categoryPath,
+                },
+                event.supplierId,
             );
         }
     } catch (error: any) {
-        await publishResultIfFanatics({
-            success: false,
-            error,
-            message: 'message' in error ? error.message : 'Unexpected error'
-        }, event.supplierId);
+        await publishResultIfFanatics(
+            {
+                success: false,
+                error,
+                message: 'message' in error ? error.message : 'Unexpected error',
+            },
+            event.supplierId,
+        );
         await sendWebsocketEvent(
-          'error',
-          {
-              error,
-              message: 'message' in error ? error.message : 'Unexpected error',
-              categoryPath: event.categoryPath
-          },
-          event.supplierId
+            'error',
+            {
+                error,
+                message: 'message' in error ? error.message : 'Unexpected error',
+                categoryPath: event.categoryPath,
+            },
+            event.supplierId,
         );
         throw error;
     }
@@ -93,13 +99,16 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
     s3Path = decodeURIComponent(s3Path);
 
     const meta = await downloadS3Metadata<CatalogSpreadsheetS3Metadata>(s3Path);
-    const skippedRowIndexes = meta.skipped_row_indexes?.split(',').map(parseInt).filter(idx => !isNaN(idx));
+    const skippedRowIndexes = meta.skipped_row_indexes
+        ?.split(',')
+        .map(parseInt)
+        .filter((idx) => !isNaN(idx));
 
     const parsed = parseCatalogItemS3UploadUrl(s3Path);
     if (parsed === 'error') {
         throw new Error(`Failed parsing catalog s3 metadata. Url: ${s3Path}`);
     }
-    const {supplierId, retailerId, userId} = parsed;
+    const { supplierId, retailerId, userId } = parsed;
 
     if (!meta.category_path) {
         throw new Error(`S3 file ${s3Path} must have Metadata.category_path defined`);
@@ -112,30 +121,30 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
         retailerId,
         userId,
         categoryPath: meta.category_path,
-        isLocalTest: meta.is_local_test === 'true'
+        isLocalTest: meta.is_local_test === 'true',
     };
 }
 
 async function publishSpreadsheetImpl({
-                                          categoryPath,
-                                          retailerId,
-                                          supplierId,
-                                          userId,
-                                          s3Path,
-                                          skippedRowIndexes
-                                      }: PublishCategorySpreadsheetEvent): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
+    categoryPath,
+    retailerId,
+    supplierId,
+    userId,
+    s3Path,
+    skippedRowIndexes,
+}: PublishCategorySpreadsheetEvent): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
     const callId = Math.random().toString(36).substring(6).toUpperCase();
     console.log(`${callId} - Starting processing for supplier: ${supplierId}, path: ${s3Path}`);
 
     const sendProgress = (progress: number, message: string) => {
-        return sendWebsocketEvent('progressUpdate', {progress, message, categoryPath}, supplierId);
+        return sendWebsocketEvent('progressUpdate', { progress, message, categoryPath }, supplierId);
     };
 
     const [, dscoSpreadsheet, warehouses, [supplierSpreadsheet, existingCatalogItems]] = await Promise.all([
         sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateDscoSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
-        loadSpreadsheetAndCatalogItems(categoryPath, userId, supplierId, retailerId, s3Path)
+        loadSpreadsheetAndCatalogItems(categoryPath, userId, supplierId, retailerId, s3Path),
     ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
@@ -145,18 +154,18 @@ async function publishSpreadsheetImpl({
     if (!supplierSpreadsheet) {
         return Ok({
             totalRowCount: 0,
-            categoryPath
+            categoryPath,
         });
     }
 
     // Pull the row data from the google spreadsheet
     const catalogRows = supplierSpreadsheet.extractCatalogRows(
-      dscoSpreadsheet,
-      supplierId,
-      retailerId,
-      categoryPath,
-      keyWith(existingCatalogItems, (item) => [item.sku!, item]),
-      warehouses
+        dscoSpreadsheet,
+        supplierId,
+        retailerId,
+        categoryPath,
+        keyWith(existingCatalogItems, (item) => [item.sku!, item]),
+        warehouses,
     );
 
     // Resolve the rows that were modified, giving progress updates
@@ -190,25 +199,30 @@ async function publishSpreadsheetImpl({
     const resolvedBatches = map(batch(rowsToSave, batchSize), (rows) => resolver.resolveBatch(rows));
 
     // Batch the gearman calls to run as many as we can concurrently
-    const gearmanCalls = map(batch(resolvedBatches, numConcurrentGearmanCalls), (gearmanCalls) => Promise.all(collect(gearmanCalls)));
+    const gearmanCalls = map(batch(resolvedBatches, numConcurrentGearmanCalls), (gearmanCalls) =>
+        Promise.all(collect(gearmanCalls)),
+    );
 
     await sendProgress(startValidationPct, `Validating ${remainingRowsToValidate} modified rows...`);
 
     for await (const resolvedBatch of gearmanCalls) {
         for (const resolvedBatchError of resolvedBatch) {
             if (resolvedBatchError) {
-                await publishResultIfFanatics({
-                    success: false,
-                    rowWithError: resolvedBatchError.rowIdx,
-                    validationMessages: resolvedBatchError.messages
-                }, supplierId);
+                await publishResultIfFanatics(
+                    {
+                        success: false,
+                        rowWithError: resolvedBatchError.rowIdx,
+                        validationMessages: resolvedBatchError.messages,
+                    },
+                    supplierId,
+                );
 
                 return Ok({
                     totalRowCount,
                     validationMessages: resolvedBatchError.messages,
                     rowWithError: resolvedBatchError.rowIdx,
                     sentRequest: await gzipAsync(Buffer.from(JSON.stringify(resolvedBatchError.sentRequest), 'utf8')),
-                    categoryPath
+                    categoryPath,
                 });
             } else {
                 remainingRowsToValidate -= batchSize;
@@ -223,35 +237,48 @@ async function publishSpreadsheetImpl({
         const validationPct = (totalRowCount - remainingRowsToValidate) / totalRowCount;
 
         await sendProgress(
-          (1 - startValidationPct) * validationPct + startValidationPct,
-          `Validating ${numberWithCommas(remainingRowsToValidate)} rows...`
+            (1 - startValidationPct) * validationPct + startValidationPct,
+            `Validating ${numberWithCommas(remainingRowsToValidate)} rows...`,
         );
 
-        console.log(`${callId} - Finished processing ${numberWithCommas(totalRowCount - remainingRowsToValidate)} out of ${numberWithCommas(totalRowCount)} rows...`);
+        console.log(
+            `${callId} - Finished processing ${numberWithCommas(
+                totalRowCount - remainingRowsToValidate,
+            )} out of ${numberWithCommas(totalRowCount)} rows...`,
+        );
     }
 
     console.log(`${callId} - Finished!`);
 
-    await publishResultIfFanatics({
-        success: true,
-        numUploadedItems: totalRowCount
-    }, supplierId);
+    await publishResultIfFanatics(
+        {
+            success: true,
+            numUploadedItems: totalRowCount,
+        },
+        supplierId,
+    );
 
-    return Ok({totalRowCount, categoryPath});
+    return Ok({ totalRowCount, categoryPath });
 }
 
 /**
- * For every sku in the spreadsheet, we try loading the existing catalog items.  This allows us to merge uploaded data with existing catalog data, and detect which rows have changed
+ * For every sku in the spreadsheet, we try loading the existing catalog items.
+ * This allows us to merge uploaded data with existing catalog data, and detect which rows have changed
  */
-async function loadSpreadsheetAndCatalogItems(categoryPath: string, userId: number, supplierId: number, retailerId: number, s3Path: string): Promise<[PhysicalSpreadsheet | undefined, CoreCatalog[]]> {
+async function loadSpreadsheetAndCatalogItems(
+    categoryPath: string,
+    userId: number,
+    supplierId: number,
+    retailerId: number,
+    s3Path: string,
+): Promise<[PhysicalSpreadsheet | undefined, CoreCatalog[]]> {
     const buffer = await downloadS3Bucket(s3Path);
 
-    const supplierSpreadsheet = XlsxSpreadsheet.isXlsx(buffer) ? XlsxSpreadsheet.fromBuffer(buffer) : new CsvSpreadsheet(buffer);
+    const supplierSpreadsheet = XlsxSpreadsheet.isXlsx(buffer)
+        ? XlsxSpreadsheet.fromBuffer(buffer)
+        : new CsvSpreadsheet(buffer);
 
-    return [
-        supplierSpreadsheet,
-        await catalogItemSearch(supplierId, retailerId, categoryPath, supplierSpreadsheet?.skus())
-    ];
+    return [supplierSpreadsheet, await loadCatalogItemsFromMongo(supplierId, 'sku', supplierSpreadsheet?.skus() ?? [])];
 }
 
 /**
@@ -274,15 +301,15 @@ function timeoutPromise<T>(promise: Promise<T>, timeout: number): Promise<'timeo
         }, timeout);
 
         // Set up the real work
-        promise.then(
-          (value) => {
-              clearTimeout(timer);
-              resolve(value);
-          })
-          .catch((error) => {
-              clearTimeout(timer);
-              reject(error);
-          });
+        promise
+            .then((value) => {
+                clearTimeout(timer);
+                resolve(value);
+            })
+            .catch((error) => {
+                clearTimeout(timer);
+                reject(error);
+            });
     });
 }
 

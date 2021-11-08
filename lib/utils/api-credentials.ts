@@ -11,5 +11,5 @@ export function setApiCredentials(credentials: Credentials): void {
 }
 
 export function getApiCredentials(): Credentials {
-    return api_credentials ?? AWS.config.credentials as Credentials;
+    return api_credentials ?? (AWS.config.credentials as Credentials);
 }

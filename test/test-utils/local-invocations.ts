@@ -1,31 +1,38 @@
-import {
-    generateCategorySpreadsheet
-} from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
+import { generateCategorySpreadsheet } from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
 import { getAssortments } from '@api/get-assortments/get-assortments';
 import { getCategorySpreadsheetUploadUrl } from '@api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url';
 import {
+    Assortment,
+    CatalogSpreadsheetWebsocketEvents,
     GenerateCategorySpreadsheetRequest,
-    GetAssortmentsRequest, Assortment,
-    GetCategorySpreadsheetUploadUrlRequest
+    GetAssortmentsRequest,
+    GetCategorySpreadsheetUploadUrlRequest,
 } from '@api/index';
 import { publishCategorySpreadsheet } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { createContext } from '@dsco/service-utils';
 import { DsRequest, DsRequestBody, DsRequestResponse } from '@dsco/ts-models';
 import { XlsxSpreadsheet } from '@lib/spreadsheet';
 import { gunzipAsync } from '@lib/utils';
+import { setTestWebsocketHandler } from '@lib/utils/send-websocket-event';
 import type { S3CreateEvent } from 'aws-lambda';
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 
-
-async function locallyInvokeHandler<R extends DsRequest<any, any, any>>(handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>, body: DsRequestBody<R>, identityId: string): Promise<DsRequestResponse<R>> {
-    const result = await handler({
-        body: JSON.stringify(body),
-        requestContext: {
-            identity: {
-                cognitoIdentityId: identityId
-            }
-        }
-    } as APIGatewayProxyEvent, createContext());
+async function locallyInvokeHandler<R extends DsRequest<any, any, any>>(
+    handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>,
+    body: DsRequestBody<R>,
+    identityId: string,
+): Promise<DsRequestResponse<R>> {
+    const result = await handler(
+        {
+            body: JSON.stringify(body),
+            requestContext: {
+                identity: {
+                    cognitoIdentityId: identityId,
+                },
+            },
+        } as APIGatewayProxyEvent,
+        createContext(),
+    );
 
     const resp: DsRequestResponse<R> = JSON.parse(result.body);
     if (!resp || !resp.success) {
@@ -34,12 +41,20 @@ async function locallyInvokeHandler<R extends DsRequest<any, any, any>>(handler:
     return resp;
 }
 
-export async function locallyInvokeGetSpreadsheetUploadUrlApi(categoryPath: string, retailerId: number, identityId: string): Promise<string> {
-    const resp = await locallyInvokeHandler<GetCategorySpreadsheetUploadUrlRequest>(getCategorySpreadsheetUploadUrl, {
-        retailerId,
-        categoryPath,
-        skippedRowIndexes: []
-    }, identityId);
+export async function locallyInvokeGetSpreadsheetUploadUrlApi(
+    categoryPath: string,
+    retailerId: number,
+    identityId: string,
+): Promise<string> {
+    const resp = await locallyInvokeHandler<GetCategorySpreadsheetUploadUrlRequest>(
+        getCategorySpreadsheetUploadUrl,
+        {
+            retailerId,
+            categoryPath,
+            skippedRowIndexes: [],
+        },
+        identityId,
+    );
 
     expect(resp.uploadUrl).toBeTruthy();
 
@@ -55,29 +70,44 @@ export async function locallyInvokeGetAssortmentsApi(identityId: string): Promis
 }
 
 export async function locallyInvokePublishBot(uploadUrl: string): Promise<void> {
-    const {bucket, path} = parseSpreadsheetUploadUrl(uploadUrl);
+    const { bucket, path } = parseSpreadsheetUploadUrl(uploadUrl);
 
     const event = {
-        Records: [{
-            s3: {
-                bucket: {
-                    name: bucket
+        Records: [
+            {
+                s3: {
+                    bucket: {
+                        name: bucket,
+                    },
+                    object: {
+                        key: path,
+                    },
                 },
-                object: {
-                    key: path
-                }
-            }
-        }]
+            },
+        ],
     } as S3CreateEvent;
 
+    let websocketSuccess = false;
+    waitForWebsocketSuccess().then(() => (websocketSuccess = true));
+
     await publishCategorySpreadsheet(event);
+
+    expect(websocketSuccess).toBe(true);
 }
 
-export async function locallyInvokeGenerateSpreadsheetApi(categoryPath: string, retailerId: number, identityId: string): Promise<Buffer> {
-    const resp = await locallyInvokeHandler<GenerateCategorySpreadsheetRequest>(generateCategorySpreadsheet, {
-        retailerId,
-        categoryPath
-    }, identityId);
+export async function locallyInvokeGenerateSpreadsheetApi(
+    categoryPath: string,
+    retailerId: number,
+    identityId: string,
+): Promise<Buffer> {
+    const resp = await locallyInvokeHandler<GenerateCategorySpreadsheetRequest>(
+        generateCategorySpreadsheet,
+        {
+            retailerId,
+            categoryPath,
+        },
+        identityId,
+    );
 
     expect(resp.gzippedFile).toBeTruthy();
 
@@ -87,7 +117,26 @@ export async function locallyInvokeGenerateSpreadsheetApi(categoryPath: string, 
     return unzipped;
 }
 
-function parseSpreadsheetUploadUrl(url: string): { bucket: string, path: string } {
+function waitForWebsocketSuccess(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        setTestWebsocketHandler((type, data) => {
+            if (type === 'success') {
+                const success = data as CatalogSpreadsheetWebsocketEvents['success'];
+
+                if (success.rowWithError) {
+                    reject(`Spreadsheet had validation errors: \n- ${success.validationMessages?.join('\n- ')}`);
+                } else {
+                    resolve();
+                }
+            } else if (type === 'error') {
+                const error = data as CatalogSpreadsheetWebsocketEvents['error'];
+                reject(`Invocation error: ${error.message}\n\n${error.error}`);
+            }
+        });
+    });
+}
+
+function parseSpreadsheetUploadUrl(url: string): { bucket: string; path: string } {
     const regex = /https:\/\/(.*?)\.s3\.amazonaws.com\/(.*?)\?/;
     const matches = regex.exec(url);
     if (!matches) {
@@ -96,6 +145,6 @@ function parseSpreadsheetUploadUrl(url: string): { bucket: string, path: string 
 
     return {
         bucket: matches[1],
-        path: matches[2]
+        path: matches[2],
     };
 }

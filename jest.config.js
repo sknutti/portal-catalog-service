@@ -17,5 +17,5 @@ module.exports = {
     // collectCoverage: true,
     testResultsProcessor: 'jest-bamboo-formatter',
     // TODO: Why is this needed? Running jest with --detectOpenHandles does nothing, just hangs
-    forceExit: true
+    forceExit: true,
 };

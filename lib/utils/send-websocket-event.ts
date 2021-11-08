@@ -9,13 +9,12 @@ config.bootstrap(require('../../leo_config'));
 const leo = require('leo-sdk');
 const ls = require('leo-streams');
 
-
 let testWebsocketHandler: WebsocketHandler | undefined;
 
 export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebsocketEvents>(
-  type: K,
-  data: CatalogSpreadsheetWebsocketEvents[K],
-  accountId: number
+    type: K,
+    data: CatalogSpreadsheetWebsocketEvents[K],
+    accountId: number,
 ): Promise<void> {
     if (getDscoEnv() === 'test' || getIsRunningLocally()) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
@@ -31,9 +30,9 @@ export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebso
         accountId,
         event: {
             type,
-            ...data
+            ...data,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
     });
 }
 
@@ -44,9 +43,9 @@ async function pushEventToLeo(botId: string, payload: any) {
             id: botId,
             correlation_id: {
                 source: botId,
-                start: 1
+                start: 1,
             },
-            payload
+            payload,
         };
         done(null, event);
     });
@@ -66,7 +65,11 @@ function pipe(...args: any[]): Promise<any> {
     });
 }
 
-type WebsocketHandler = <K extends keyof CatalogSpreadsheetWebsocketEvents> (type: K, data: CatalogSpreadsheetWebsocketEvents[K], accountId: number) => void;
+type WebsocketHandler = <K extends keyof CatalogSpreadsheetWebsocketEvents>(
+    type: K,
+    data: CatalogSpreadsheetWebsocketEvents[K],
+    accountId: number,
+) => void;
 
 /**
  * Allows us to intercept & handle websocket events in tests

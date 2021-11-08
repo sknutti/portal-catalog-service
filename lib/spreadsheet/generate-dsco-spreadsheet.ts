@@ -5,7 +5,7 @@ import {
     PipelineRule,
     PipelineRulePrimaryDataType,
     PipelineRuleSecondaryDataType,
-    UnexpectedError
+    UnexpectedError,
 } from '@dsco/ts-models';
 import { descriptions } from '@lib/descriptions';
 import { getAwsRegion } from '@lib/environment';

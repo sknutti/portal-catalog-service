@@ -13,7 +13,7 @@ import {
     locallyInvokeGetSpreadsheetUploadUrlApi,
     locallyInvokePublishBot,
     TEST_ACCOUNTS,
-    TestAccount
+    TestAccount,
 } from '../test/test-utils';
 
 const testTypes: Record<TestType, TestTypeDef> = {
@@ -22,21 +22,21 @@ const testTypes: Record<TestType, TestTypeDef> = {
         categoryMessage: 'What category would you like to upload to?',
         fileMessage: 'What spreadsheet would you like to upload?',
         fileTypes: ['xlsx', 'csv'],
-        modifiesData: true
+        modifiesData: true,
     },
     generate: {
         name: 'Generate Category Spreadsheet',
         categoryMessage: 'What category would you like to generate from?',
         fileMessage: 'What file would you like to save the generated spreadsheet to?',
-        fileTypes: ['xlsx']
+        fileTypes: ['xlsx'],
     },
     getUploadUrl: {
         name: 'Get Presigned Spreadsheet Upload Url',
-        categoryMessage: 'What category would you like a presigned upload url for?'
+        categoryMessage: 'What category would you like a presigned upload url for?',
     },
     getAssortments: {
-        name: 'Get Assortments'
-    }
+        name: 'Get Assortments',
+    },
 };
 type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments';
 
@@ -53,35 +53,38 @@ async function main() {
     (global as any).expect = require('expect');
 
     const prompt = await inquirer.prompt<{
-        testType: TestType,
-        account: TestAccount,
-        environment: Exclude<DscoEnv, 'dev'>,
+        testType: TestType;
+        account: TestAccount;
+        environment: Exclude<DscoEnv, 'dev'>;
     }>([
         {
             type: 'list',
             name: 'testType',
             message: 'What type of test would you like to run?',
-            choices: Object.entries(testTypes).map(([value, {name}]) => ({name, value}))
+            choices: Object.entries(testTypes).map(([value, { name }]) => ({ name, value })),
         },
         {
             type: 'list',
             name: 'account',
             message: 'Which account do you want to test with?',
-            choices: Object.entries(TEST_ACCOUNTS).map(([name, value]) => ({name, value}))
+            choices: Object.entries(TEST_ACCOUNTS).map(([name, value]) => ({ name, value })),
         },
-        {type: 'list', name: 'environment', choices: prompt => Object.keys(prompt.account)}
+        { type: 'list', name: 'environment', choices: (prompt) => Object.keys(prompt.account) },
     ]);
 
-    const {retailerId, userId, isRealCustomer, defaultCategoryPath} = prompt.account[prompt.environment]!;
-    const {environment, testType} = prompt;
+    const { retailerId, userId, isRealCustomer, defaultCategoryPath } = prompt.account[prompt.environment]!;
+    const { environment, testType } = prompt;
     const testTypeDef = testTypes[testType];
 
     if (isRealCustomer && testTypeDef.modifiesData) {
-        const confirmPrompt = await inquirer.prompt<{ confirm: boolean }>([{
-            type: 'confirm',
-            name: 'confirm',
-            message: 'WARNING: You are about to modify data for a real customer account. Are you sure you want to continue?'
-        }]);
+        const confirmPrompt = await inquirer.prompt<{ confirm: boolean }>([
+            {
+                type: 'confirm',
+                name: 'confirm',
+                message:
+                    'WARNING: You are about to modify data for a real customer account. Are you sure you want to continue?',
+            },
+        ]);
 
         if (!confirmPrompt.confirm) {
             return;
@@ -95,23 +98,23 @@ async function main() {
     switch (testType) {
         case 'generate':
             return await generateSpreadsheet(
-              await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
-              retailerId,
-              await promptFilePath(testTypeDef.fileMessage!, 'generated-spreadsheet.xlsx'),
-              identityId
+                await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
+                retailerId,
+                await promptFilePath(testTypeDef.fileMessage!, 'generated-spreadsheet.xlsx'),
+                identityId,
             );
         case 'upload':
             return await uploadFile(
-              await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
-              retailerId,
-              await promptFilePath(testTypeDef.fileMessage!, await defaultUploadFile()),
-              identityId
+                await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
+                retailerId,
+                await promptFilePath(testTypeDef.fileMessage!, await defaultUploadFile()),
+                identityId,
             );
         case 'getUploadUrl':
             return await getUploadUrl(
-              await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
-              retailerId,
-              identityId
+                await promptCategoryPath(testTypeDef.categoryMessage!, retailerId, defaultCategoryPath),
+                retailerId,
+                identityId,
             );
         case 'getAssortments':
             return await getAssortments(identityId);
@@ -124,22 +127,26 @@ main();
 
 async function promptFilePath(message: string, defaultPath?: string): Promise<string> {
     const resp = await inquirer.prompt<{ file: string }>([
-        {type: 'input', name: 'file', message, default: defaultPath}
+        { type: 'input', name: 'file', message, default: defaultPath },
     ]);
 
     return resp.file;
 }
 
 async function defaultUploadFile(): Promise<string | undefined> {
-    if (await fileExists('generated-file.xlsx')) {
-        return 'generated-file.xlsx';
+    if (await fileExists('generated-spreadsheet.xlsx')) {
+        return 'generated-spreadsheet.xlsx';
     }
 }
 
+const other = '-- Other Category (manually enter) --';
+
 async function promptCategoryPath(message: string, retailerId: number, defaultPath?: string): Promise<string> {
-    const choices = await getTopLevelCategoryNames(retailerId);
+    let choices = await getTopLevelCategoryNames(retailerId);
+    choices = [...choices, other];
     const resp = await inquirer.prompt<{ category: string }>([
-        {type: 'list', name: 'category', message, choices, default: defaultPath}
+        { type: 'list', name: 'category', message, choices, default: defaultPath },
+        { type: 'input', name: 'category', message, when: (p) => p.category === other, askAnswered: true },
     ]);
     return resp.category;
 }

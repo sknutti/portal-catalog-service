@@ -28,7 +28,6 @@ export function getIsRunningLocally(): boolean {
     return process.env.LEO_LOCAL === 'true';
 }
 
-
 function ensureEnvironmentVar(variable: string): string {
     const result = process.env[variable];
     if (!result) {
@@ -43,11 +42,11 @@ export function setupEnvironmentForRunningLocally(env: Exclude<DscoEnv, 'dev'>):
             authTable: 'TestAuth-LeoAuthUser-OZ7R6RHZIPDY',
         },
         staging: {
-            authTable: 'StagingAuth-LeoAuthUser-1IVNIRH40AURC'
+            authTable: 'StagingAuth-LeoAuthUser-1IVNIRH40AURC',
         },
         prod: {
-            authTable: 'ProdAuth-LeoAuthUser-SD8EQDNF542U'
-        }
+            authTable: 'ProdAuth-LeoAuthUser-SD8EQDNF542U',
+        },
     }[env];
 
     process.env.AWS_REGION = 'us-east-1';

@@ -9,7 +9,7 @@ export class CsvSpreadsheet extends PhysicalSpreadsheet {
         super();
 
         // TODO: We probably want to stream this in the future.  Sync works well enough for now
-        this.parsed = parse(body, {columns: true, skip_empty_lines: true, bom: true});
+        this.parsed = parse(body, { columns: true, skip_empty_lines: true, bom: true });
     }
 
     *rows(): IterableIterator<CsvSpreadsheetRow> {
@@ -19,7 +19,7 @@ export class CsvSpreadsheet extends PhysicalSpreadsheet {
     }
 
     skus(): string[] {
-        return this.parsed.map(row => row.sku).filter(sku => !!sku);
+        return this.parsed.map((row) => row.sku).filter((sku) => !!sku);
     }
 
     numDataRows(): number {

@@ -36,14 +36,14 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
     ];
 
     const catalogRows = await Promise.all(
-      spreadsheet!.extractCatalogRows(
-        generateSampleDscoSpreadsheet(),
-        supplierId,
-        retailerId,
-        categoryPath,
-        existingItems,
-        [firstWarehouse, secondWarehouse],
-      ),
+        spreadsheet!.extractCatalogRows(
+            generateSampleDscoSpreadsheet(),
+            supplierId,
+            retailerId,
+            categoryPath,
+            existingItems,
+            [firstWarehouse, secondWarehouse],
+        ),
     );
 
     expect(catalogRows).toMatchObject([
@@ -118,53 +118,53 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
 function generateSampleDscoSpreadsheet(): DscoSpreadsheet {
     const dscoSpreadsheet = new DscoSpreadsheet('mySheet');
     dscoSpreadsheet.addColumn(
-      new DscoColumn('sku', '', 'core', {
-          format: 'string',
-          required: PipelineErrorType.error,
-      }),
+        new DscoColumn('sku', '', 'core', {
+            format: 'string',
+            required: PipelineErrorType.error,
+        }),
     );
     dscoSpreadsheet.addColumn(
-      new DscoColumn('upc', '', 'core', {
-          format: 'string',
-          required: 'none',
-      }),
-    );
-
-    dscoSpreadsheet.addColumn(
-      new DscoColumn('product_status', '', 'core', {
-          format: 'enum',
-          enumVals: new Set(['active', 'inactive']),
-          required: PipelineErrorType.error,
-      }),
+        new DscoColumn('upc', '', 'core', {
+            format: 'string',
+            required: 'none',
+        }),
     );
 
     dscoSpreadsheet.addColumn(
-      new DscoColumn('Supplier_Number', '', 'extended', {
-          format: 'number',
-          required: PipelineErrorType.error,
-      }),
+        new DscoColumn('product_status', '', 'core', {
+            format: 'enum',
+            enumVals: new Set(['active', 'inactive']),
+            required: PipelineErrorType.error,
+        }),
     );
 
     dscoSpreadsheet.addColumn(
-      new DscoColumn('Shoe_Color', '', 'extended', {
-          format: 'enum',
-          enumVals: new Set(['Red', 'Blue']),
-          required: PipelineErrorType.error,
-      }),
+        new DscoColumn('Supplier_Number', '', 'extended', {
+            format: 'number',
+            required: PipelineErrorType.error,
+        }),
     );
 
     dscoSpreadsheet.addColumn(
-      new DscoColumn('estimated_availability_date', '', 'core', {
-          format: 'date',
-          required: 'none',
-      }),
+        new DscoColumn('Shoe_Color', '', 'extended', {
+            format: 'enum',
+            enumVals: new Set(['Red', 'Blue']),
+            required: PipelineErrorType.error,
+        }),
     );
 
     dscoSpreadsheet.addColumn(
-      new DscoColumn('images.Front_Image', '', 'extended', {
-          format: 'image',
-          required: PipelineErrorType.error,
-      }),
+        new DscoColumn('estimated_availability_date', '', 'core', {
+            format: 'date',
+            required: 'none',
+        }),
+    );
+
+    dscoSpreadsheet.addColumn(
+        new DscoColumn('images.Front_Image', '', 'extended', {
+            format: 'image',
+            required: PipelineErrorType.error,
+        }),
     );
 
     return dscoSpreadsheet;

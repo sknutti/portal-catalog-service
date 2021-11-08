@@ -6,6 +6,11 @@ export interface LoadCatalogAttributionsResponse extends DsResponse {
 
 export class LoadCatalogAttributionsRequest extends DsRequest<null, LoadCatalogAttributionsResponse, DsError> {
     constructor(env: DscoEnv, accountId: number) {
-        super('GET', `/catalog-attribution/catalog/catalogs?accountId=${accountId}`, DsRequest.getHost(env, 'apps'), null);
+        super(
+            'GET',
+            `/catalog-attribution/catalog/catalogs?accountId=${accountId}`,
+            DsRequest.getHost(env, 'apps'),
+            null,
+        );
     }
 }

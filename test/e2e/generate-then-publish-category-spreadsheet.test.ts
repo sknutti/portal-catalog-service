@@ -1,13 +1,11 @@
-import { CatalogSpreadsheetWebsocketEvents } from '@api/index';
 import { randomInt } from '@lib/utils';
-import { setTestWebsocketHandler } from '@lib/utils/send-websocket-event';
 import axios from 'axios';
 import {
     getTopLevelCategoryNames,
     initAWSCredentials,
     locallyInvokeGenerateSpreadsheetApi,
     locallyInvokeGetSpreadsheetUploadUrlApi,
-    locallyInvokePublishBot
+    locallyInvokePublishBot,
 } from '../test-utils';
 
 // Aidan Test Retailer
@@ -27,33 +25,8 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
     // Write the generated spreadsheet to the s3 bucket
     await axios.put(uploadUrl, generatedSpreadsheet);
 
-    let websocketSuccess = false;
-    waitForWebsocketSuccess().then(() => websocketSuccess = true);
-
     await locallyInvokePublishBot(uploadUrl);
-
-    expect(websocketSuccess).toBe(true);
 }, 60_000);
-
-
-function waitForWebsocketSuccess(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        setTestWebsocketHandler((type, data) => {
-            if (type === 'success') {
-                const success = data as CatalogSpreadsheetWebsocketEvents['success'];
-
-                if (success.rowWithError) {
-                    reject(`Spreadsheet had validation errors: \n- ${success.validationMessages?.join('\n- ')}`);
-                } else {
-                    resolve();
-                }
-            } else if (type === 'error') {
-                const error = data as CatalogSpreadsheetWebsocketEvents['error'];
-                reject(`Invocation error: ${error.message}\n\n${error.error}`);
-            }
-        });
-    });
-}
 
 async function getRandomCategoryPath() {
     const categoryPaths = await getTopLevelCategoryNames(retailerId);

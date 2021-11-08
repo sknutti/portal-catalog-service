@@ -1,18 +1,18 @@
 get-category-spreadsheet-upload-url:
-  handler: api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url.getCategorySpreadsheetUploadUrl
-  memorySize: 1024
-  timeout: 10
-  events:
-    # This spreadsheet/publish url is now deprecated
-    - http:
-        path: spreadsheet/publish
-        method: post
-        cors: true
-        integration: lambda-proxy
-        authorizer: aws_iam
-    - http:
-        path: spreadsheet/upload-url
-        method: post
-        cors: true
-        integration: lambda-proxy
-        authorizer: aws_iam
+    handler: api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url.getCategorySpreadsheetUploadUrl
+    memorySize: 1024
+    timeout: 10
+    events:
+        # This spreadsheet/publish url is now deprecated
+        - http:
+              path: spreadsheet/publish
+              method: post
+              cors: true
+              integration: lambda-proxy
+              authorizer: aws_iam
+        - http:
+              path: spreadsheet/upload-url
+              method: post
+              cors: true
+              integration: lambda-proxy
+              authorizer: aws_iam

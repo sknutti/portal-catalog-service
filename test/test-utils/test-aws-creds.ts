@@ -29,7 +29,7 @@ export const getCredentials = async (userId: number): Promise<CognitoIdentityCre
         client: new CognitoIdentityClient({
             region: getAwsRegion(),
             serviceId: 'execute-api',
-            credentials: new AWS.SharedIniFileCredentials()
+            credentials: new AWS.SharedIniFileCredentials(),
         }),
         identityId: auth.IdentityId!,
         logins: {
@@ -39,8 +39,8 @@ export const getCredentials = async (userId: number): Promise<CognitoIdentityCre
 };
 
 export const getAuth = async (
-  userId: number,
-  userPrefix: 'user_' | 'admin_' = defaultUserPrefix,
+    userId: number,
+    userPrefix: 'user_' | 'admin_' = defaultUserPrefix,
 ): Promise<CognitoIdentity.Types.GetOpenIdTokenForDeveloperIdentityResponse> => {
     const cognitoIdentity = new CognitoIdentity({
         region: getAwsRegion(),
@@ -53,16 +53,16 @@ export const getAuth = async (
     const identityPoolId = {
         test: 'us-east-1:80b3d91e-563f-4eda-a70b-d85140e2125a',
         staging: 'us-east-1:dc79ebb9-3313-47dd-b31d-2ffe60c7f21c',
-        prod: 'us-east-1:4b960ed4-82ac-42d0-ae3e-ec2d1a5a6e1f'
+        prod: 'us-east-1:4b960ed4-82ac-42d0-ae3e-ec2d1a5a6e1f',
     }[getDscoEnv()];
 
     return cognitoIdentity
-      .getOpenIdTokenForDeveloperIdentity({
-          IdentityPoolId: identityPoolId,
-          Logins: {
-              'login.dsco.io': `${userPrefix}${userId}`,
-          },
-          TokenDuration: tokenDuration,
-      })
-      .promise();
+        .getOpenIdTokenForDeveloperIdentity({
+            IdentityPoolId: identityPoolId,
+            Logins: {
+                'login.dsco.io': `${userPrefix}${userId}`,
+            },
+            TokenDuration: tokenDuration,
+        })
+        .promise();
 };

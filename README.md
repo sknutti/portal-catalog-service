@@ -48,16 +48,20 @@ The source for each of the bot lambdas can be found in `/bot/function_name/`
 Shared code and helper code can be found under `/lib`
 
 ## Running Locally
+
 _Note: Running locally requires you are connected to the dsco vpn_
 
-There's two methods of running locally: 
-- A manual test script that allows you to quickly test most operations
-- Use serverless-offline to run a local http server allowing you to invoke lambdas
+There's two methods of running locally:
+
+-   A manual test script that allows you to quickly test most operations
+-   Use serverless-offline to run a local http server allowing you to invoke lambdas
 
 #### Manual Test Script
-This is the easiest method to get started.  Simply run `npm run manual-test`.  For more info, view the README in the scripts directory
+
+This is the easiest method to get started. Simply run `npm run manual-test`. For more info, view the README in the scripts directory
 
 #### Serverless-Offline Server
+
 To start, run `npm start` which will watch for changes to your apis and
 start a server so you can test them under [localhost:3000](localhost:3000)
 
@@ -67,6 +71,7 @@ You'll need to restart the server anytime you change this value.
 To invoke a lambda as a specific user, you'll need to provide a
 `cognito-identity-i` header value on your requests. To get an identity value for a specific account and
 user:
+
 1. Go to Dsco internal tools
 2. Log in as the account that you want into the Dsco portal
 3. Open up a javascript console in the browser

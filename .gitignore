@@ -11,5 +11,6 @@ build
 coverage
 docs
 generated-spreadsheet.xlsx
+~$generated-spreadsheet.xlsx
 
 docs/*
