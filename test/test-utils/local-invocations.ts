@@ -7,6 +7,7 @@ import {
     GenerateCategorySpreadsheetRequest,
     GetAssortmentsRequest,
     GetCategorySpreadsheetUploadUrlRequest,
+    GenerateContentExceptionsSpreadsheetRequest,
 } from '@api/index';
 import { publishCategorySpreadsheet } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { createContext } from '@dsco/service-utils';
@@ -107,6 +108,21 @@ export async function locallyInvokeGenerateSpreadsheetApi(
             categoryPath,
         },
         identityId,
+    );
+
+    expect(resp.gzippedFile).toBeTruthy();
+
+    const unzipped = await gunzipAsync(resp.gzippedFile);
+    expect(XlsxSpreadsheet.isXlsx(unzipped)).toBe(true);
+
+    return unzipped;
+}
+
+export async function locallyInvokeGetContentExceptionsApi(): Promise<Buffer> {
+    const resp = await locallyInvokeHandler<GenerateContentExceptionsSpreadsheetRequest>(
+        generateCategorySpreadsheet,
+        {}, // TODO CCR will have to add inputs here when we know what they look like
+        'test',
     );
 
     expect(resp.gzippedFile).toBeTruthy();

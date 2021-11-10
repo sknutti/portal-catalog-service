@@ -1,11 +1,12 @@
 import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
-export interface GenerateCategorySpreadsheetRequestBody {
-    retailerId: number;
-    categoryPath: string;
+export interface GenerateContentExceptionsSpreadsheetRequestBody {
+    // TODO CCR add stuff here, but I do not know what at this time
+    // retailerId: number;
+    // categoryPath: string;
 }
 
-export interface GenerateCategorySpreadsheetResponse extends DsResponse {
+export interface GenerateContentExceptionsSpreadsheetResponse extends DsResponse {
     /**
      * A binary string containing the gzipped file
      */
@@ -15,12 +16,12 @@ export interface GenerateCategorySpreadsheetResponse extends DsResponse {
 /**
  * Generates an xlsx spreadsheet for a given catalog attribution category
  */
-export class GenerateCategorySpreadsheetRequest extends DsRequest<
-    GenerateCategorySpreadsheetRequestBody,
-    GenerateCategorySpreadsheetResponse,
+export class GenerateContentExceptionsSpreadsheetRequest extends DsRequest<
+    GenerateContentExceptionsSpreadsheetRequestBody,
+    GenerateContentExceptionsSpreadsheetResponse,
     DsError
 > {
-    constructor(env: DscoEnv, body: GenerateCategorySpreadsheetRequestBody) {
-        super('POST', '/portal-catalog/spreadsheet', DsRequest.getHost(env, 'micro'), body);
+    constructor(env: DscoEnv, body: GenerateContentExceptionsSpreadsheetRequestBody) {
+        super('GET', '/content/get-exceptions-spreadsheet', DsRequest.getHost(env, 'micro'), body);
     }
 }
