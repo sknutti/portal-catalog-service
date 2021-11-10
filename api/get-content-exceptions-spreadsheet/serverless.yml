@@ -1,0 +1,12 @@
+get-content-exceptions-spreadsheet:
+    handler: api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet.getContentExceptionsSpreadsheet
+    memorySize: 1024
+    timeout: 60
+    vpc: ${self:custom.environment.gearman-and-mongo-vpc}
+    events:
+        - http:
+              path: content/get-exceptions-spreadsheet
+              method: get
+              cors: true
+              integration: lambda-proxy
+              # authorizer: aws_iam

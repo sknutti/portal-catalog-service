@@ -106,3 +106,4 @@ functions:
     - ${file(./api/get-category-spreadsheet-upload-url/serverless.yml)}
     - ${file(./bot/fanatics-upload-handler/serverless.yml)}
     - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
+    - ${file(.api/get-content-exceptions-spreadsheet/serverless.yml)}
