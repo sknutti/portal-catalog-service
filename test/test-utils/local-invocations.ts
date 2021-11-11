@@ -1,6 +1,7 @@
 import { generateCategorySpreadsheet } from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
 import { getAssortments } from '@api/get-assortments/get-assortments';
 import { getCategorySpreadsheetUploadUrl } from '@api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url';
+import { getContentExceptionsSpreadsheet } from '@api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet';
 import {
     Assortment,
     CatalogSpreadsheetWebsocketEvents,
@@ -118,11 +119,11 @@ export async function locallyInvokeGenerateSpreadsheetApi(
     return unzipped;
 }
 
-export async function locallyInvokeGetContentExceptionsApi(): Promise<Buffer> {
+export async function locallyInvokeGetContentExceptionsApi(identityId: string): Promise<Buffer> {
     const resp = await locallyInvokeHandler<GenerateContentExceptionsSpreadsheetRequest>(
-        generateCategorySpreadsheet,
+        getContentExceptionsSpreadsheet,
         {}, // TODO CCR will have to add inputs here when we know what they look like
-        'test',
+        identityId,
     );
 
     expect(resp.gzippedFile).toBeTruthy();
