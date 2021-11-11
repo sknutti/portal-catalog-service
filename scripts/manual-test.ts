@@ -124,7 +124,7 @@ async function main() {
         case 'getAssortments':
             return await getAssortments(identityId);
         case 'getContentExceptions':
-            return await getContentExceptions(identityId); // TODO CCR add inputs here when we know what they are
+            return await getContentExceptions('test', identityId); // TODO CCR add inputs here when we know what they are
         default:
             assertUnreachable(testType, 'testType');
     }
@@ -188,9 +188,9 @@ async function getAssortments(identityId: string) {
     console.log(`\nSuccessfully got assortments: ${JSON.stringify(resp, null, 4)}`);
 }
 
-async function getContentExceptions(identityId: string) {
+async function getContentExceptions(categoryPath: string, identityId: string) {
     console.log(`\nCalling getContentExceptions with identity: ${identityId}`);
-    const resp = await locallyInvokeGetContentExceptionsApi(identityId); // TODO CCR add more arguments here when we know what they will be
+    const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, identityId); // TODO CCR add more arguments here when we know what they will be
     console.log(`\nSuccessfully got content exceptions: ${JSON.stringify(resp, null, 4)}`);
 }
 
