@@ -19,9 +19,9 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         // if (!event.body.retailerId) {
         //     return new MissingRequiredFieldError('retailerId');
         // }
-        // if (!event.body.categoryPath) {
-        //     return new MissingRequiredFieldError('categoryPath');
-        // }
+        if (!event.body.categoryPath) {
+            return new MissingRequiredFieldError('categoryPath');
+        }
 
         // const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
@@ -47,15 +47,17 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         // }
 
         const spreadsheet = new DscoSpreadsheet('ccr test');
-        const myCol = new DscoColumn('sku', 'description', 'core', {
+        const myCol = new DscoColumn('sku', 'this will be a description', 'core', {
             required: 'none',
         });
         spreadsheet.addColumn(myCol);
         const workbook = xlsxFromDsco(spreadsheet, 123456);
 
+        console.log(JSON.stringify(workbook.toBuffer()));
+
         return {
             success: true,
-            gzippedFile: await gzipAsync(workbook.toBuffer()),
+            gzippedFile: '[0]', //await gzipAsync(workbook.toBuffer()),
         };
     },
 );
