@@ -113,7 +113,11 @@ export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
             validation_errors: [
                 {
                     attribute_name: 'long_description',
-                    errors: ['Description must be longer than 9000 characters'],
+                    errors: [
+                        'Description must be longer than 9000 characters',
+                        'This is the second validation error',
+                        'This is a really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really long error',
+                    ],
                 },
             ],
         },

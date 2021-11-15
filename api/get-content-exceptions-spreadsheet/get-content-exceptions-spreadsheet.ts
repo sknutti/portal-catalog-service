@@ -5,11 +5,9 @@ import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/s
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogExceptionsItemSearch, gzipAsync } from '@lib/utils';
 import { GenerateContentExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
-import { XlsxSpreadsheet } from '@lib/spreadsheet';
-import * as XLSX from '@sheet/image';
-import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 import { DscoColumn } from '@lib/spreadsheet/dsco-column';
 import { CoreCatalog } from '@lib/core-catalog';
+import { PipelineErrorType } from '@dsco/ts-models';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
@@ -44,20 +42,25 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         // TODO CCR below function call returns dummy values, function call will likely need to take 3 parameters
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(); //supplierId, retailerId, categoryPath);
 
+        // TODO CCR replace below with: await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
         const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
-        // Populate spreadsheet with rows of data
-        for (const catalogItem of catalogExceptionItems) {
-            spreadsheet.addCatalogRow(new DscoCatalogRow(catalogItem, false, false));
-        }
-
-        // Columns should be added after rows
         for (const colName of ['sku', 'long_description']) {
             spreadsheet.addColumn(
+                // Through trial and error I have determined:
+                // 'core' serves as a flag that a given column is not in the extended_attributes
+                // replacing 'core' with 'extended' will tell the lower-level functions to look for this column in the extended_attributes
+                // Setting required: 'none' means values will not be inserted into the rows of the given column
+                // Make sure you check out the interface DscoColValidation in dsco-column.ts to understand the validation input in this constructor
                 new DscoColumn(colName, 'this will be a description', 'core', {
-                    required: 'none',
+                    required: PipelineErrorType.info,
+                    format: 'string',
                 }),
             );
+        }
+
+        for (const catalogItem of catalogExceptionItems) {
+            spreadsheet.addCatalogRow(new DscoCatalogRow(catalogItem, false, false));
         }
 
         const workbook = xlsxFromDsco(spreadsheet, retailerId);
