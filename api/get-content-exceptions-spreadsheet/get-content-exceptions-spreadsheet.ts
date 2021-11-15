@@ -45,6 +45,7 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         // TODO CCR replace below with: await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
         const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
+        // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this when that is ready)
         for (const colName of ['sku', 'long_description']) {
             spreadsheet.addColumn(
                 // Through trial and error I have determined:
