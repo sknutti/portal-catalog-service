@@ -11,7 +11,7 @@ import { PipelineErrorType } from '@dsco/ts-models';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
-        console.log('In content exceptions spreadsheet request!', event.body.categoryPath);
+        console.log('In content exceptions spreadsheet request!');
         console.log(JSON.stringify(event));
         console.log(`The specified category path is ${event.body.categoryPath}`);
 
