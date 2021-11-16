@@ -48,6 +48,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
             const cellData = getCellData(row.catalog, col, retailerId);
 
             if (cellData) {
+                checkForAndAddKnownCellValidationErrors(cellData, col.fieldName, row.catalog);
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
                 sheet[cell] = cellData;
             }
@@ -256,6 +257,8 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
         case 'number':
             const num = +data;
             return { t: 'n', v: isNaN(num) ? undefined : num };
+        default:
+            return;
     }
 }
 
@@ -330,4 +333,39 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
     };
 
     return [validationSheet, validationSheetInfo];
+}
+
+/**
+ * Validation errors would've been determined long before reaching this point
+ * If any such errors exist, they will be specified in the given catalogData
+ * This function will add the description(s) of the error to the given cell as a comment
+ */
+function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: string, catalogData: CoreCatalog): void {
+    // Check if there are known validation errors
+    if (!catalogData.validation_errors) {
+        return; // No validation errors, return without modifying
+    }
+    const validationErrorsForThisCell = catalogData.validation_errors.filter(
+        // TODO CCR - this can fail if the column name was changed before we got here, which can happen
+        (error) => error.attribute_name === columnName,
+    );
+    if (validationErrorsForThisCell.length === 0) {
+        return; // No validation errors, return without modifying
+    } else if (validationErrorsForThisCell.length === 1) {
+        // Add any found errors as an in-cell comment
+        cell.c = [
+            {
+                a: 'CommerceHub',
+                t: validationErrorsForThisCell[0].errors.join('\n'),
+            },
+        ];
+        cell.c.hidden = true;
+        // TODO CCR - Extremely long error messages will mean we should set:
+        //cell.c['!pos'] = {w: (some width), h: (some height)} // such that the whole error message will be visible
+    } else {
+        console.log(
+            `Got ${validationErrorsForThisCell.length} mathes for the given column name, expected either 0 or 1`,
+        );
+        return;
+    }
 }

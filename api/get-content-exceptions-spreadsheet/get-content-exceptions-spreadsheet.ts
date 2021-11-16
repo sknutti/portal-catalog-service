@@ -3,12 +3,11 @@ import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getLeoAuthUserTable } from '@lib/environment';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
-import { catalogItemSearch, gzipAsync } from '@lib/utils';
+import { catalogExceptionsItemSearch, gzipAsync } from '@lib/utils';
 import { GenerateContentExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
-import { XlsxSpreadsheet } from '@lib/spreadsheet';
-import * as XLSX from '@sheet/image';
-import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 import { DscoColumn } from '@lib/spreadsheet/dsco-column';
+import { CoreCatalog } from '@lib/core-catalog';
+import { PipelineErrorType } from '@dsco/ts-models';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
@@ -30,34 +29,48 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         //     return new UnauthorizedError();
         // }
 
-        // const supplierId = user.accountId;
-        // const { retailerId, categoryPath } = event.body;
-
-        // const catalogItems = await catalogItemSearch(supplierId, retailerId, categoryPath);
-
         // const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
 
         // if (!(spreadsheet instanceof DscoSpreadsheet)) {
         //     return spreadsheet;
         // }
 
-        // for (const catalog of catalogItems) {
-        //     // Populate the spreadsheet with all of their catalog items
-        //     spreadsheet.addCatalogRow(new DscoCatalogRow(catalog, false, false));
-        // }
+        const supplierId = 654321; // Placeholder, replace with user.accountId ?
+        const categoryPath = event.body.categoryPath;
+        const retailerId = 123456; // Placeholder, replace with event.body.retailerId
 
-        const spreadsheet = new DscoSpreadsheet('ccr test');
-        const myCol = new DscoColumn('sku', 'this will be a description', 'core', {
-            required: 'none',
-        });
-        spreadsheet.addColumn(myCol);
-        const workbook = xlsxFromDsco(spreadsheet, 123456);
+        // TODO CCR below function call returns dummy values, function call will likely need to take 3 parameters
+        const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(); //supplierId, retailerId, categoryPath);
 
-        console.log(JSON.stringify(workbook.toBuffer()));
+        // TODO CCR replace below with: await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
+        const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
+
+        // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this when that is ready)
+        for (const colName of ['sku', 'long_description']) {
+            spreadsheet.addColumn(
+                // Through trial and error I have determined:
+                // 'core' serves as a flag that a given column is not in the extended_attributes
+                // replacing 'core' with 'extended' will tell the lower-level functions to look for this column in the extended_attributes
+                // Setting required: 'none' means values will not be inserted into the rows of the given column
+                // Make sure you check out the interface DscoColValidation in dsco-column.ts to understand the validation input in this constructor
+                new DscoColumn(colName, 'this will be a description', 'core', {
+                    required: PipelineErrorType.info,
+                    format: 'string',
+                }),
+            );
+        }
+
+        for (const catalogItem of catalogExceptionItems) {
+            spreadsheet.addCatalogRow(new DscoCatalogRow(catalogItem, false, false));
+        }
+
+        const workbook = xlsxFromDsco(spreadsheet, retailerId);
+
+        //workbook.toFile(); // TODO test line only take out before committing
 
         return {
             success: true,
-            gzippedFile: '[0]', //await gzipAsync(workbook.toBuffer()),
+            gzippedFile: await gzipAsync(workbook.toBuffer()),
         };
     },
 );

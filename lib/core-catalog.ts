@@ -23,6 +23,10 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         code: string;
         quantity: number;
     }>;
+    validation_errors?: Array<{
+        attribute_name: string;
+        errors: string[];
+    }>;
     [key: string]: any;
 }
 
