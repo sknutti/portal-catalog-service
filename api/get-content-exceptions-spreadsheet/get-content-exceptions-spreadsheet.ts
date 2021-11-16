@@ -12,7 +12,7 @@ import { DscoColumn } from '@lib/spreadsheet/dsco-column';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
-        console.log('In content exceptions spreadsheet request!');
+        console.log('In content exceptions spreadsheet request!', event.body.categoryPath);
         console.log(JSON.stringify(event));
         console.log(`The specified category path is ${event.body.categoryPath}`);
 
