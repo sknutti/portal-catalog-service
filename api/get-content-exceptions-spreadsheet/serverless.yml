@@ -6,7 +6,7 @@ get-content-exceptions-spreadsheet:
     events:
         - http:
               path: content/get-exceptions-spreadsheet
-              method: get
+              method: post
               cors: true
               integration: lambda-proxy
               # authorizer: aws_iam

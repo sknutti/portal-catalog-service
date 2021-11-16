@@ -22,6 +22,6 @@ export class GenerateContentExceptionsSpreadsheetRequest extends DsRequest<
     DsError
 > {
     constructor(env: DscoEnv, body: GenerateContentExceptionsSpreadsheetRequestBody) {
-        super('GET', '/content/get-exceptions-spreadsheet', DsRequest.getHost(env, 'micro'), body);
+        super('POST', '/content/get-exceptions-spreadsheet', DsRequest.getHost(env, 'micro'), body);
     }
 }
