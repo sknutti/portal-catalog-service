@@ -26,7 +26,7 @@
         "@dsco/search-apis": "^1.0.40",
         "@dsco/service-utils": "0.0.20",
         "@dsco/ts-models": "^1.0.82",
-        "@sheet/image": "^1.20211011.1",
+        "@sheet/image": "^1.20201004.1",
         "aws-sdk": "^2.692.0",
         "axios": "^0.19.2",
         "crypto-js": "^3.1.9-1",
