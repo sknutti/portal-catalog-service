@@ -13,7 +13,9 @@ export interface GenerateCategorySpreadsheetResponse extends DsResponse {
 }
 
 /**
- * Generates an xlsx spreadsheet for a given catalog attribution category
+ * Generates an excel spreadsheet for a given catalog attribution category.
+ *
+ * For example: A supplier is wanting to upload items to the "Shoes" category, so they use this api to generate a spreadsheet
  */
 export class GenerateCategorySpreadsheetRequest extends DsRequest<
     GenerateCategorySpreadsheetRequestBody,
