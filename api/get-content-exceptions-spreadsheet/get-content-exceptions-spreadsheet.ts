@@ -11,12 +11,13 @@ import { PipelineErrorType } from '@dsco/ts-models';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
-        // if (!event.body.retailerId) {
-        //     return new MissingRequiredFieldError('retailerId');
-        // }
         if (!event.body.categoryPath) {
             return new MissingRequiredFieldError('categoryPath');
         }
+        // TODO CCR - Uncomment the below authorization steps as part of https://chb.atlassian.net/browse/CCR-111
+        // if (!event.body.retailerId) {
+        //     return new MissingRequiredFieldError('retailerId');
+        // }
 
         // const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
@@ -35,13 +36,13 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         const categoryPath = event.body.categoryPath;
         const retailerId = 123456; // Placeholder, replace with event.body.retailerId
 
-        // TODO CCR below function call returns dummy values, function call will likely need to take 3 parameters
+        // TODO CCR below function call returns dummy values, function call will likely need to take 3 parameters (https://chb.atlassian.net/browse/CCR-112)
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(); //supplierId, retailerId, categoryPath);
 
-        // TODO CCR replace below with: = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
+        // TODO CCR (CCR-112) - replace below with: = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
         const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
-        // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this when that is ready)
+        // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this loop when CCR-112 is ready)
         for (const colName of ['sku', 'long_description']) {
             spreadsheet.addColumn(
                 // Through trial and error I have determined:

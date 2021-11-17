@@ -347,6 +347,7 @@ function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: s
     }
     const validationErrorsForThisCell = catalogData.validation_errors.filter(
         // TODO CCR - this can fail if the column name was changed before we got here, which can happen
+        // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
         (error) => error.attribute_name === columnName,
     );
     if (validationErrorsForThisCell.length === 0) {
@@ -362,6 +363,7 @@ function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: s
         cell.c.hidden = true;
         // TODO CCR - Extremely long error messages will mean we should set:
         //cell.c['!pos'] = {w: (some width), h: (some height)} // such that the whole error message will be visible
+        // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-110
     } else {
         console.log(
             `Got ${validationErrorsForThisCell.length} mathes for the given column name, expected either 0 or 1`,

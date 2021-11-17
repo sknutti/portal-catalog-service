@@ -99,7 +99,7 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
 /**
  * Looks for items with content exceptions using ElasticSearch
- * TODO CCR placeholder for now, fill out later
+ * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
  */
 export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
     const catalogExceptionItems: CoreCatalog[] = [
