@@ -47,8 +47,15 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         });
     }
 
-    toFile(name = 'output.xlsx'): void {
-        writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}`);
+    toFile(name = 'output'): void {
+        //writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}.xlsx`);
+        writeFile(
+            this.workbook,
+            `/Users/emiller/Documents/2021-11-12-excel-file-dumpster/${name}-${new Date()
+                .toISOString()
+                .slice(0, 19)
+                .replace(/:/g, '')}.xlsx`,
+        );
     }
 
     *rows(): IterableIterator<XlsxSpreadsheetRow> {

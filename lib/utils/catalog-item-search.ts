@@ -96,3 +96,45 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
     return mongoResp;
 }
+
+/**
+ * Looks for items with content exceptions using ElasticSearch
+ * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
+ */
+export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
+    const catalogExceptionItems: CoreCatalog[] = [
+        {
+            supplier_id: 1234,
+            categories: {},
+            extended_attributes: {},
+            toSnakeCase: undefined,
+            sku: '7',
+            long_description: 'test data only',
+            validation_errors: [
+                {
+                    attribute_name: 'long_description',
+                    errors: [
+                        'Description must be longer than 9000 characters',
+                        'This is the second validation error',
+                        'This is a really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really long error',
+                    ],
+                },
+            ],
+        },
+        {
+            supplier_id: 1234,
+            categories: {},
+            extended_attributes: {},
+            toSnakeCase: undefined,
+            sku: '21',
+            long_description: 'test data only replace with real function call',
+            validation_errors: [
+                {
+                    attribute_name: 'long_description',
+                    errors: ['Description must not contain "\\n"'],
+                },
+            ],
+        },
+    ];
+    return catalogExceptionItems;
+}

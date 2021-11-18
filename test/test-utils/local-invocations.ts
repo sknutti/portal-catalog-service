@@ -1,12 +1,14 @@
 import { generateCategorySpreadsheet } from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
 import { getAssortments } from '@api/get-assortments/get-assortments';
 import { getCategorySpreadsheetUploadUrl } from '@api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url';
+import { getContentExceptionsSpreadsheet } from '@api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet';
 import {
     Assortment,
     CatalogSpreadsheetWebsocketEvents,
     GenerateCategorySpreadsheetRequest,
     GetAssortmentsRequest,
     GetCategorySpreadsheetUploadUrlRequest,
+    GenerateContentExceptionsSpreadsheetRequest,
 } from '@api/index';
 import { publishCategorySpreadsheet } from '@bot/publish-category-spreadsheet/publish-category-spreadsheet';
 import { createContext } from '@dsco/service-utils';
@@ -106,6 +108,21 @@ export async function locallyInvokeGenerateSpreadsheetApi(
             retailerId,
             categoryPath,
         },
+        identityId,
+    );
+
+    expect(resp.gzippedFile).toBeTruthy();
+
+    const unzipped = await gunzipAsync(resp.gzippedFile);
+    expect(XlsxSpreadsheet.isXlsx(unzipped)).toBe(true);
+
+    return unzipped;
+}
+
+export async function locallyInvokeGetContentExceptionsApi(categoryPath: string, identityId: string): Promise<Buffer> {
+    const resp = await locallyInvokeHandler<GenerateContentExceptionsSpreadsheetRequest>(
+        getContentExceptionsSpreadsheet,
+        { categoryPath }, // TODO CCR will have to add inputs here when we know what they look like
         identityId,
     );
 

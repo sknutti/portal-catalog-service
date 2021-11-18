@@ -12,6 +12,7 @@ import {
     locallyInvokeGetAssortmentsApi,
     locallyInvokeGetSpreadsheetUploadUrlApi,
     locallyInvokePublishBot,
+    locallyInvokeGetContentExceptionsApi,
     TEST_ACCOUNTS,
     TestAccount,
 } from '../test/test-utils';
@@ -37,8 +38,12 @@ const testTypes: Record<TestType, TestTypeDef> = {
     getAssortments: {
         name: 'Get Assortments',
     },
+    getContentExceptions: {
+        name: 'Get Content Exceptions',
+        // TODO CCR will probably want to add more info here
+    },
 };
-type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments';
+type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments' | 'getContentExceptions';
 
 interface TestTypeDef {
     name: string;
@@ -118,6 +123,8 @@ async function main() {
             );
         case 'getAssortments':
             return await getAssortments(identityId);
+        case 'getContentExceptions':
+            return await getContentExceptions('test', identityId); // TODO CCR add inputs here when we know what they are
         default:
             assertUnreachable(testType, 'testType');
     }
@@ -179,6 +186,12 @@ async function getUploadUrl(category: string, retailerId: number, identityId: st
 async function getAssortments(identityId: string) {
     const resp = await locallyInvokeGetAssortmentsApi(identityId);
     console.log(`\nSuccessfully got assortments: ${JSON.stringify(resp, null, 4)}`);
+}
+
+async function getContentExceptions(categoryPath: string, identityId: string) {
+    console.log(`\nCalling getContentExceptions with identity: ${identityId}`);
+    const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, identityId); // TODO CCR add more arguments here when we know what they will be
+    console.log(`\nSuccessfully got content exceptions: ${JSON.stringify(resp, null, 4)}`);
 }
 
 async function fileExists(path: string): Promise<boolean> {
