@@ -361,9 +361,7 @@ function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: s
             },
         ];
         cell.c.hidden = true;
-        // TODO CCR - Extremely long error messages will mean we should set:
-        //cell.c['!pos'] = {w: (some width), h: (some height)} // such that the whole error message will be visible
-        // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-110
+        cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationErrorsForThisCell[0].errors.join('\n')) };
     } else {
         console.log(
             `Got ${validationErrorsForThisCell.length} mathes for the given column name, expected either 0 or 1`,
