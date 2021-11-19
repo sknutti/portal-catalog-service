@@ -100,6 +100,7 @@ If you don't have serverless installed globally, run `npm i serverless -g`.
 After building, simply run `cd build/artifact/ && sls deploy --stage {stage}` to deploy to the given stage.
 
 ### Bamboo Deploy
+_Note: This repo has been updated to utilize bitbucket pipelines. It is no longer necessary to deploy using Bamboo._
 
 Bamboo builds run automatically when changes are pushed to the master branch. New builds will be automatically deployed to test.
 
