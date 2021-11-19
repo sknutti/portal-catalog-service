@@ -20,16 +20,7 @@ pipelines:
                   - npm run test
                   - npm run build
               artifacts:
-                  - dist/**
                   - build/artifact/**
-        - step:
-              name: Test Deploy
-              deployment: test
-              trigger: automatic
-              script:
-                  - cd build/artifact
-                  - aws-init.sh
-                  - npx sls deploy --stage test
 
     branches:
         master: #Override, Runs for master branch
