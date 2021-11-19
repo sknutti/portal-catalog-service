@@ -6,3 +6,6 @@ coverage
 
 .serverless
 .build
+
+build
+README.md
