@@ -9,7 +9,9 @@ pipelines:
               name: Install, Format, Lint, Test, Build
               caches:
                   - node
+              runs-on: self.hosted
               script:
+                  - aws-init.sh
                   - npm config set @sheet:registry https://pylon.sheetjs.com:54111
                   - npm config set //pylon.sheetjs.com:54111/:_authToken $SHEET_TOKEN # To get this token, successfully login to the site, and then look in .npmrc to find the token.
                   - npm install
