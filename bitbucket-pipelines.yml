@@ -21,7 +21,7 @@ pipelines:
                   - npm run build
               artifacts:
                   - dist/**
-                  - build/artifact
+                  - build/artifact/**
         - step:
               name: Test Deploy
               deployment: test
