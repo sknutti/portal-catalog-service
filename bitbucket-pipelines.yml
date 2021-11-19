@@ -20,7 +20,7 @@ pipelines:
                   - npm run test
                   - npm run build
               artifacts:
-                  - dist/**
+                  - build/artifact/**
 
     branches:
         master: #Override, Runs for master branch
