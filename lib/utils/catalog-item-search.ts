@@ -34,8 +34,7 @@ export async function catalogItemSearch(
             exact_categories: {
                 [retailerId]: [categoryPath],
             },
-            // A 2000 item limit for now so that the generate doesn't call with too large a spreadsheet
-            limit: 2_000,
+            limit: 10_000,
         }),
         env,
         getApiCredentials(),

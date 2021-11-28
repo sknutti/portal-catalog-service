@@ -4,9 +4,10 @@ import {
     downloadS3Bucket,
     downloadS3Metadata,
     createCatalogItemS3UploadPath,
-    getSignedS3Url,
+    getSignedS3UploadUrl,
     parseCatalogItemS3UploadUrl,
     writeS3Object,
+    getSignedS3DownloadUrl,
 } from '@lib/s3';
 import axios from 'axios';
 import * as uuid from 'uuid';
@@ -22,18 +23,25 @@ test('Parsing s3 upload url works', () => {
     expect(parsed).toMatchObject({ supplierId, retailerId, userId });
 });
 
-test('Signed upload url works', async () => {
+test('Signed upload and download url works', async () => {
     const custom_meta = 'My custom meta with all sorts of emojis! 😋 ✂️ 📋 👌';
     const path = 'test/unit-test-😋 ✂️.txt';
 
-    const url = await getSignedS3Url(path, { custom_meta });
+    const url = await getSignedS3UploadUrl(path, { custom_meta });
 
     const id = uuid.v4();
     await axios.put(url, id);
 
+    // Download directly to verify the metadata was stored
     const [body, meta] = await Promise.all([downloadS3Bucket(path), downloadS3Metadata<{ custom_meta: string }>(path)]);
     expect(body.toString('utf8')).toEqual(id);
     expect(meta.custom_meta).toEqual(custom_meta);
+
+    // Also download via signed url
+    const downloadUrl = await getSignedS3DownloadUrl(path, 'test 😋 \'it".txt');
+    const resp = await axios.get(downloadUrl);
+    expect(resp.headers['content-disposition']).toEqual('attachment; filename ="test%20%F0%9F%98%8B%20\'it%22.txt"');
+    expect(resp.data).toEqual(id);
 });
 
 test('Write & copy s3 object works', async () => {

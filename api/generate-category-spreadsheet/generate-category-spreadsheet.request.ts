@@ -7,9 +7,9 @@ export interface GenerateCategorySpreadsheetRequestBody {
 
 export interface GenerateCategorySpreadsheetResponse extends DsResponse {
     /**
-     * A binary string containing the gzipped file
+     * The presigned s3 download url
      */
-    gzippedFile: string;
+    downloadUrl: string;
 }
 
 /**
