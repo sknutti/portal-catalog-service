@@ -62,6 +62,10 @@ provider:
                       ExpirationInDays: 90
                       Prefix: 'uploads/'
                       Status: 'Enabled'
+                    - Id: ExpireCatalogItemDownloads
+                      ExpirationInDays: 30
+                      Prefix: 'downloads/'
+                      Status: 'Enabled'
             publicAccessBlockConfiguration:
                 BlockPublicAcls: true
                 BlockPublicPolicy: true

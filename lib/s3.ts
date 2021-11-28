@@ -13,7 +13,7 @@ function getS3Client(): AWS.S3 {
     }
 }
 
-export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
+export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
     const params = {
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
@@ -22,6 +22,17 @@ export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
     };
 
     return getS3Client().getSignedUrlPromise('putObject', params);
+}
+
+export function getSignedS3DownloadUrl<M>(path: string, downloadFilename: string): Promise<string> {
+    const params = {
+        Bucket: getPortalCatalogS3BucketName(),
+        Key: path,
+        Expires: 60 * 60, // expire the link in 1 hour
+        ResponseContentDisposition: `attachment; filename ="${encodeURIComponent(downloadFilename)}"`
+    };
+
+    return getS3Client().getSignedUrlPromise('getObject', params);
 }
 
 function prepareMetadata<M>(metadata: M): Record<string, string> {
@@ -90,7 +101,7 @@ export async function downloadS3Metadata<Metadata>(path: string): Promise<Metada
     return meta as any as Metadata;
 }
 
-export async function writeS3Object(bucket: string, path: string, body: string): Promise<void> {
+export async function writeS3Object(bucket: string, path: string, body: string | Buffer): Promise<void> {
     await getS3Client()
         .putObject({
             Bucket: bucket,
@@ -108,6 +119,16 @@ export function createCatalogItemS3UploadPath(
 ): string {
     const uploadId = uuid.v4();
     return `uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
+}
+
+export function createCatalogItemS3DownloadPath(
+  supplierId: number,
+  retailerId: number,
+  userId: number,
+  path: string,
+): string {
+    const downloadId = uuid.v4();
+    return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
 export function parseCatalogItemS3UploadUrl(

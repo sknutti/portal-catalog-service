@@ -18,6 +18,7 @@ import { gunzipAsync } from '@lib/utils';
 import { setTestWebsocketHandler } from '@lib/utils/send-websocket-event';
 import type { S3CreateEvent } from 'aws-lambda';
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import axios, { AxiosResponse } from 'axios';
 
 async function locallyInvokeHandler<R extends DsRequest<any, any, any>>(
     handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>,
@@ -111,12 +112,13 @@ export async function locallyInvokeGenerateSpreadsheetApi(
         identityId,
     );
 
-    expect(resp.gzippedFile).toBeTruthy();
+    expect(resp.downloadUrl).toBeTruthy();
 
-    const unzipped = await gunzipAsync(resp.gzippedFile);
-    expect(XlsxSpreadsheet.isXlsx(unzipped)).toBe(true);
+    // Download via the signed url
+    const s3Resp = await axios.get<any, AxiosResponse<Buffer>>(resp.downloadUrl, {responseType: 'arraybuffer'});
+    expect(XlsxSpreadsheet.isXlsx(s3Resp.data)).toBe(true);
 
-    return unzipped;
+    return s3Resp.data;
 }
 
 export async function locallyInvokeGetContentExceptionsApi(categoryPath: string, identityId: string): Promise<Buffer> {
