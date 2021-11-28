@@ -45,7 +45,10 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
 
     return {
         success: true,
-        downloadUrl: await getSignedS3DownloadUrl(downloadPath, `Catalog Spreadsheet - ${getLastCategoryPath(categoryPath)}.xlsx`)
+        downloadUrl: await getSignedS3DownloadUrl(
+            downloadPath,
+            `Catalog Spreadsheet - ${getLastCategoryPath(categoryPath)}.xlsx`,
+        ),
     };
 });
 

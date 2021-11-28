@@ -29,7 +29,7 @@ export function getSignedS3DownloadUrl<M>(path: string, downloadFilename: string
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
-        ResponseContentDisposition: `attachment; filename ="${encodeURIComponent(downloadFilename)}"`
+        ResponseContentDisposition: `attachment; filename ="${encodeURIComponent(downloadFilename)}"`,
     };
 
     return getS3Client().getSignedUrlPromise('getObject', params);
@@ -122,10 +122,10 @@ export function createCatalogItemS3UploadPath(
 }
 
 export function createCatalogItemS3DownloadPath(
-  supplierId: number,
-  retailerId: number,
-  userId: number,
-  path: string,
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
 ): string {
     const downloadId = uuid.v4();
     return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;

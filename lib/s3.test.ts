@@ -6,7 +6,8 @@ import {
     createCatalogItemS3UploadPath,
     getSignedS3UploadUrl,
     parseCatalogItemS3UploadUrl,
-    writeS3Object, getSignedS3DownloadUrl
+    writeS3Object,
+    getSignedS3DownloadUrl,
 } from '@lib/s3';
 import axios from 'axios';
 import * as uuid from 'uuid';
@@ -39,7 +40,7 @@ test('Signed upload and download url works', async () => {
     // Also download via signed url
     const downloadUrl = await getSignedS3DownloadUrl(path, 'test 😋 \'it".txt');
     const resp = await axios.get(downloadUrl);
-    expect(resp.headers['content-disposition']).toEqual("attachment; filename =\"test%20%F0%9F%98%8B%20'it%22.txt\"");
+    expect(resp.headers['content-disposition']).toEqual('attachment; filename ="test%20%F0%9F%98%8B%20\'it%22.txt"');
     expect(resp.data).toEqual(id);
 });
 

@@ -115,7 +115,7 @@ export async function locallyInvokeGenerateSpreadsheetApi(
     expect(resp.downloadUrl).toBeTruthy();
 
     // Download via the signed url
-    const s3Resp = await axios.get<any, AxiosResponse<Buffer>>(resp.downloadUrl, {responseType: 'arraybuffer'});
+    const s3Resp = await axios.get<any, AxiosResponse<Buffer>>(resp.downloadUrl, { responseType: 'arraybuffer' });
     expect(XlsxSpreadsheet.isXlsx(s3Resp.data)).toBe(true);
 
     return s3Resp.data;

@@ -9,11 +9,11 @@ export * from './test-accounts';
 
 export async function getTopLevelCategoryNames(retailerId: number): Promise<string[]> {
     const resp = await axiosRequest(
-          new LoadCatalogAttributionsRequest(getDscoEnv(), retailerId),
-          getDscoEnv(),
-          getApiCredentials(),
-          getAwsRegion(),
-        );
+        new LoadCatalogAttributionsRequest(getDscoEnv(), retailerId),
+        getDscoEnv(),
+        getApiCredentials(),
+        getAwsRegion(),
+    );
 
     if (!resp.data.success) {
         throw new Error('Failed loading catalog attributions');

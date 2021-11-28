@@ -29,9 +29,9 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             isRealCustomer: true,
             supplierId: 1000044156,
             retailerId: 1000043588,
-            userId: 17844
-        }
-    }
+            userId: 17844,
+        },
+    },
 };
 
 export type TestAccount = Partial<Record<Exclude<DscoEnv, 'dev'>, TestAccountInfo>>;
