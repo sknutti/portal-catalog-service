@@ -5,6 +5,8 @@ import { CoreCatalog } from '@lib/core-catalog';
 import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
+import { ItemSearchV2Request } from './item-search-v2.request';
+import { batch, map } from './iter-tools';
 
 interface MongoSecret {
     portalCatalogConnectString: string;
@@ -26,27 +28,51 @@ export async function catalogItemSearch(
 ): Promise<CoreCatalog[]> {
     const env = getDscoEnv();
 
-    // First we do an ES request to find all items in the category
-    const searchResp = await axiosRequest(
-        new ItemSearchRequest(env, {
-            full_detail: false,
-            supplier_id: supplierId,
-            exact_categories: {
-                [retailerId]: [categoryPath],
-            },
-            limit: 10_000,
-        }),
-        env,
-        getApiCredentials(),
-        getAwsRegion(),
-    );
+    let itemIds: number[] = [];
 
-    if (!searchResp.data.success) {
-        throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data)}`);
+    // First we do ES queries to find all items in the category
+    let totalItems = 1;
+    let pageNumber = 0;
+    let paginationKey: any = null;
+
+    while (itemIds.length < totalItems) {
+        const searchResp = await axiosRequest(
+          new ItemSearchV2Request(env, {
+              fullDetail: false,
+              supplierId: supplierId,
+              categories: [{
+                  retailerId,
+                  includeItemsInChildCategories: false,
+                  filterType: 'AND',
+                  paths: [categoryPath]
+              }],
+              pageSize: 10_000,
+              pageNumber,
+              paginationKey,
+              version: 2,
+              objectType: 'ITEM'
+          }),
+          env,
+          getApiCredentials(),
+          getAwsRegion(),
+        );
+
+        if (!searchResp.data.success) {
+            throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data)}`);
+        }
+
+        if (!searchResp.data.docs.length) {
+            break;
+        }
+
+        itemIds = itemIds.concat(searchResp.data.docs);
+        totalItems = searchResp.data.hits;
+        pageNumber++;
+        paginationKey = searchResp.data.paginationKey;
     }
 
     // Then we load those items from mongo
-    return await loadCatalogItemsFromMongo(supplierId, 'item_id', searchResp.data.docs);
+    return await loadCatalogItemsFromMongo(supplierId, 'item_id', itemIds);
 }
 
 export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item_id'>(

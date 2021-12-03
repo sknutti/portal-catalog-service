@@ -1,6 +1,6 @@
 generate-category-spreadsheet:
     handler: api/generate-category-spreadsheet/generate-category-spreadsheet.generateCategorySpreadsheet
-    memorySize: 1024
+    memorySize: 4086 # High memory usage in case downloading hundreds of thousands of items
     timeout: 30
     vpc: ${self:custom.environment.gearman-and-mongo-vpc}
     events:
