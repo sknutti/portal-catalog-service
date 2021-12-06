@@ -37,24 +37,26 @@ export async function catalogItemSearch(
 
     while (itemIds.length < totalItems) {
         const searchResp = await axiosRequest(
-          new ItemSearchV2Request(env, {
-              fullDetail: false,
-              supplierId: supplierId,
-              categories: [{
-                  retailerId,
-                  includeItemsInChildCategories: false,
-                  filterType: 'AND',
-                  paths: [categoryPath]
-              }],
-              pageSize: 10_000,
-              pageNumber,
-              paginationKey,
-              version: 2,
-              objectType: 'ITEM'
-          }),
-          env,
-          getApiCredentials(),
-          getAwsRegion(),
+            new ItemSearchV2Request(env, {
+                fullDetail: false,
+                supplierId: supplierId,
+                categories: [
+                    {
+                        retailerId,
+                        includeItemsInChildCategories: false,
+                        filterType: 'AND',
+                        paths: [categoryPath],
+                    },
+                ],
+                pageSize: 10_000,
+                pageNumber,
+                paginationKey,
+                version: 2,
+                objectType: 'ITEM',
+            }),
+            env,
+            getApiCredentials(),
+            getAwsRegion(),
         );
 
         if (!searchResp.data.success) {
@@ -134,17 +136,13 @@ export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
             extended_attributes: {},
             toSnakeCase: undefined,
             sku: '7',
-            long_description: 'test data only',
-            validation_errors: [
-                {
-                    attribute_name: 'long_description',
-                    errors: [
-                        'Description must be longer than 9000 characters',
-                        'This is the second validation error',
-                        'This is a really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really long error',
-                    ],
-                },
-            ],
+            longdescription: 'test data only',
+            compliance: {
+                error_channels: ['1234'],
+                error_categories: ['1234_dsco'],
+                error_fields: ['1234_longdescription'],
+                field_errors: ['1234_longdescription_this is a test error'],
+            },
         },
         {
             supplier_id: 1234,
@@ -152,13 +150,16 @@ export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
             extended_attributes: {},
             toSnakeCase: undefined,
             sku: '21',
-            long_description: 'test data only replace with real function call',
-            validation_errors: [
-                {
-                    attribute_name: 'long_description',
-                    errors: ['Description must not contain "\\n"'],
-                },
-            ],
+            longdescription: 'test data only',
+            compliance: {
+                error_channels: ['1234'],
+                error_categories: ['1234_dsco'],
+                error_fields: ['1234_long_description'],
+                field_errors: [
+                    '1234_longdescription_this is a separate test error',
+                    '1234_longdescription_this error also takes place on multiple lines',
+                ],
+            },
         },
     ];
     return catalogExceptionItems;

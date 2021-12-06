@@ -23,11 +23,23 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         code: string;
         quantity: number;
     }>;
-    validation_errors?: Array<{
-        attribute_name: string;
-        errors: string[];
-    }>;
+    compliance?: CatalogContentCompliance;
     [key: string]: any;
+}
+
+// Following https://chb.atlassian.net/wiki/spaces/CCAR/pages/98302329486/Data+Contract
+export interface CatalogContentCompliance {
+    // error_channels: string[];
+    // error_categories: string[];
+    // error_fields: string[];
+    field_errors: string[];
+    [key: string]: any;
+}
+
+export interface CatalogFieldError {
+    channel_id: string;
+    field_name: string;
+    errorcode: string;
 }
 
 export function createCoreCatalog(
@@ -53,4 +65,21 @@ export function createCoreCatalog(
     };
 
     return { catalog, extended };
+}
+
+export function interpretCatalogFieldError(field_error: string): CatalogFieldError {
+    const fieldErrorSplit: string[] = field_error.split('_');
+    if (fieldErrorSplit.length !== 3) {
+        return {
+            channel_id: 'error',
+            field_name: 'error',
+            errorcode: 'could not interpret field error',
+        };
+    } else {
+        return {
+            channel_id: fieldErrorSplit[0],
+            field_name: fieldErrorSplit[1],
+            errorcode: fieldErrorSplit[2],
+        };
+    }
 }
