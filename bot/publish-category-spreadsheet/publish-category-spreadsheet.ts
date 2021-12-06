@@ -150,7 +150,7 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent): P
         sendProgress(0.34, 'Parsing Spreadsheet...'),
         generateDscoSpreadsheet(supplierId, retailerId, categoryPath),
         WarehousesLoader.loadWarehouses(supplierId),
-        loadSpreadsheetAndCatalogItems(categoryPath, userId, supplierId, retailerId, s3Path),
+        loadSpreadsheetAndCatalogItems(event),
     ] as const);
 
     if (!(dscoSpreadsheet instanceof DscoSpreadsheet)) {
@@ -180,8 +180,6 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent): P
     const skippedRows = new Set(skippedRowIndexes);
 
     const dataRowCount = supplierSpreadsheet.numDataRows();
-    await fanoutIfLargeSpreadsheetAndFanatics(dataRowCount, event);
-
     let remainingRowsToValidate = dataRowCount;
 
     // Enumerate all of the rows starting at 1 for the header.  Then filter out the skipped rows, rows without data, and unmodified rows
@@ -260,19 +258,17 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent): P
  * This allows us to merge uploaded data with existing catalog data, and detect which rows have changed
  */
 async function loadSpreadsheetAndCatalogItems(
-    categoryPath: string,
-    userId: number,
-    supplierId: number,
-    retailerId: number,
-    s3Path: string,
+    event: PublishCategorySpreadsheetEvent
 ): Promise<[PhysicalSpreadsheet | undefined, CoreCatalog[]]> {
-    const buffer = await downloadS3Bucket(s3Path);
+    const buffer = await downloadS3Bucket(event.s3Path);
 
     const supplierSpreadsheet = XlsxSpreadsheet.isXlsx(buffer)
         ? XlsxSpreadsheet.fromBuffer(buffer)
         : new CsvSpreadsheet(buffer);
 
-    return [supplierSpreadsheet, await loadCatalogItemsFromMongo(supplierId, 'sku', supplierSpreadsheet?.skus() ?? [])];
+    await fanoutIfLargeSpreadsheetAndFanatics(supplierSpreadsheet?.numDataRows() ?? 0, event);
+
+    return [supplierSpreadsheet, await loadCatalogItemsFromMongo(event.supplierId, 'sku', supplierSpreadsheet?.skus() ?? [])];
 }
 
 /**

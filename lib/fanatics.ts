@@ -18,6 +18,9 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, 
     if (!isFanatics(event.supplierId) || dataRowCount < MAX_ROWS_PER_INVOCATION || event.fromRowIdx || event.toRowIdx) {
         return;
     }
+
+    console.warn(`Found spreadsheet with ${dataRowCount} rows, fanning out.`);
+
     const lambda = new AWS.Lambda({ apiVersion: '2015-03-31' });
 
     const childInvocations: Promise<any>[] = [];
@@ -34,6 +37,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, 
             // Plus one for the header row
             toRowIdx: to + 1
         };
+        console.warn('Spawning child invocation', newEvent);
 
         childInvocations.push(
           lambda
@@ -81,9 +85,10 @@ function fanaticsErrorsToTable(errors: FanaticsErrors): string {
 }
 
 export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEvent, 'supplierId' | 's3Path' | 'uploadTime'>, errors: FanaticsErrors): Promise<void> {
-    let address = 'asdfkasf';
+    let toAddresses = ['agrant@commercehub.com']; // jkerr@fanatics.com
+
     if (process.env.SEND_EMAIL_TEST === 'true') {
-        address = 'success@simulator.amazonses.com';
+        toAddresses = ['success@simulator.amazonses.com'];
     } else if (getIsRunningLocally() || !isFanatics(event.supplierId)) {
         return;
     }
@@ -93,7 +98,7 @@ export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEv
     const request: AWS.SES.SendEmailRequest = {
         Source: 'notifications@dsco.io',
         Destination: {
-            ToAddresses: [address]
+            ToAddresses: toAddresses
         },
         Message: {
             Subject: {
