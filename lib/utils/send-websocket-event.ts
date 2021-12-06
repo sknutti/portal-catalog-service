@@ -2,6 +2,7 @@
 
 import { CatalogSpreadsheetWebsocketEvents } from '@api/index';
 import { getDscoEnv, getIsRunningLocally } from '@lib/environment';
+import { isFanatics } from '@lib/fanatics';
 import { Transform } from 'stream';
 
 const config = require('leo-config');
@@ -18,6 +19,9 @@ export async function sendWebsocketEvent<K extends keyof CatalogSpreadsheetWebso
 ): Promise<void> {
     if (getDscoEnv() === 'test' || getIsRunningLocally()) {
         console.log(`Sending websocket message: ${type}`, JSON.stringify(data, null, 2));
+    }
+    if (isFanatics(accountId)) {
+        return;
     }
 
     if (testWebsocketHandler) {
