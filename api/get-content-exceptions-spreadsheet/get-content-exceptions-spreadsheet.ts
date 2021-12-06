@@ -43,7 +43,7 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
         // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this loop when CCR-112 is ready)
-        for (const colName of ['sku', 'long_description']) {
+        for (const colName of ['sku', 'longdescription']) {
             spreadsheet.addColumn(
                 // Through trial and error I have determined:
                 // 'core' serves as a flag that a given column is not in the extended_attributes
