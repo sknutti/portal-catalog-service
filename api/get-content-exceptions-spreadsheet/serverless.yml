@@ -9,4 +9,4 @@ get-content-exceptions-spreadsheet:
               method: post
               cors: true
               integration: lambda-proxy
-              # authorizer: aws_iam
+              authorizer: aws_iam

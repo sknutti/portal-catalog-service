@@ -128,7 +128,11 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
  * Looks for items with content exceptions using ElasticSearch
  * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
  */
-export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
+export async function catalogExceptionsItemSearch(
+    supplierId: number,
+    retailerId: number,
+    categoryPath: string,
+): Promise<CoreCatalog[]> {
     const catalogExceptionItems: CoreCatalog[] = [
         {
             supplier_id: 1234,

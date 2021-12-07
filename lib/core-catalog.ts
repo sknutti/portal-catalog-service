@@ -72,7 +72,7 @@ export function interpretCatalogFieldError(field_error: string): CatalogFieldErr
     if (fieldErrorSplit.length !== 3) {
         return {
             channel_id: 'error',
-            field_name: 'error',
+            field_name: 'error plus extra text to make sure this message does not match a value field',
             errorcode: 'could not interpret field error',
         };
     } else {

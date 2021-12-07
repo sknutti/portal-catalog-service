@@ -2,7 +2,7 @@ import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
 export interface GenerateContentExceptionsSpreadsheetRequestBody {
     // TODO CCR add stuff here, but I do not know what at this time
-    // retailerId: number;
+    retailerId: number;
     categoryPath: string;
 }
 
