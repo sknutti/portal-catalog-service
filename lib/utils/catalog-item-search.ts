@@ -140,12 +140,12 @@ export async function catalogExceptionsItemSearch(
             extended_attributes: {},
             toSnakeCase: undefined,
             sku: '7',
-            longdescription: 'test data only',
+            long_description: 'test data only',
             compliance: {
                 error_channels: ['1234'],
                 error_categories: ['1234_dsco'],
-                error_fields: ['1234_longdescription'],
-                field_errors: ['1234_longdescription_this is a test error'],
+                error_fields: ['1234_long_description'],
+                field_errors: ['1234:test__long_description__test__long desc test error__this is a test error'],
             },
         },
         {
@@ -154,14 +154,14 @@ export async function catalogExceptionsItemSearch(
             extended_attributes: {},
             toSnakeCase: undefined,
             sku: '21',
-            longdescription: 'test data only',
+            long_description: 'test data only',
             compliance: {
                 error_channels: ['1234'],
                 error_categories: ['1234_dsco'],
                 error_fields: ['1234_long_description'],
                 field_errors: [
-                    '1234_longdescription_this is a separate test error',
-                    '1234_longdescription_this error also takes place on multiple lines',
+                    '1234:test__long_description__test__long desc test error__this is a separate test error',
+                    '1234:test__long_description__test__long desc test error__this error also takes place on multiple lines',
                 ],
             },
         },

@@ -40,7 +40,7 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         );
 
         // TODO CCR (CCR-112) - replace below with: = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
-        //const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
+        // const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
         const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
         console.log('Got file or error back...');
@@ -50,8 +50,9 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         }
         console.log('File was OK.');
 
+        /*
         // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this loop when CCR-112 is ready)
-        for (const colName of ['sku', 'longdescription']) {
+        for (const colName of ['sku', 'long_description']) {
             spreadsheet.addColumn(
                 // Through trial and error I have determined:
                 // 'core' serves as a flag that a given column is not in the extended_attributes
@@ -64,6 +65,7 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
                 }),
             );
         }
+		*/
 
         for (const catalogItem of catalogExceptionItems) {
             spreadsheet.addCatalogRow(new DscoCatalogRow(catalogItem, false, false));
