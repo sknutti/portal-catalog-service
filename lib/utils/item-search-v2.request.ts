@@ -74,7 +74,11 @@ export interface ItemSearchV2Response<FULL_DETAIL extends boolean = true> extend
 }
 
 // TODO: This should be added to the @dsco/search-apis project
-export class ItemSearchV2Request<FULL_DETAIL extends boolean = true> extends DsRequest<ItemSearchBodyV2<FULL_DETAIL>, ItemSearchV2Response<FULL_DETAIL>, DsError> {
+export class ItemSearchV2Request<FULL_DETAIL extends boolean = true> extends DsRequest<
+    ItemSearchBodyV2<FULL_DETAIL>,
+    ItemSearchV2Response<FULL_DETAIL>,
+    DsError
+> {
     constructor(env: DscoEnv, body: ItemSearchBodyV2<FULL_DETAIL>) {
         super('POST', '/item/api/search', DsRequest.getHost(env, 'apps'), body);
     }
