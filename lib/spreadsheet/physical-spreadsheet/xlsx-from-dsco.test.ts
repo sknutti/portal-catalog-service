@@ -13,7 +13,7 @@ test('Validation error search can extract validation errors from a DscoCatalog o
             error_channels: ['1234'],
             error_categories: ['1234_dsco'],
             error_fields: ['1234_longdescription'],
-            field_errors: ['1234_longdescription_this is a test error'],
+            field_errors: ['1234:test catalog__longdescription__length__LENGTH_ERROR__this is a test error'],
         },
     };
     const expectedResult = ['this is a test error'];
@@ -65,9 +65,9 @@ test('Validation error search returns empty array when there are no matches with
             error_categories: ['1234_dsco'],
             error_fields: ['1234_longdescription'],
             field_errors: [
-                '1234_longdescription_this is a test error',
-                '1234_supplierid_making this list a little longer',
-                '1234_redherring_dont use this value',
+                '1234:test catalog__longdescription__length__LENGTH_ERROR__this is a test error',
+                '11223334455:ROOT-CAT||CAT1__FIELD1__IMAGE_COMPLIANCE__SIZE__Image could not be resized',
+                '11223334455:ROOT-CAT||CAT2__FIELD1__EXTENDED_ATTRIBUTE__LENGTH__should NOT be shorter than 2 characters',
             ],
         },
     };

@@ -189,7 +189,6 @@ async function getAssortments(identityId: string) {
 }
 
 async function getContentExceptions(categoryPath: string, retailerId: number, identityId: string) {
-    console.log(`\nCalling getContentExceptions with identity: ${identityId}`);
     const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, retailerId, identityId); // TODO CCR add more arguments here when we know what they will be
     await fs.writeFile('test-get-content-exceptions-output-file.xlsx', resp);
     console.log('\nSuccessfully saved content exceptions to file.');

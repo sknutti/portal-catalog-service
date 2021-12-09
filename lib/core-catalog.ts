@@ -37,9 +37,12 @@ export interface CatalogContentCompliance {
 }
 
 export interface CatalogFieldError {
-    channel_id: string;
-    field_name: string;
-    errorcode: string;
+    channelId: string;
+    cattegoryPath: string;
+    fieldName: string;
+    complianceType: string;
+    errorCode: string;
+    errorMessage: string;
 }
 
 export function createCoreCatalog(
@@ -68,18 +71,28 @@ export function createCoreCatalog(
 }
 
 export function interpretCatalogFieldError(field_error: string): CatalogFieldError {
-    const fieldErrorSplit: string[] = field_error.split('_');
-    if (fieldErrorSplit.length !== 3) {
-        return {
-            channel_id: 'error',
-            field_name: 'error plus extra text to make sure this message does not match a value field',
-            errorcode: 'could not interpret field error',
-        };
-    } else {
-        return {
-            channel_id: fieldErrorSplit[0],
-            field_name: fieldErrorSplit[1],
-            errorcode: fieldErrorSplit[2],
-        };
-    }
+    const genericParseError: CatalogFieldError = {
+        channelId: 'error',
+        cattegoryPath: 'error',
+        fieldName: 'error plus extra text to make sure this message does not match a value field',
+        complianceType: 'error',
+        errorCode: 'PARSE_ERROR',
+        errorMessage: 'Error message was poorly formatted and could not be parsed',
+    };
+    // Try splitting on '__'
+    const fieldErrorSplit: string[] = field_error.split('__');
+    if (fieldErrorSplit.length !== 5) return genericParseError;
+
+    // Split out the channelId and categoryPath
+    const channelAndCategorySplit = fieldErrorSplit[0].split(':');
+    if (channelAndCategorySplit.length !== 2) return genericParseError;
+
+    return {
+        channelId: channelAndCategorySplit[0],
+        cattegoryPath: channelAndCategorySplit[1],
+        fieldName: fieldErrorSplit[1],
+        complianceType: fieldErrorSplit[2],
+        errorCode: fieldErrorSplit[3],
+        errorMessage: fieldErrorSplit[4],
+    };
 }

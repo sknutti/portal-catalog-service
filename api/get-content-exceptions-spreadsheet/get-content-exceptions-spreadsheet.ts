@@ -1,5 +1,5 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
-import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
+import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
 import { getLeoAuthUserTable } from '@lib/environment';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
@@ -8,6 +8,8 @@ import { GenerateContentExceptionsSpreadsheetRequest } from './get-content-excep
 import { DscoColumn } from '@lib/spreadsheet/dsco-column';
 import { CoreCatalog } from '@lib/core-catalog';
 import { PipelineErrorType } from '@dsco/ts-models';
+
+import * as AWS from 'aws-sdk';
 
 export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
     async (event) => {
@@ -27,7 +29,10 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         const supplierId = user.accountId;
 
         console.log(`GCES Called with sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
+        console.log(`Valid rids:\n${JSON.stringify(user.retailerIds, null, 4)}`);
+        console.log(`Got AWS creds:\n${JSON.stringify(AWS.config.credentials, null, 4)}`);
 
+        // Still using test data
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(
             supplierId,
             retailerId,
@@ -35,13 +40,15 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         );
 
         // TODO CCR (CCR-112) - replace below with: = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
-        const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
+        //const spreadsheet = new DscoSpreadsheet(`Catalog Exceptions ${categoryPath}`);
 
-        // const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
-
-        // if (!(spreadsheet instanceof DscoSpreadsheet)) {
-        //     return spreadsheet;
-        // }
+        const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
+        console.log('Got file or error back...');
+        if (spreadsheet instanceof UnexpectedError) {
+            console.log('The file generator returned an error');
+            return spreadsheet;
+        }
+        console.log('File was OK.');
 
         // Add columns (Using generateDscoSpreadsheet(...) will automatically populate columns, so you can remove this loop when CCR-112 is ready)
         for (const colName of ['sku', 'longdescription']) {

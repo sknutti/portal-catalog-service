@@ -1,11 +1,14 @@
 import { CatalogFieldError, interpretCatalogFieldError } from './core-catalog';
 
 test('Interpret good catalog field error', () => {
-    const testInput = 'a_b_c';
+    const testInput = 'a:b__c__d__e__f';
     const expectedResponse: CatalogFieldError = {
-        channel_id: 'a',
-        field_name: 'b',
-        errorcode: 'c',
+        channelId: 'a',
+        cattegoryPath: 'b',
+        fieldName: 'c',
+        complianceType: 'd',
+        errorCode: 'e',
+        errorMessage: 'f',
     };
     const testResponse: CatalogFieldError = interpretCatalogFieldError(testInput);
     expect(testResponse).toEqual(expectedResponse);

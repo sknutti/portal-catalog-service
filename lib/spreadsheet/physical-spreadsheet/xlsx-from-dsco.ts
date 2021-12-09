@@ -369,10 +369,10 @@ export function getValidationErrorsForAColumnFromCatalogData(columnName: string,
         interpretCatalogFieldError(field_error),
     );
     const filteredErrorsForGivenColumn: CatalogFieldError[] = allCatalogFieldErrors.filter((field_error) => {
-        return field_error.field_name === columnName;
+        return field_error.fieldName === columnName;
     });
-    const arrayOfErrorCodes: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.errorcode;
+    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
+        return field_error.errorMessage;
     });
-    return arrayOfErrorCodes;
+    return arrayOfErrorMessages;
 }

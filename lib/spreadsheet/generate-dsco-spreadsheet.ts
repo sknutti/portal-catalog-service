@@ -75,6 +75,8 @@ async function generateSpreadsheetCols(
         ),
     ] as const);
 
+    console.log('Succesfully fulfilled Axios requests!');
+
     if (!catalogRulesResp.data.success) {
         return catalogRulesResp.data;
     } else if (!allRulesResp.data.success) {
@@ -86,6 +88,7 @@ async function generateSpreadsheetCols(
         core: {} as Record<string, DscoColumn>,
         extended: {} as Record<string, DscoColumn>,
     };
+
     const ensureCol = (name: string, rule: PipelineRule): DscoColumn => {
         const type = rule.attrType === 'custom' ? 'extended' : 'core';
 
