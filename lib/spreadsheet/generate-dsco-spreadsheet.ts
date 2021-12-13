@@ -75,8 +75,6 @@ async function generateSpreadsheetCols(
         ),
     ] as const);
 
-    console.log('Succesfully fulfilled Axios requests!');
-
     if (!catalogRulesResp.data.success) {
         return catalogRulesResp.data;
     } else if (!allRulesResp.data.success) {

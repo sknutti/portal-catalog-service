@@ -6,7 +6,8 @@ import { CoreCatalog } from '@lib/core-catalog';
 import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
-import { ItemExceptionSearchV1Request, ItemSearchV2Request } from './item-search-v2.request';
+import { ItemSearchV2Request } from './item-search-v2.request';
+import { ItemExceptionSearchV1Request } from './item-exceptions-search.request';
 import { batch, map } from './iter-tools';
 
 interface MongoSecret {
@@ -127,8 +128,7 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
 /**
  * Looks for items with content exceptions using ElasticSearch
- * Same thing as catalogItemSearch but hitting ItemExceptionSearchV1Request instead
- * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
+ * Takes item ids from these results and loads those items from Mongo
  */
 export async function catalogExceptionsItemSearch(
     supplierId: number,
@@ -144,14 +144,11 @@ export async function catalogExceptionsItemSearch(
             channelId: retailerId,
             categoryPath: categoryPath,
             version: 1,
-            objectType: 'ITEM',
         }),
         env,
         getApiCredentials(),
         getAwsRegion(),
     );
-
-    console.log(`Got query data: ${JSON.stringify(searchResp.data)}`);
 
     if (!searchResp.data.success) {
         throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data, null, 4)}`);
