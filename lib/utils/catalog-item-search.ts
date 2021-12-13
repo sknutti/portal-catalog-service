@@ -1,11 +1,12 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
+import { DsError } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
-import { ItemSearchV2Request } from './item-search-v2.request';
+import { ItemExceptionSearchV1Request, ItemSearchV2Request } from './item-search-v2.request';
 import { batch, map } from './iter-tools';
 
 interface MongoSecret {
@@ -126,6 +127,7 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
 /**
  * Looks for items with content exceptions using ElasticSearch
+ * Same thing as catalogItemSearch but hitting ItemExceptionSearchV1Request instead
  * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
  */
 export async function catalogExceptionsItemSearch(
@@ -133,38 +135,32 @@ export async function catalogExceptionsItemSearch(
     retailerId: number,
     categoryPath: string,
 ): Promise<CoreCatalog[]> {
-    const catalogExceptionItems: CoreCatalog[] = [
-        {
-            supplier_id: 1234,
-            categories: {},
-            extended_attributes: {},
-            toSnakeCase: undefined,
-            sku: '7',
-            long_description: 'test data only',
-            compliance: {
-                error_channels: ['1234'],
-                error_categories: ['1234_dsco'],
-                error_fields: ['1234_long_description'],
-                field_errors: ['1234:test__long_description__test__long desc test error__this is a test error'],
-            },
-        },
-        {
-            supplier_id: 1234,
-            categories: {},
-            extended_attributes: {},
-            toSnakeCase: undefined,
-            sku: '21',
-            long_description: 'test data only',
-            compliance: {
-                error_channels: ['1234'],
-                error_categories: ['1234_dsco'],
-                error_fields: ['1234_long_description'],
-                field_errors: [
-                    '1234:test__long_description__test__long desc test error__this is a separate test error',
-                    '1234:test__long_description__test__long desc test error__this error also takes place on multiple lines',
-                ],
-            },
-        },
-    ];
-    return catalogExceptionItems;
+    const env = getDscoEnv();
+
+    // ES Query
+    const searchResp = await axiosRequest(
+        new ItemExceptionSearchV1Request(env, {
+            supplierId: supplierId,
+            channelId: retailerId,
+            categoryPath: categoryPath,
+            version: 1,
+            objectType: 'ITEM',
+        }),
+        env,
+        getApiCredentials(),
+        getAwsRegion(),
+    );
+
+    console.log(`Got query data: ${JSON.stringify(searchResp.data)}`);
+
+    if (!searchResp.data.success) {
+        throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data, null, 4)}`);
+    }
+
+    // Filter results to just have the item ids
+    const itemIds: number[] = searchResp.data.items.map((item) => item.item_id);
+    console.log(`Got item ids: ${JSON.stringify(itemIds)}`);
+
+    // Then we load those items from mongo
+    return await loadCatalogItemsFromMongo(supplierId, 'item_id', itemIds);
 }
