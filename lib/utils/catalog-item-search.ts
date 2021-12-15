@@ -1,11 +1,13 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
+import { DsError } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
 import { ItemSearchV2Request } from './item-search-v2.request';
+import { ItemExceptionSearchRequest } from './item-exceptions-search.request';
 import { batch, map } from './iter-tools';
 
 interface MongoSecret {
@@ -37,24 +39,26 @@ export async function catalogItemSearch(
 
     while (itemIds.length < totalItems) {
         const searchResp = await axiosRequest(
-          new ItemSearchV2Request(env, {
-              fullDetail: false,
-              supplierId: supplierId,
-              categories: [{
-                  retailerId,
-                  includeItemsInChildCategories: false,
-                  filterType: 'AND',
-                  paths: [categoryPath]
-              }],
-              pageSize: 10_000,
-              pageNumber,
-              paginationKey,
-              version: 2,
-              objectType: 'ITEM'
-          }),
-          env,
-          getApiCredentials(),
-          getAwsRegion(),
+            new ItemSearchV2Request(env, {
+                fullDetail: false,
+                supplierId: supplierId,
+                categories: [
+                    {
+                        retailerId,
+                        includeItemsInChildCategories: false,
+                        filterType: 'AND',
+                        paths: [categoryPath],
+                    },
+                ],
+                pageSize: 10_000,
+                pageNumber,
+                paginationKey,
+                version: 2,
+                objectType: 'ITEM',
+            }),
+            env,
+            getApiCredentials(),
+            getAwsRegion(),
         );
 
         if (!searchResp.data.success) {
@@ -124,42 +128,37 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
 /**
  * Looks for items with content exceptions using ElasticSearch
- * TODO CCR placeholder for now, fill out later (https://chb.atlassian.net/browse/CCR-112)
+ * Takes item ids from ES results and loads those items from Mongo
  */
-export async function catalogExceptionsItemSearch(): Promise<CoreCatalog[]> {
-    const catalogExceptionItems: CoreCatalog[] = [
-        {
-            supplier_id: 1234,
-            categories: {},
-            extended_attributes: {},
-            toSnakeCase: undefined,
-            sku: '7',
-            long_description: 'test data only',
-            validation_errors: [
-                {
-                    attribute_name: 'long_description',
-                    errors: [
-                        'Description must be longer than 9000 characters',
-                        'This is the second validation error',
-                        'This is a really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really really long error',
-                    ],
-                },
-            ],
-        },
-        {
-            supplier_id: 1234,
-            categories: {},
-            extended_attributes: {},
-            toSnakeCase: undefined,
-            sku: '21',
-            long_description: 'test data only replace with real function call',
-            validation_errors: [
-                {
-                    attribute_name: 'long_description',
-                    errors: ['Description must not contain "\\n"'],
-                },
-            ],
-        },
-    ];
-    return catalogExceptionItems;
+export async function catalogExceptionsItemSearch(
+    supplierId: number,
+    retailerId: number,
+    categoryPath: string,
+): Promise<CoreCatalog[]> {
+    const env = getDscoEnv();
+
+    // ES Query
+    const searchResp = await axiosRequest(
+        new ItemExceptionSearchRequest(env, {
+            supplierId: supplierId,
+            channelId: retailerId,
+            categoryPath: categoryPath,
+            version: 1,
+        }),
+        env,
+        getApiCredentials(),
+        getAwsRegion(),
+    );
+
+    if (!searchResp.data.success) {
+        throw new Error(`Bad response from item exception search: ${JSON.stringify(searchResp.data)}`);
+    }
+
+    // Filter results to just have the item ids
+    const itemIds: number[] = searchResp.data.items.map((item) => item.item_id);
+    console.log(`Got item ids: ${JSON.stringify(itemIds)}`);
+    if (itemIds.length === 0) return [];
+
+    // Then we load those items from mongo
+    return await loadCatalogItemsFromMongo(supplierId, 'item_id', itemIds);
 }

@@ -121,10 +121,14 @@ export async function locallyInvokeGenerateSpreadsheetApi(
     return s3Resp.data;
 }
 
-export async function locallyInvokeGetContentExceptionsApi(categoryPath: string, identityId: string): Promise<Buffer> {
+export async function locallyInvokeGetContentExceptionsApi(
+    categoryPath: string,
+    retailerId: number,
+    identityId: string,
+): Promise<Buffer> {
     const resp = await locallyInvokeHandler<GenerateContentExceptionsSpreadsheetRequest>(
         getContentExceptionsSpreadsheet,
-        { categoryPath }, // TODO CCR will have to add inputs here when we know what they look like
+        { retailerId, categoryPath },
         identityId,
     );
 

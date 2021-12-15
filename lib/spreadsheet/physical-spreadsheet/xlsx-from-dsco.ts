@@ -1,5 +1,5 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
-import { CoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog, CatalogFieldError, interpretCatalogFieldError } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
@@ -341,31 +341,38 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
  * This function will add the description(s) of the error to the given cell as a comment
  */
 function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: string, catalogData: CoreCatalog): void {
-    // Check if there are known validation errors
-    if (!catalogData.validation_errors) {
-        return; // No validation errors, return without modifying
-    }
-    const validationErrorsForThisCell = catalogData.validation_errors.filter(
-        // TODO CCR - this can fail if the column name was changed before we got here, which can happen
-        // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
-        (error) => error.attribute_name === columnName,
-    );
-    if (validationErrorsForThisCell.length === 0) {
-        return; // No validation errors, return without modifying
-    } else if (validationErrorsForThisCell.length === 1) {
-        // Add any found errors as an in-cell comment
+    const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(columnName, catalogData);
+    if (validationErrorsForThisCell.length > 0) {
+        // Add any found validation errors as an in-cell comment
         cell.c = [
             {
                 a: 'CommerceHub',
-                t: validationErrorsForThisCell[0].errors.join('\n'),
+                t: validationErrorsForThisCell.join('\n'),
             },
         ];
         cell.c.hidden = true;
-        cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationErrorsForThisCell[0].errors.join('\n')) };
-    } else {
-        console.log(
-            `Got ${validationErrorsForThisCell.length} mathes for the given column name, expected either 0 or 1`,
-        );
-        return;
+        cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationErrorsForThisCell.join('\n')) };
     }
+}
+
+/**
+ * Given a catalog item and a column name, extract all validation errors from the item data for the given column
+ * Return the results as an array of strings, where each element in the array is an error code
+ */
+export function getValidationErrorsForAColumnFromCatalogData(columnName: string, catalogData: CoreCatalog): string[] {
+    // TODO CCR - this can fail if the column name was changed before we got here, which can happen
+    // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
+    if (!catalogData.compliance) {
+        return []; // No compliance errors, return empty array
+    }
+    const allCatalogFieldErrors: CatalogFieldError[] = catalogData.compliance.field_errors.map((field_error) =>
+        interpretCatalogFieldError(field_error),
+    );
+    const filteredErrorsForGivenColumn: CatalogFieldError[] = allCatalogFieldErrors.filter((field_error) => {
+        return field_error.fieldName === columnName;
+    });
+    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
+        return field_error.errorMessage;
+    });
+    return arrayOfErrorMessages;
 }

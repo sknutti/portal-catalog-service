@@ -40,7 +40,6 @@ const testTypes: Record<TestType, TestTypeDef> = {
     },
     getContentExceptions: {
         name: 'Get Content Exceptions',
-        // TODO CCR will probably want to add more info here
     },
 };
 type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments' | 'getContentExceptions';
@@ -124,7 +123,9 @@ async function main() {
         case 'getAssortments':
             return await getAssortments(identityId);
         case 'getContentExceptions':
-            return await getContentExceptions('test', identityId); // TODO CCR add inputs here when we know what they are
+            // TODO CCR - this only works in a narrow scope (when using supplierId=1000012302 and reatilerId=1000012301 in test)
+            // Expand on this as part of https://chb.atlassian.net/browse/CCR-134
+            return await getContentExceptions('Food', retailerId, identityId);
         default:
             assertUnreachable(testType, 'testType');
     }
@@ -188,10 +189,10 @@ async function getAssortments(identityId: string) {
     console.log(`\nSuccessfully got assortments: ${JSON.stringify(resp, null, 4)}`);
 }
 
-async function getContentExceptions(categoryPath: string, identityId: string) {
-    console.log(`\nCalling getContentExceptions with identity: ${identityId}`);
-    const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, identityId); // TODO CCR add more arguments here when we know what they will be
-    console.log(`\nSuccessfully got content exceptions: ${JSON.stringify(resp, null, 4)}`);
+async function getContentExceptions(categoryPath: string, retailerId: number, identityId: string) {
+    const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, retailerId, identityId);
+    await fs.writeFile('test-get-content-exceptions-output-file.xlsx', resp);
+    console.log('\nSuccessfully saved content exceptions to file.');
 }
 
 async function fileExists(path: string): Promise<boolean> {
