@@ -33,6 +33,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - sls deploy --stage test
             - step:
                   name: Staging Deploy
@@ -43,6 +44,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - sls deploy --stage staging
             - step:
                   name: Production Deploy
@@ -53,6 +55,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - sls deploy --stage prod
             - step:
                   name: Library Deploy
