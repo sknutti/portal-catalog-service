@@ -33,7 +33,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
-                      - npx sls deploy --stage test
+                      - sls deploy --stage test
             - step:
                   name: Staging Deploy
                   caches:
@@ -43,7 +43,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
-                      - npx sls deploy --stage staging
+                      - sls deploy --stage staging
             - step:
                   name: Production Deploy
                   caches:
@@ -53,7 +53,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
-                      - npx sls deploy --stage prod
+                      - sls deploy --stage prod
             - step:
                   name: Library Deploy
                   caches:
