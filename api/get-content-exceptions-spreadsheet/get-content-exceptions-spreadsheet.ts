@@ -35,16 +35,6 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
             categoryPath,
         );
 
-        // if (!catalogExceptionItems[0].compliance) {
-        //     catalogExceptionItems[0].compliance = {
-        //         field_errors: [
-        //             '1234:test__description__test__long desc test error__this is the first test error',
-        //             '1234:test__description__test__long desc test error__this error also takes place on multiple lines',
-        //             'this is a poorly formatted error that will be placed on the sku column',
-        //         ],
-        //     };
-        // }
-
         const spreadsheet: UnexpectedError | DscoSpreadsheet = await generateDscoSpreadsheet(
             supplierId,
             retailerId,

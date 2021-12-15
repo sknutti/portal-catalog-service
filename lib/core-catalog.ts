@@ -79,7 +79,7 @@ export function interpretCatalogFieldError(fieldError: string): CatalogFieldErro
         fieldName: 'sku', // This message will appear on the sku column, but will represent an error that applies to the entire row
         complianceType: 'error',
         errorCode: 'PARSE_ERROR',
-        errorMessage: `We encountered an error that could not be interpreted: "${fieldError}"`,
+        errorMessage: `Try uploading this item again. We encountered an error that could not be interpreted: "${fieldError}"`,
     };
     // Try splitting on '__'
     if (fieldError.split('__').length !== 5) {

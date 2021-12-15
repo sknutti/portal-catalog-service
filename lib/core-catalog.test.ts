@@ -22,7 +22,8 @@ test('Interpreter fails on poorly formatted catalog field error (missing field)'
         fieldName: 'sku',
         complianceType: 'error',
         errorCode: 'PARSE_ERROR',
-        errorMessage: 'We encountered an error that could not be interpreted: "a:b__c__e__f"',
+        errorMessage:
+            'Try uploading this item again. We encountered an error that could not be interpreted: "a:b__c__e__f"',
     };
     const testResponse: CatalogFieldError = interpretCatalogFieldError(testInput);
     expect(testResponse).toEqual(expectedResponse);
@@ -36,7 +37,8 @@ test('Interpreter fails on poorly formatted catalog field error (bad channelId +
         fieldName: 'sku',
         complianceType: 'error',
         errorCode: 'PARSE_ERROR',
-        errorMessage: 'We encountered an error that could not be interpreted: "ab__c__d__e__f"',
+        errorMessage:
+            'Try uploading this item again. We encountered an error that could not be interpreted: "ab__c__d__e__f"',
     };
     const testResponse: CatalogFieldError = interpretCatalogFieldError(testInput);
     expect(testResponse).toEqual(expectedResponse);
