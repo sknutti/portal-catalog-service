@@ -8,18 +8,21 @@ export function getFanaticsAccountForEnv(): Account | undefined {
 }
 
 export function isFanatics(supplierId: number): boolean {
-    return !getIsRunningLocally() && supplierId === getFanaticsAccountForEnv()?.supplierId;
+    return supplierId === getFanaticsAccountForEnv()?.supplierId;
 }
 
 
 const MAX_ROWS_PER_INVOCATION = 20_000;
 
-export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, event: PublishCategorySpreadsheetEvent): Promise<void> {
+/**
+ * To prevent timing out, will re-invoke the upload bot on subsets of a very large file.  Currently only enabled for fanatics (as this breaks the websocket communication)
+ */
+export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, event: PublishCategorySpreadsheetEvent, callId: string): Promise<void> {
     if (!isFanatics(event.supplierId) || dataRowCount < MAX_ROWS_PER_INVOCATION || event.fromRowIdx || event.toRowIdx) {
         return;
     }
 
-    console.warn(`Found spreadsheet with ${dataRowCount} rows, fanning out.`);
+    console.warn(`[${callId}] - Found spreadsheet with ${dataRowCount} rows, fanning out.`);
 
     const lambda = new AWS.Lambda({ apiVersion: '2015-03-31' });
 
@@ -66,11 +69,15 @@ interface FanaticsErrors {
     genericMessage?: string;
     rowWithError?: number;
     validationErrors?: string[];
+    callId: string;
 }
 
 function fanaticsErrorsToTable(errors: FanaticsErrors): string {
     let result = '';
 
+    if (errors.callId) {
+        result += `<tr><td>Call Id</td><td>${errors.callId}</td></tr>`;
+    }
     if (errors.rowWithError) {
         result += `<tr><td>Row With Error</td><td>${errors.rowWithError}</td></tr>`;
     }

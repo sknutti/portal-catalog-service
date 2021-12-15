@@ -1,3 +1,4 @@
+import { isInRange } from '@lib/utils';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
 import { PhysicalSpreadsheet } from './physical-spreadsheet';
 import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
@@ -64,12 +65,16 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         }
     }
 
-    skus(): string[] {
+    skus(fromRowIdx?: number, toRowIdx?: number): string[] {
         const result: string[] = [];
 
         // + 1 to skip the header row
         let rowNum = this.range.s.r + 1;
         for (; rowNum <= this.range.e.r; rowNum++) {
+            if (!isInRange(rowNum, fromRowIdx, toRowIdx)) {
+                continue;
+            }
+
             const skuCell = this.getCell(rowNum, this.skuHeaderIdx);
             let sku;
             if (skuCell) {
