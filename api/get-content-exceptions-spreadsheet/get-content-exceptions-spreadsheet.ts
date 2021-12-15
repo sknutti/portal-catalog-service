@@ -1,7 +1,7 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
 import { getLeoAuthUserTable } from '@lib/environment';
-import { DscoCatalogRow, generateDscoSpreadsheet } from '@lib/spreadsheet';
+import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogExceptionsItemSearch, gzipAsync } from '@lib/utils';
 import { GenerateContentExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
@@ -19,6 +19,8 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         const { retailerId, categoryPath } = event.body;
 
         // Must be logged in
+        // TODO CCR - this only works if user is logged in as a supplier, adding support for retailers as part of:
+        // https://chb.atlassian.net/browse/CCR-133
         const user = await getUser(event.requestContext, getLeoAuthUserTable());
         if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {
             return new UnauthorizedError();
@@ -27,7 +29,6 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
 
         console.log(`GCES Called with sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
 
-        // Still using test data
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(
             supplierId,
             retailerId,
@@ -39,11 +40,16 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
         //         field_errors: [
         //             '1234:test__description__test__long desc test error__this is the first test error',
         //             '1234:test__description__test__long desc test error__this error also takes place on multiple lines',
+        //             'this is a poorly formatted error that will be placed on the sku column',
         //         ],
         //     };
         // }
 
-        const spreadsheet = await generateDscoSpreadsheet(supplierId, retailerId, categoryPath);
+        const spreadsheet: UnexpectedError | DscoSpreadsheet = await generateDscoSpreadsheet(
+            supplierId,
+            retailerId,
+            categoryPath,
+        );
         if (spreadsheet instanceof UnexpectedError) {
             return spreadsheet;
         }

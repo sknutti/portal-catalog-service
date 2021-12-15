@@ -1,6 +1,8 @@
 import { Catalog, CatalogImage, ProductStatus, SnakeCase } from '@dsco/ts-models';
 
 // This allows us to access snake_cased values on the catalog.
+// TODO We should be able to get this interface from "@dsco/bus-models": "^0.1.63" rather than declaring it here
+// Addressed by: https://chb.atlassian.net/browse/CCR-135
 export interface CoreCatalog extends SnakeCase<Catalog> {
     supplier_id: number;
     categories: {
@@ -38,7 +40,7 @@ export interface CatalogContentCompliance {
 
 export interface CatalogFieldError {
     channelId: string;
-    cattegoryPath: string;
+    categoryPath: string;
     fieldName: string;
     complianceType: string;
     errorCode: string;
@@ -70,29 +72,35 @@ export function createCoreCatalog(
     return { catalog, extended };
 }
 
-export function interpretCatalogFieldError(field_error: string): CatalogFieldError {
+export function interpretCatalogFieldError(fieldError: string): CatalogFieldError {
     const genericParseError: CatalogFieldError = {
         channelId: 'error',
-        cattegoryPath: 'error',
-        fieldName: 'error plus extra text to make sure this message does not match a value field',
+        categoryPath: 'error',
+        fieldName: 'sku', // This message will appear on the sku column, but will represent an error that applies to the entire row
         complianceType: 'error',
         errorCode: 'PARSE_ERROR',
-        errorMessage: 'Error message was poorly formatted and could not be parsed',
+        errorMessage: `We encountered an error that could not be interpreted: "${fieldError}"`,
     };
     // Try splitting on '__'
-    const fieldErrorSplit: string[] = field_error.split('__');
-    if (fieldErrorSplit.length !== 5) return genericParseError;
+    if (fieldError.split('__').length !== 5) {
+        console.log(`ERROR interpretCatalogFieldError(...) could not interpret the fieldError: "${fieldError}"`);
+        return genericParseError;
+    }
+    const [pathing, fieldName, complianceType, errorCode, errorMessage] = fieldError.split('__');
 
     // Split out the channelId and categoryPath
-    const channelAndCategorySplit = fieldErrorSplit[0].split(':');
-    if (channelAndCategorySplit.length !== 2) return genericParseError;
+    if (pathing.split(':').length !== 2) {
+        console.log(`ERROR interpretCatalogFieldError(...) could not interpret the fieldError: "${fieldError}"`);
+        return genericParseError;
+    }
+    const [channelId, categoryPath] = pathing.split(':');
 
     return {
-        channelId: channelAndCategorySplit[0],
-        cattegoryPath: channelAndCategorySplit[1],
-        fieldName: fieldErrorSplit[1],
-        complianceType: fieldErrorSplit[2],
-        errorCode: fieldErrorSplit[3],
-        errorMessage: fieldErrorSplit[4],
+        channelId,
+        categoryPath,
+        fieldName,
+        complianceType,
+        errorCode,
+        errorMessage,
     };
 }

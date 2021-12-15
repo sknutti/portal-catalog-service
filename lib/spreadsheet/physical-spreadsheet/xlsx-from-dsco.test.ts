@@ -1,7 +1,7 @@
 import { CoreCatalog } from '@lib/core-catalog';
 import { getValidationErrorsForAColumnFromCatalogData } from './xlsx-from-dsco';
 
-test('Validation error search can extract validation errors from a DscoCatalog object', () => {
+test('Validation error search can extract validation errors from a CoreCatalog object', () => {
     const testCatalogData: CoreCatalog = {
         supplier_id: 1234,
         categories: {},
@@ -21,7 +21,7 @@ test('Validation error search can extract validation errors from a DscoCatalog o
     expect(testResult).toEqual(expectedResult);
 });
 
-test('Validation error search returns empty array when no errors compliance data is not present', () => {
+test('Validation error search returns empty array when compliance data is not present', () => {
     const testCatalogData: CoreCatalog = {
         supplier_id: 1234,
         categories: {},

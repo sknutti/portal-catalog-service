@@ -7,7 +7,7 @@ import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment'
 import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
 import { ItemSearchV2Request } from './item-search-v2.request';
-import { ItemExceptionSearchV1Request } from './item-exceptions-search.request';
+import { ItemExceptionSearchRequest } from './item-exceptions-search.request';
 import { batch, map } from './iter-tools';
 
 interface MongoSecret {
@@ -128,7 +128,7 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
 /**
  * Looks for items with content exceptions using ElasticSearch
- * Takes item ids from these results and loads those items from Mongo
+ * Takes item ids from ES results and loads those items from Mongo
  */
 export async function catalogExceptionsItemSearch(
     supplierId: number,
@@ -139,7 +139,7 @@ export async function catalogExceptionsItemSearch(
 
     // ES Query
     const searchResp = await axiosRequest(
-        new ItemExceptionSearchV1Request(env, {
+        new ItemExceptionSearchRequest(env, {
             supplierId: supplierId,
             channelId: retailerId,
             categoryPath: categoryPath,
@@ -151,12 +151,13 @@ export async function catalogExceptionsItemSearch(
     );
 
     if (!searchResp.data.success) {
-        throw new Error(`Bad response running catalog item search: ${JSON.stringify(searchResp.data, null, 4)}`);
+        throw new Error(`Bad response from item exception search: ${JSON.stringify(searchResp.data)}`);
     }
 
     // Filter results to just have the item ids
     const itemIds: number[] = searchResp.data.items.map((item) => item.item_id);
     console.log(`Got item ids: ${JSON.stringify(itemIds)}`);
+    if (itemIds.length === 0) return [];
 
     // Then we load those items from mongo
     return await loadCatalogItemsFromMongo(supplierId, 'item_id', itemIds);

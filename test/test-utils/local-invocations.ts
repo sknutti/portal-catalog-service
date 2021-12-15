@@ -128,7 +128,7 @@ export async function locallyInvokeGetContentExceptionsApi(
 ): Promise<Buffer> {
     const resp = await locallyInvokeHandler<GenerateContentExceptionsSpreadsheetRequest>(
         getContentExceptionsSpreadsheet,
-        { retailerId, categoryPath }, // TODO CCR will have to add inputs here when we know what they look like
+        { retailerId, categoryPath },
         identityId,
     );
 
