@@ -44,6 +44,7 @@ export class CatalogResolver {
         }
 
         for (const response of gmResp.data?.responses || []) {
+            console.log('DELETEME: ', {response: JSON.stringify(response)});
             if (!response.success) {
                 return {
                     messages: this.findErrors(response.data?.messages || []),
