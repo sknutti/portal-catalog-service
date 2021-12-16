@@ -33,7 +33,10 @@ test('Signed upload and download url works', async () => {
     await axios.put(url, id);
 
     // Download directly to verify the metadata was stored
-    const [body, [meta]] = await Promise.all([downloadS3Bucket(path), downloadS3Metadata<{ custom_meta: string }>(path)]);
+    const [body, [meta]] = await Promise.all([
+        downloadS3Bucket(path),
+        downloadS3Metadata<{ custom_meta: string }>(path),
+    ]);
     expect(body.toString('utf8')).toEqual(id);
     expect(meta.custom_meta).toEqual(custom_meta);
 

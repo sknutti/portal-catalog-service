@@ -7,7 +7,7 @@ import {
     CatalogSpreadsheetS3Metadata,
     downloadS3Bucket,
     downloadS3Metadata,
-    parseCatalogItemS3UploadUrl
+    parseCatalogItemS3UploadUrl,
 } from '@lib/s3';
 import { DscoSpreadsheet, generateDscoSpreadsheet, PhysicalSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CsvSpreadsheet } from '@lib/spreadsheet/physical-spreadsheet/csv-spreadsheet';
@@ -24,8 +24,8 @@ export interface PublishCategorySpreadsheetEvent {
     userId: number;
     categoryPath: string;
     s3Path: string;
-	// References the original s3 file fanatics uploaded, if any
-	sourceS3Path?: string;
+    // References the original s3 file fanatics uploaded, if any
+    sourceS3Path?: string;
     uploadTime: Date;
     skippedRowIndexes?: number[];
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
@@ -34,14 +34,16 @@ export interface PublishCategorySpreadsheetEvent {
     fromRowIdx?: number;
     // Exclusive
     toRowIdx?: number;
-	// Used to track child invocations when fanning out
-	callId?: string;
+    // Used to track child invocations when fanning out
+    callId?: string;
 }
 
 // Purposely 10 seconds before actual timeout
 const LAMBDA_TIMEOUT = 890 * 1_000;
 
-export async function publishCategorySpreadsheet(inEvent: S3CreateEvent | PublishCategorySpreadsheetEvent): Promise<void> {
+export async function publishCategorySpreadsheet(
+    inEvent: S3CreateEvent | PublishCategorySpreadsheetEvent,
+): Promise<void> {
     const event = 'categoryPath' in inEvent ? inEvent : await getEventFromS3(inEvent);
     const callId = event.callId || Math.random().toString(36).substring(6).toUpperCase();
 
@@ -60,7 +62,7 @@ export async function publishCategorySpreadsheet(inEvent: S3CreateEvent | Publis
         } else if (resp.ok) {
             await sendWebsocketEvent('success', resp.val, event.supplierId);
         } else {
-            await sendFanaticsEmail(event, {genericMessage: `${resp.val.message}\n${resp.val.details}`, callId});
+            await sendFanaticsEmail(event, { genericMessage: `${resp.val.message}\n${resp.val.details}`, callId });
 
             await sendWebsocketEvent(
                 'error',
@@ -78,7 +80,10 @@ export async function publishCategorySpreadsheet(inEvent: S3CreateEvent | Publis
             return;
         }
 
-        await sendFanaticsEmail(event, {genericMessage: 'message' in error ? error.message : `Unexpected error: ${JSON.stringify(error)}`, callId});
+        await sendFanaticsEmail(event, {
+            genericMessage: 'message' in error ? error.message : `Unexpected error: ${JSON.stringify(error)}`,
+            callId,
+        });
         await sendWebsocketEvent(
             'error',
             {
@@ -122,25 +127,21 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
         retailerId,
         userId,
         uploadTime: lastModified,
-		sourceS3Path: meta.source_s3_path,
+        sourceS3Path: meta.source_s3_path,
         categoryPath: meta.category_path,
         isLocalTest: meta.is_local_test === 'true',
     };
 }
 
-async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent, callId: string): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
-    const {
-        categoryPath,
-        retailerId,
-        supplierId,
-        userId,
-        s3Path,
-        skippedRowIndexes,
-        fromRowIdx,
-        toRowIdx
-    } = event;
+async function publishSpreadsheetImpl(
+    event: PublishCategorySpreadsheetEvent,
+    callId: string,
+): Promise<Result<CatalogSpreadsheetWebsocketEvents['success'], UnexpectedError>> {
+    const { categoryPath, retailerId, supplierId, userId, s3Path, skippedRowIndexes, fromRowIdx, toRowIdx } = event;
 
-    console.log(`${callId} - Starting processing for supplier: ${supplierId}, path: ${s3Path}, fromIdx: ${fromRowIdx}, toIdx: ${toRowIdx}`);
+    console.log(
+        `${callId} - Starting processing for supplier: ${supplierId}, path: ${s3Path}, fromIdx: ${fromRowIdx}, toIdx: ${toRowIdx}`,
+    );
 
     const sendProgress = (progress: number, message: string) => {
         return sendWebsocketEvent('progressUpdate', { progress, message, categoryPath }, supplierId);
@@ -184,7 +185,8 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent, ca
 
     // Enumerate all of the rows starting at 1 for the header.  Then filter out the skipped rows, rows without data, and unmodified rows
     const rowsToSave = filter(enumerate(catalogRows, 1), ([row, rowIdx]) => {
-        const needsSave = !row.emptyRow && row.modified && !skippedRows.has(rowIdx) && isInRange(rowIdx, fromRowIdx, toRowIdx);
+        const needsSave =
+            !row.emptyRow && row.modified && !skippedRows.has(rowIdx) && isInRange(rowIdx, fromRowIdx, toRowIdx);
 
         if (!needsSave) {
             remainingRowsToValidate -= 1;
@@ -214,7 +216,11 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent, ca
     for await (const resolvedBatch of gearmanCalls) {
         for (const resolvedBatchError of resolvedBatch) {
             if (resolvedBatchError) {
-                await sendFanaticsEmail(event, {rowWithError: resolvedBatchError.rowIdx, validationErrors: resolvedBatchError.messages, callId});
+                await sendFanaticsEmail(event, {
+                    rowWithError: resolvedBatchError.rowIdx,
+                    validationErrors: resolvedBatchError.messages,
+                    callId,
+                });
 
                 return Ok({
                     totalRowCount: dataRowCount,
@@ -258,7 +264,7 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent, ca
  */
 async function loadSpreadsheetAndCatalogItems(
     event: PublishCategorySpreadsheetEvent,
-    callId: string
+    callId: string,
 ): Promise<[PhysicalSpreadsheet | undefined, CoreCatalog[]]> {
     const buffer = await downloadS3Bucket(event.s3Path);
 
@@ -268,7 +274,14 @@ async function loadSpreadsheetAndCatalogItems(
 
     await fanoutIfLargeSpreadsheetAndFanatics(supplierSpreadsheet?.numDataRows() ?? 0, event, callId);
 
-    return [supplierSpreadsheet, await loadCatalogItemsFromMongo(event.supplierId, 'sku', supplierSpreadsheet?.skus(event.fromRowIdx, event.toRowIdx) ?? [])];
+    return [
+        supplierSpreadsheet,
+        await loadCatalogItemsFromMongo(
+            event.supplierId,
+            'sku',
+            supplierSpreadsheet?.skus(event.fromRowIdx, event.toRowIdx) ?? [],
+        ),
+    ];
 }
 
 // Resolves just before the lambda would time out.  This allows us to send it back to the user over the socket

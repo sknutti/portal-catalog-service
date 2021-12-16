@@ -16,7 +16,7 @@ export class CatalogResolver {
      */
     async resolveBatch(
         rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>,
-        callId: string
+        callId: string,
     ): Promise<CatalogResolveError | undefined> {
         const indexMap: Record<number, number> = {};
         const catalogs: CoreCatalog[] = [];
@@ -63,9 +63,12 @@ export class CatalogResolver {
         let errors = messages.filter((m) => m.type === 'error' || m.type === 'ERROR') || [];
 
         if (!errors.length) {
-            errors = messages.filter((m) => m.type === 'RECORD_STATUS_MESSAGE' || m.type === 'RECORD_STATUS' || m.type === 'STATUS_MESSAGE') || [];
+            errors =
+                messages.filter(
+                    (m) =>
+                        m.type === 'RECORD_STATUS_MESSAGE' || m.type === 'RECORD_STATUS' || m.type === 'STATUS_MESSAGE',
+                ) || [];
         }
-
 
         if (errors.length) {
             return Array.from(new Set(errors.map((e) => e.message)));

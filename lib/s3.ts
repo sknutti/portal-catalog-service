@@ -161,5 +161,5 @@ export interface CatalogSpreadsheetS3Metadata {
     skipped_row_indexes?: string;
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
-	source_s3_path?: string;
+    source_s3_path?: string;
 }

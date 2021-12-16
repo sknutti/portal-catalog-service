@@ -46,9 +46,9 @@ export function gunzipAsync(text: string): Promise<Buffer> {
  * Min is inclusive, max is exclusive
  * If min or max aren't numbers, will be unbounded
  */
-export function isInRange(test:number, min?: number, max?: number): boolean {
-   min = min ?? -Infinity;
-   max = max ?? Infinity;
+export function isInRange(test: number, min?: number, max?: number): boolean {
+    min = min ?? -Infinity;
+    max = max ?? Infinity;
 
-   return test >= min && test < max;
+    return test >= min && test < max;
 }
