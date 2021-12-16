@@ -17,7 +17,7 @@ export abstract class PhysicalSpreadsheet {
     /**
      * Provides a list of all skus in the spreadsheet
      */
-    abstract skus(): string[];
+    abstract skus(fromRowIdx?: number, toRowIdx?: number): string[];
 
     /**
      * Number of rows containing data in the spreadsheet
