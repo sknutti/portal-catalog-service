@@ -24,6 +24,8 @@ export interface PublishCategorySpreadsheetEvent {
     userId: number;
     categoryPath: string;
     s3Path: string;
+	// References the original s3 file fanatics uploaded, if any
+	sourceS3Path?: string;
     uploadTime: Date;
     skippedRowIndexes?: number[];
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
@@ -32,6 +34,8 @@ export interface PublishCategorySpreadsheetEvent {
     fromRowIdx?: number;
     // Exclusive
     toRowIdx?: number;
+	// Used to track child invocations when fanning out
+	callId?: string;
 }
 
 // Purposely 10 seconds before actual timeout
@@ -39,7 +43,7 @@ const LAMBDA_TIMEOUT = 890 * 1_000;
 
 export async function publishCategorySpreadsheet(inEvent: S3CreateEvent | PublishCategorySpreadsheetEvent): Promise<void> {
     const event = 'categoryPath' in inEvent ? inEvent : await getEventFromS3(inEvent);
-    const callId = Math.random().toString(36).substring(6).toUpperCase();
+    const callId = event.callId || Math.random().toString(36).substring(6).toUpperCase();
 
     console.log(`${callId} - Publish event extracted from s3 metadata: `, event);
 
@@ -118,6 +122,7 @@ async function getEventFromS3(createEvent: S3CreateEvent): Promise<PublishCatego
         retailerId,
         userId,
         uploadTime: lastModified,
+		sourceS3Path: meta.source_s3_path,
         categoryPath: meta.category_path,
         isLocalTest: meta.is_local_test === 'true',
     };
@@ -181,7 +186,6 @@ async function publishSpreadsheetImpl(event: PublishCategorySpreadsheetEvent, ca
     const rowsToSave = filter(enumerate(catalogRows, 1), ([row, rowIdx]) => {
         const needsSave = !row.emptyRow && row.modified && !skippedRows.has(rowIdx) && isInRange(rowIdx, fromRowIdx, toRowIdx);
 
-        // aws-sdk-dynamobd: 1m 15s
         if (!needsSave) {
             remainingRowsToValidate -= 1;
         }

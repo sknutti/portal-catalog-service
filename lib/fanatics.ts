@@ -12,12 +12,13 @@ export function isFanatics(supplierId: number): boolean {
 }
 
 
-const MAX_ROWS_PER_INVOCATION = 20_000;
-
 /**
  * To prevent timing out, will re-invoke the upload bot on subsets of a very large file.  Currently only enabled for fanatics (as this breaks the websocket communication)
  */
 export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, event: PublishCategorySpreadsheetEvent, callId: string): Promise<void> {
+	// prod is faster and can handle much larger invocations
+	const MAX_ROWS_PER_INVOCATION = getDscoEnv() === 'prod' ? 25_000 : 10_000;
+
     if (!isFanatics(event.supplierId) || dataRowCount < MAX_ROWS_PER_INVOCATION || event.fromRowIdx || event.toRowIdx) {
         return;
     }
@@ -30,11 +31,13 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, 
 
     let from = 0;
     let to = MAX_ROWS_PER_INVOCATION;
+	let count = 0;
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const newEvent: PublishCategorySpreadsheetEvent = {
             ...event,
+			callId: `${callId}-fanout-${count}`,
             // Plus one for the header row
             fromRowIdx: from + 1,
             // Plus one for the header row
@@ -58,6 +61,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(dataRowCount: number, 
 
         from = to;
         to += MAX_ROWS_PER_INVOCATION;
+		count += 1;
     }
 
     await Promise.all(childInvocations);
@@ -91,7 +95,7 @@ function fanaticsErrorsToTable(errors: FanaticsErrors): string {
     return result;
 }
 
-export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEvent, 'supplierId' | 's3Path' | 'uploadTime'>, errors: FanaticsErrors): Promise<void> {
+export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEvent, 'supplierId' | 's3Path' | 'sourceS3Path' | 'uploadTime'>, errors: FanaticsErrors): Promise<void> {
     let toAddresses = ['agrant@commercehub.com']; // jkerr@fanatics.com
 
     if (process.env.SEND_EMAIL_TEST === 'true') {
@@ -100,6 +104,8 @@ export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEv
         return;
     }
     console.error('Sending Fanatics Email For These Errors: ', errors);
+
+	const sourceFile = event.sourceS3Path ? `<tr><td>Source File</td><td>${event.sourceS3Path}</td></tr>` : '';
 
     const ses = new AWS.SES({apiVersion: '2010-12-01'});
     const request: AWS.SES.SendEmailRequest = {
@@ -135,6 +141,7 @@ export async function sendFanaticsEmail(event: Pick<PublishCategorySpreadsheetEv
 
 <table>
     <tr><td>Environment</td><td>${getDscoEnv()}</td></tr>
+    ${sourceFile}
     <tr><td>File</td><td>${event.s3Path}</td></tr>
     <tr><td>Upload Date</td><td>${event.uploadTime.toString()}</td></tr>
     ${fanaticsErrorsToTable(errors)}

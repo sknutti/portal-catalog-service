@@ -14,8 +14,13 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
         throw new Error(`No fanatics account for dsco env: ${process.env.ENVIRONMENT}`);
     }
 
+	let s3Path = record.object.key;
+	s3Path = s3Path.replace(/\+/g, ' ');
+	s3Path = decodeURIComponent(s3Path);
+
     const meta: CatalogSpreadsheetS3Metadata = {
         category_path: account.categoryPath,
+		source_s3_path: s3Path
     };
 
     const from = {
