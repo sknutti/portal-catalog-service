@@ -15,12 +15,13 @@ pipelines:
                   - npm config set @sheet:registry https://pylon.sheetjs.com:54111
                   - npm config set //pylon.sheetjs.com:54111/:_authToken $SHEET_TOKEN # To get this token, successfully login to the site, and then look in .npmrc to find the token.
                   - npm install
-                  - npm run lint:prettier
-                  - npm run lint
-                  - npm run test
+                  #   - npm run lint:prettier
+                  #   - npm run lint
+                  #   - npm run test
                   - npm run build
               artifacts:
                   - build/artifact/**
+                  - build/lib/**
 
     branches:
         master: #Override, Runs for master branch
@@ -35,6 +36,17 @@ pipelines:
                       - aws-init.sh
                       - npm install
                       - npx sls deploy --stage test
+            - step:
+                  name: Library Deploy
+                  caches:
+                      - node
+                  deployment: library
+                  trigger: manual
+                  script:
+                      - cd build/lib
+                      - npm config set @dsco:registry https://registry.npmjs.org
+                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+                      - npm publish --dry-run
             - step:
                   name: Staging Deploy
                   caches:
@@ -57,14 +69,3 @@ pipelines:
                       - aws-init.sh
                       - npm install
                       - npx sls deploy --stage prod
-            - step:
-                  name: Library Deploy
-                  caches:
-                      - node
-                  deployment: library
-                  trigger: manual
-                  script:
-                      - cd build/lib
-                      - npm config set @dsco:registry https://registry.npmjs.org
-                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
-                      - npm publish --dry-run
