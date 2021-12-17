@@ -1,14 +1,15 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError, UnexpectedError } from '@dsco/ts-models';
-import { getLeoAuthUserTable } from '@lib/environment';
+import { getLeoAuthUserTable, getPortalCatalogS3BucketName } from '@lib/environment';
+import { createCatalogItemS3DownloadPath, getSignedS3DownloadUrl, writeS3Object } from '@lib/s3';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
 import { catalogExceptionsItemSearch, gzipAsync } from '@lib/utils';
-import { GenerateContentExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
+import { GenerateCatalogExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
 import { CoreCatalog, CatalogContentCompliance } from '@lib/core-catalog';
 import { PipelineErrorType } from '@dsco/ts-models';
 
-export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExceptionsSpreadsheetRequest>(
+export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogExceptionsSpreadsheetRequest>(
     async (event) => {
         if (!event.body.categoryPath) {
             return new MissingRequiredFieldError('categoryPath');
@@ -50,11 +51,19 @@ export const getContentExceptionsSpreadsheet = apiWrapper<GenerateContentExcepti
 
         const workbook = xlsxFromDsco(spreadsheet, retailerId);
 
-        //workbook.toFile(); // TODO test line only take out before committing
+    const downloadPath = createCatalogItemS3DownloadPath(supplierId, retailerId, user.userId, categoryPath);
+    await writeS3Object(getPortalCatalogS3BucketName(), downloadPath, workbook.toBuffer());
 
         return {
             success: true,
-            gzippedFile: await gzipAsync(workbook.toBuffer()),
-        };
-    },
-);
+        downloadUrl: await getSignedS3DownloadUrl(
+            downloadPath,
+            `Catalog Spreadsheet - ${getLastCategoryPath(categoryPath)}.xlsx`,
+        ),
+    };
+});
+
+function getLastCategoryPath(fullCategoryPath: string): string {
+    const split = fullCategoryPath.split('||');
+    return split[split.length - 1];
+}

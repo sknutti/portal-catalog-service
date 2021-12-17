@@ -1,11 +1,11 @@
 get-content-exceptions-spreadsheet:
-    handler: api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet.getContentExceptionsSpreadsheet
+    handler: api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet.generateCatalogExceptionsSpreadsheet
     memorySize: 1024
     timeout: 60
     vpc: ${self:custom.environment.gearman-and-mongo-vpc}
     events:
         - http:
-              path: content/get-exceptions-spreadsheet
+              path: exceptions-spreadsheet
               method: post
               cors: true
               integration: lambda-proxy
