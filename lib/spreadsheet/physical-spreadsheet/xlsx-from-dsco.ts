@@ -50,19 +50,20 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         let curRowIdx = 1;
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
-            const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(col.fieldName, row.catalog);
-            if (cellData && validationErrorsForThisCell.length > 0) {
-
-                AddKnownCellValidationErrors(cellData, validationErrorsForThisCell);
+            
+            if (cellData) {
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
+                const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(col.fieldName, row.catalog);
+
                 sheet[cell] = cellData;
+
+                if(validationErrorsForThisCell.length>0){
+                    AddKnownCellValidationErrors(cellData, validationErrorsForThisCell);
+                    cellsWithValidationErrors.push(cell);
+                }
                 
-                //sheet[cell].s.color = { rgb: 0xEF474D};
-                //console.log('sheet cell', sheet[cell]);
-
-                cellsWithValidationErrors.push(cell);
             }
-
+            
             curRowIdx++;
         }
     }
@@ -74,8 +75,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
     });
 
-    console.log('list of cells with validation errors',cellsWithValidationErrors);
-    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors);
+    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors, 0xee2a2a, 0xfbff7e);
     return new XlsxSpreadsheet(workBook, sheet);
 }
 
@@ -345,10 +345,11 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
     return [validationSheet, validationSheetInfo];
 }
 
+
 /**
- * Validation errors would've been determined long before reaching this point
- * If any such errors exist, they will be specified in the given catalogData
  * This function will add the description(s) of the error to the given cell as a comment
+ * @param cell - cell object to add comment to
+ * @param validationError - validation error to communicate to customer 
  */
 function AddKnownCellValidationErrors(cell: CellObject, validationError:string[]): void {
         
@@ -387,20 +388,22 @@ export function getValidationErrorsForAColumnFromCatalogData(columnName: string,
 
 /**
  * 
- * @param sheet - 
- * @param cellAddressList - 
+ * function adds to conditional formatting as a way of highlighting a list of select cells of interest 
+ * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings 
+ * @param sheet - sheetJS object that will be modified 
+ * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton 
+ * @param fontColorHex - hexidecimal value for rgb font color value
+ * @param cellFillColorHex - hexidecimal value for rgb cell fill color value
  */
-function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddresses:string[]):void{
+function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddresses:string[], fontColorHex:number, cellFillColorHex:number):void{
     
-    const fontColor = 'ee2a2a'; //red
-    const cellFillColor = 'fbff7e '; // yellow
-    const condfmt = (sheet['!condfmt'] = sheet['!condfmt'] || []);
+    const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
 
-    condfmt.unshift({
+    conditionalFormattingRules.unshift({
         ref: cellAddresses.join(' '),
         t: 'formula',
         f: 'TRUE',
-        s: { bgColor: { rgb:cellFillColor}, color:{rgb:fontColor}},
+        s: { bgColor: { rgb:cellFillColorHex}, color:{rgb:fontColorHex}},
     });
     
 }
