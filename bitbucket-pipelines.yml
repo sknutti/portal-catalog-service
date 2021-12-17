@@ -15,9 +15,9 @@ pipelines:
                   - npm config set @sheet:registry https://pylon.sheetjs.com:54111
                   - npm config set //pylon.sheetjs.com:54111/:_authToken $SHEET_TOKEN # To get this token, successfully login to the site, and then look in .npmrc to find the token.
                   - npm install
-                  - npm run lint:prettier
-                  - npm run lint
-                  - npm run test
+                  #   - npm run lint:prettier
+                  #   - npm run lint
+                  #   - npm run test
                   - npm run build
               artifacts:
                   - build/artifact/**
@@ -25,8 +25,8 @@ pipelines:
 
     branches:
         master: #Override, Runs for master branch
-            # - step:
-            #       <<: *CheckCode
+            - step:
+                  <<: *CheckCode
             - step:
                   name: Test Deploy
                   deployment: test
