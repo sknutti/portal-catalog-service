@@ -40,6 +40,8 @@ export interface CreateOrUpdateItemMessage {
         | 'INFO'
         | 'info'
         | 'RECORD_STATUS'
+        | 'STATUS_MESSAGE'
+        | 'STATUS'
         | 'RECORD_INFO'
         | 'RECORD_STATUS_MESSAGE';
     message: string;

@@ -24,6 +24,13 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             defaultCategoryPath: 'Fan Gear',
         },
     },
+    'Demo Retailer 3': {
+        prod: {
+            retailerId: 1000010787,
+            supplierId: 1000010792,
+            userId: 18419
+        }
+    },
     'KNS x Belk': {
         prod: {
             isRealCustomer: true,

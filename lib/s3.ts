@@ -85,7 +85,10 @@ export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata:
         .promise();
 }
 
-export async function downloadS3Metadata<Metadata>(path: string): Promise<Metadata> {
+/**
+ * @returns [Metadata, Date] the s3 file metadata, and the last modify date of the file
+ */
+export async function downloadS3Metadata<Metadata>(path: string): Promise<[Metadata, Date]> {
     const resp = await getS3Client()
         .headObject({
             Bucket: getPortalCatalogS3BucketName(),
@@ -98,7 +101,7 @@ export async function downloadS3Metadata<Metadata>(path: string): Promise<Metada
         meta[key] = decodeURIComponent(val);
     }
 
-    return meta as any as Metadata;
+    return [meta as any as Metadata, resp.LastModified || new Date()];
 }
 
 export async function writeS3Object(bucket: string, path: string, body: string | Buffer): Promise<void> {
@@ -158,4 +161,5 @@ export interface CatalogSpreadsheetS3Metadata {
     skipped_row_indexes?: string;
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
+    source_s3_path?: string;
 }
