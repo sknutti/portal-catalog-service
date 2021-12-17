@@ -67,5 +67,5 @@ pipelines:
                   script:
                       - cd build/lib
                       - npm config set @dsco:registry https://registry.npmjs.org
-                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+                      - npm config set //registry.npmjs.org/:_authToken $NPM_PUBLISH_TOKEN
                       - npm publish
