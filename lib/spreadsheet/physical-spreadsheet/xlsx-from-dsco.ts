@@ -2,7 +2,7 @@ import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog, CatalogFieldError, interpretCatalogFieldError } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { CellObject, Comments, DataValidation, Style, utils, WorkSheet} from '@sheet/image';
+import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
@@ -30,10 +30,8 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
     let highlightStart = 0;
     let curColIdx = -1;
     let cur: PipelineErrorType | 'none' = PipelineErrorType.error;
-    
-    const cellsWithValidationErrors:string[] = [];
 
-    
+    const cellsWithValidationErrors: string[] = [];
 
     for (const col of spreadsheet) {
         if (col.validation.required !== cur) {
@@ -50,20 +48,22 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         let curRowIdx = 1;
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
-            
+
             if (cellData) {
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
-                const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(col.fieldName, row.catalog);
+                const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
+                    col.fieldName,
+                    row.catalog,
+                );
 
                 sheet[cell] = cellData;
 
-                if(validationErrorsForThisCell.length>0){
+                if (validationErrorsForThisCell.length > 0) {
                     AddKnownCellValidationErrors(cellData, validationErrorsForThisCell);
                     cellsWithValidationErrors.push(cell);
                 }
-                
             }
-            
+
             curRowIdx++;
         }
     }
@@ -157,8 +157,6 @@ function highlightBanded(
         f: 'TRUE',
         s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle },
     });
-
-    
 
     // Then style the rows beneath
     condfmt.push({
@@ -345,14 +343,12 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
     return [validationSheet, validationSheetInfo];
 }
 
-
 /**
  * This function will add the description(s) of the error to the given cell as a comment
  * @param cell - cell object to add comment to
- * @param validationError - validation error to communicate to customer 
+ * @param validationError - validation error to communicate to customer
  */
-function AddKnownCellValidationErrors(cell: CellObject, validationError:string[]): void {
-        
+function AddKnownCellValidationErrors(cell: CellObject, validationError: string[]): void {
     cell.c = [
         {
             a: 'CommerceHub',
@@ -361,7 +357,6 @@ function AddKnownCellValidationErrors(cell: CellObject, validationError:string[]
     ];
     cell.c.hidden = true;
     cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationError.join('\n')) };
-    
 }
 
 /**
@@ -387,19 +382,24 @@ export function getValidationErrorsForAColumnFromCatalogData(columnName: string,
 }
 
 /**
- * 
- * function adds to conditional formatting as a way of highlighting a list of select cells of interest 
- * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings 
- * @param sheet - sheetJS object that will be modified 
- * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton 
+ *
+ * function adds to conditional formatting as a way of highlighting a list of select cells of interest
+ * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings
+ * @param sheet - sheetJS object that will be modified
+ * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton
  * @param fontColorHex - hexidecimal value for rgb font color value
  * @param cellFillColorHex - hexidecimal value for rgb cell fill color value
  */
-function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddresses:string[], fontColorHex:number, cellFillColorHex:number):void{
-    
+function highlightSelectCellsByConditionalFormatting(
+    sheet: WorkSheet,
+    cellAddresses: string[],
+    fontColorHex: number,
+    cellFillColorHex: number,
+): void {
     const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
 
-    const borderStyle: Partial<Style> = { //this matched boarder style in highlightBanding fn 
+    const borderStyle: Partial<Style> = {
+        //this matched boarder style in highlightBanding fn
         left: { style: 'thin', color: { rgb: 0xcacaca } },
         right: { style: 'thin', color: { rgb: 0xcacaca } },
     };
@@ -408,7 +408,6 @@ function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddres
         ref: cellAddresses.join(' '),
         t: 'formula',
         f: 'TRUE',
-        s: { bgColor: { rgb:cellFillColorHex}, color:{rgb:fontColorHex}, ...borderStyle},
+        s: { bgColor: { rgb: cellFillColorHex }, color: { rgb: fontColorHex }, ...borderStyle },
     });
-    
 }
