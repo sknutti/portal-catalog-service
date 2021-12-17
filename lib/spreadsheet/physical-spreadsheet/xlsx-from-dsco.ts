@@ -399,11 +399,16 @@ function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddres
     
     const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
 
+    const borderStyle: Partial<Style> = { //this matched boarder style in highlightBanding fn 
+        left: { style: 'thin', color: { rgb: 0xcacaca } },
+        right: { style: 'thin', color: { rgb: 0xcacaca } },
+    };
+
     conditionalFormattingRules.unshift({
         ref: cellAddresses.join(' '),
         t: 'formula',
         f: 'TRUE',
-        s: { bgColor: { rgb:cellFillColorHex}, color:{rgb:fontColorHex}},
+        s: { bgColor: { rgb:cellFillColorHex}, color:{rgb:fontColorHex}, ...borderStyle},
     });
     
 }
