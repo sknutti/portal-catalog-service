@@ -13,7 +13,7 @@ export interface GenerateCatalogExceptionsSpreadsheetResponse extends DsResponse
 }
 
 /**
- * Generates an xlsx spreadsheet for exceptions in a given catalog attribution category
+ * Generates an xlsx spreadsheet for compliance exceptions for a given retailer and category
  */
 export class GenerateCatalogExceptionsSpreadsheetRequest extends DsRequest<
     GenerateCatalogExceptionsSpreadsheetRequestBody,
