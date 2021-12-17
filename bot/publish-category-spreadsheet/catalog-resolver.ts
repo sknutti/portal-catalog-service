@@ -16,6 +16,7 @@ export class CatalogResolver {
      */
     async resolveBatch(
         rows: IterableIterator<[row: DscoCatalogRow, rowIdx: number]>,
+        callId: string,
     ): Promise<CatalogResolveError | undefined> {
         const indexMap: Record<number, number> = {};
         const catalogs: CoreCatalog[] = [];
@@ -28,7 +29,6 @@ export class CatalogResolver {
             i++;
         }
 
-        const callId = Math.random().toString(36).substring(6).toUpperCase();
         const api = new CreateOrUpdateItemBulkGearmanApi(this.supplierId, this.userId.toString(10), catalogs);
         (api.body as any).call_id = callId;
 
@@ -44,7 +44,6 @@ export class CatalogResolver {
         }
 
         for (const response of gmResp.data?.responses || []) {
-            console.debug('DELETEME: ', { response: JSON.stringify(response) });
             if (!response.success) {
                 return {
                     messages: this.findErrors(response.data?.messages || []),
@@ -64,7 +63,11 @@ export class CatalogResolver {
         let errors = messages.filter((m) => m.type === 'error' || m.type === 'ERROR') || [];
 
         if (!errors.length) {
-            errors = messages.filter((m) => m.type === 'RECORD_STATUS_MESSAGE') || [];
+            errors =
+                messages.filter(
+                    (m) =>
+                        m.type === 'RECORD_STATUS_MESSAGE' || m.type === 'RECORD_STATUS' || m.type === 'STATUS_MESSAGE',
+                ) || [];
         }
 
         if (errors.length) {

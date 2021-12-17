@@ -100,6 +100,11 @@ provider:
               - lambda:InvokeFunction
           Resource:
               - 'arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}'
+        - Effect: 'Allow'
+          Action:
+              - ses:SendEmail
+          Resource:
+              - 'arn:aws:ses:${self:provider.region}:#{AWS::AccountId}:identity/notifications@dsco.io'
         - ${file(./leo-iam.yml):kinesis}
         - ${file(./leo-iam.yml):firehose}
         - ${file(./leo-iam.yml):s3}

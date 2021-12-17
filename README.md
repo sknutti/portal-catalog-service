@@ -110,6 +110,7 @@ Bamboo builds run automatically when changes are pushed to the master branch. Ne
 -   To promote a deployment to an environment, use the deploy icon in the top right corner.
 
 #### Publish Library
+**Important!**: When publishing the library, you must bump the version in `api/package.json`
 
 Build it as in Building above, although to make it faster you can run `npm run build:lib`.
 

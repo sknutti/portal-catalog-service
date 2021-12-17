@@ -115,7 +115,9 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
         return assertUnreachable(identifier, 'identifierType');
     }
 
+    console.log(`Querying mongo for ${idsToLoad.length} existing items`);
     const mongoResp = await mongoClient.db().collection('Item').find<CoreCatalog>(query).toArray();
+    console.log('Finished querying mongo for items');
 
     // Close the mongo client when running locally to prevent process from hanging
     if (getIsRunningLocally()) {

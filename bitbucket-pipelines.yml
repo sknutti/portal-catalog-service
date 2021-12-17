@@ -21,6 +21,7 @@ pipelines:
                   - npm run build
               artifacts:
                   - build/artifact/**
+                  - build/lib/**
 
     branches:
         master: #Override, Runs for master branch
@@ -66,5 +67,5 @@ pipelines:
                   script:
                       - cd build/lib
                       - npm config set @dsco:registry https://registry.npmjs.org
-                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
-                      - npm publish --dry-run
+                      - npm config set //registry.npmjs.org/:_authToken $NPM_PUBLISH_TOKEN
+                      - npm publish
