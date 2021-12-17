@@ -4,10 +4,9 @@ import { getLeoAuthUserTable, getPortalCatalogS3BucketName } from '@lib/environm
 import { createCatalogItemS3DownloadPath, getSignedS3DownloadUrl, writeS3Object } from '@lib/s3';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
-import { catalogExceptionsItemSearch, gzipAsync } from '@lib/utils';
+import { catalogExceptionsItemSearch } from '@lib/utils';
 import { GenerateCatalogExceptionsSpreadsheetRequest } from './get-content-exceptions-spreadsheet.request';
-import { CoreCatalog, CatalogContentCompliance } from '@lib/core-catalog';
-import { PipelineErrorType } from '@dsco/ts-models';
+import { CoreCatalog } from '@lib/core-catalog';
 
 export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogExceptionsSpreadsheetRequest>(
     async (event) => {
