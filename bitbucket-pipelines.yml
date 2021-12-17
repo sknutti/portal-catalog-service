@@ -28,15 +28,6 @@ pipelines:
             - step:
                   <<: *CheckCode
             - step:
-                  name: Test Deploy
-                  deployment: test
-                  trigger: automatic
-                  script:
-                      - cd build/artifact
-                      - aws-init.sh
-                      - npm install
-                      - npx sls deploy --stage test
-            - step:
                   name: Library Deploy
                   caches:
                       - node
@@ -47,6 +38,15 @@ pipelines:
                       - npm config set @dsco:registry https://registry.npmjs.org
                       - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
                       - npm publish --dry-run
+            - step:
+                  name: Test Deploy
+                  deployment: test
+                  trigger: automatic
+                  script:
+                      - cd build/artifact
+                      - aws-init.sh
+                      - npm install
+                      - npx sls deploy --stage test
             - step:
                   name: Staging Deploy
                   caches:
