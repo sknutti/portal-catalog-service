@@ -2,7 +2,7 @@ import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog, CatalogFieldError, interpretCatalogFieldError } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
-import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
+import { CellObject, Comments, DataValidation, Style, utils, WorkSheet} from '@sheet/image';
 
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
@@ -30,6 +30,10 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
     let highlightStart = 0;
     let curColIdx = -1;
     let cur: PipelineErrorType | 'none' = PipelineErrorType.error;
+    
+    const cellsWithValidationErrors:string[] = [];
+
+    
 
     for (const col of spreadsheet) {
         if (col.validation.required !== cur) {
@@ -46,11 +50,17 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         let curRowIdx = 1;
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
+            const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(col.fieldName, row.catalog);
+            if (cellData && validationErrorsForThisCell.length > 0) {
 
-            if (cellData) {
-                checkForAndAddKnownCellValidationErrors(cellData, col.fieldName, row.catalog);
+                AddKnownCellValidationErrors(cellData, validationErrorsForThisCell);
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
                 sheet[cell] = cellData;
+                
+                //sheet[cell].s.color = { rgb: 0xEF474D};
+                //console.log('sheet cell', sheet[cell]);
+
+                cellsWithValidationErrors.push(cell);
             }
 
             curRowIdx++;
@@ -64,6 +74,8 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
     });
 
+    console.log('list of cells with validation errors',cellsWithValidationErrors);
+    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors);
     return new XlsxSpreadsheet(workBook, sheet);
 }
 
@@ -146,9 +158,7 @@ function highlightBanded(
         s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle },
     });
 
-    // utils.sheet_set_range_style(sheet, {
-    //
-    // }, { bgColor: {rgb: 0xFF0000}, ...borderStyle});
+    
 
     // Then style the rows beneath
     condfmt.push({
@@ -340,19 +350,17 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
  * If any such errors exist, they will be specified in the given catalogData
  * This function will add the description(s) of the error to the given cell as a comment
  */
-function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: string, catalogData: CoreCatalog): void {
-    const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(columnName, catalogData);
-    if (validationErrorsForThisCell.length > 0) {
-        // Add any found validation errors as an in-cell comment
-        cell.c = [
-            {
-                a: 'CommerceHub',
-                t: validationErrorsForThisCell.join('\n'),
-            },
-        ];
-        cell.c.hidden = true;
-        cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationErrorsForThisCell.join('\n')) };
-    }
+function AddKnownCellValidationErrors(cell: CellObject, validationError:string[]): void {
+        
+    cell.c = [
+        {
+            a: 'CommerceHub',
+            t: validationError.join('\n'),
+        },
+    ];
+    cell.c.hidden = true;
+    cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationError.join('\n')) };
+    
 }
 
 /**
@@ -375,4 +383,24 @@ export function getValidationErrorsForAColumnFromCatalogData(columnName: string,
         return field_error.errorMessage;
     });
     return arrayOfErrorMessages;
+}
+
+/**
+ * 
+ * @param sheet - 
+ * @param cellAddressList - 
+ */
+function highlightSelectCellsByConditionalFormatting(sheet:WorkSheet, cellAddresses:string[]):void{
+    
+    const fontColor = 'ee2a2a'; //red
+    const cellFillColor = 'fbff7e '; // yellow
+    const condfmt = (sheet['!condfmt'] = sheet['!condfmt'] || []);
+
+    condfmt.unshift({
+        ref: cellAddresses.join(' '),
+        t: 'formula',
+        f: 'TRUE',
+        s: { bgColor: { rgb:cellFillColor}, color:{rgb:fontColor}},
+    });
+    
 }
