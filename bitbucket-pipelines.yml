@@ -68,4 +68,4 @@ pipelines:
                       - cd build/lib
                       - npm config set @dsco:registry https://registry.npmjs.org
                       - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
-                      - npm publish --dry-run
+                      - npm publish
