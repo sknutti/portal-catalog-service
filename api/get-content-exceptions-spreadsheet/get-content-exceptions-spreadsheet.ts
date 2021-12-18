@@ -9,7 +9,7 @@ import { GenerateCatalogExceptionsSpreadsheetRequest } from './get-content-excep
 import { CoreCatalog } from '@lib/core-catalog';
 
 export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogExceptionsSpreadsheetRequest>(
-    async (event) => {
+    async (event: any) => {
         if (!event.body.categoryPath) {
             return new MissingRequiredFieldError('categoryPath');
         }
@@ -27,7 +27,7 @@ export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogEx
         }
         const supplierId = user.accountId;
 
-        console.log(`GCES Called with sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
+        //console.log(`generateCatalogExceptionsSpreadsheet called with: sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
 
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(
             supplierId,
@@ -57,7 +57,7 @@ export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogEx
             success: true,
         downloadUrl: await getSignedS3DownloadUrl(
             downloadPath,
-            `Catalog Spreadsheet - ${getLastCategoryPath(categoryPath)}.xlsx`,
+            `Catalog Exceptions - ${getLastCategoryPath(categoryPath)}.xlsx`,
         ),
     };
 });
