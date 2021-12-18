@@ -50,17 +50,18 @@ export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogEx
 
         const workbook = xlsxFromDsco(spreadsheet, retailerId);
 
-    const downloadPath = createCatalogItemS3DownloadPath(supplierId, retailerId, user.userId, categoryPath);
-    await writeS3Object(getPortalCatalogS3BucketName(), downloadPath, workbook.toBuffer());
+        const downloadPath = createCatalogItemS3DownloadPath(supplierId, retailerId, user.userId, categoryPath);
+        await writeS3Object(getPortalCatalogS3BucketName(), downloadPath, workbook.toBuffer());
 
         return {
             success: true,
-        downloadUrl: await getSignedS3DownloadUrl(
-            downloadPath,
-            `Catalog Exceptions - ${getLastCategoryPath(categoryPath)}.xlsx`,
-        ),
-    };
-});
+            downloadUrl: await getSignedS3DownloadUrl(
+                downloadPath,
+                `Catalog Exceptions - ${getLastCategoryPath(categoryPath)}.xlsx`,
+            ),
+        };
+    }
+);
 
 function getLastCategoryPath(fullCategoryPath: string): string {
     const split = fullCategoryPath.split('||');
