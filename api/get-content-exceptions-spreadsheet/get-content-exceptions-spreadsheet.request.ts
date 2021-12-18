@@ -1,26 +1,26 @@
 import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
-export interface GenerateContentExceptionsSpreadsheetRequestBody {
+export interface GenerateCatalogExceptionsSpreadsheetRequestBody {
     retailerId: number;
     categoryPath: string;
 }
 
-export interface GenerateContentExceptionsSpreadsheetResponse extends DsResponse {
+export interface GenerateCatalogExceptionsSpreadsheetResponse extends DsResponse {
     /**
-     * A binary string containing the gzipped file
+     * The presigned s3 download url
      */
-    gzippedFile: string;
+    downloadUrl: string;
 }
 
 /**
- * Generates an xlsx spreadsheet for exceptions in a given catalog attribution category
+ * Generates an xlsx spreadsheet for compliance exceptions for a given retailer and category
  */
-export class GenerateContentExceptionsSpreadsheetRequest extends DsRequest<
-    GenerateContentExceptionsSpreadsheetRequestBody,
-    GenerateContentExceptionsSpreadsheetResponse,
+export class GenerateCatalogExceptionsSpreadsheetRequest extends DsRequest<
+    GenerateCatalogExceptionsSpreadsheetRequestBody,
+    GenerateCatalogExceptionsSpreadsheetResponse,
     DsError
 > {
-    constructor(env: DscoEnv, body: GenerateContentExceptionsSpreadsheetRequestBody) {
-        super('POST', '/content/get-exceptions-spreadsheet', DsRequest.getHost(env, 'micro'), body);
+    constructor(env: DscoEnv, body: GenerateCatalogExceptionsSpreadsheetRequestBody) {
+        super('POST', '/portal-catalog/exceptions-spreadsheet', DsRequest.getHost(env, 'micro'), body);
     }
 }

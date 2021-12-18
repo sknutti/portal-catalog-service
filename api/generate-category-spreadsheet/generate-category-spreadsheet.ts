@@ -4,7 +4,7 @@ import { getLeoAuthUserTable, getPortalCatalogS3BucketName } from '@lib/environm
 import { createCatalogItemS3DownloadPath, getSignedS3DownloadUrl, writeS3Object } from '@lib/s3';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
-import { catalogItemSearch, gzipAsync } from '@lib/utils';
+import { catalogItemSearch } from '@lib/utils';
 import { GenerateCategorySpreadsheetRequest } from './generate-category-spreadsheet.request';
 
 export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadsheetRequest>(async (event) => {
