@@ -60,7 +60,7 @@ export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogEx
                 `Catalog Exceptions - ${getLastCategoryPath(categoryPath)}.xlsx`,
             ),
         };
-    }
+    },
 );
 
 function getLastCategoryPath(fullCategoryPath: string): string {
