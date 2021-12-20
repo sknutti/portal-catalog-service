@@ -75,7 +75,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
     });
 
-    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors, 0xee2a2a, 0xfbff7e);
+    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors, 0x000000, 0xfbff7e);
     return new XlsxSpreadsheet(workBook, sheet);
 }
 
