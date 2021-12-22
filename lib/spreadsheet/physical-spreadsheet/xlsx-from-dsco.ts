@@ -59,7 +59,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
                 sheet[cell] = cellData;
 
                 if (validationErrorsForThisCell.length > 0) {
-                    AddKnownCellValidationErrors(cellData, validationErrorsForThisCell);
+                    addKnownCellValidationErrors(cellData, validationErrorsForThisCell);
                     cellsWithValidationErrors.push(cell);
                 }
             }
@@ -348,7 +348,7 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
  * @param cell - cell object to add comment to
  * @param validationError - validation error to communicate to customer
  */
-function AddKnownCellValidationErrors(cell: CellObject, validationError: string[]): void {
+function addKnownCellValidationErrors(cell: CellObject, validationError: string[]): void {
     cell.c = [
         {
             a: 'CommerceHub',
@@ -399,7 +399,7 @@ function highlightSelectCellsByConditionalFormatting(
     const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
 
     const borderStyle: Partial<Style> = {
-        //this matched boarder style in highlightBanding fn
+        //this matched border style in highlightBanding fn
         left: { style: 'thin', color: { rgb: 0xcacaca } },
         right: { style: 'thin', color: { rgb: 0xcacaca } },
     };
