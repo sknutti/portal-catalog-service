@@ -14,19 +14,19 @@ const retailerId = 1000012301;
 const userId = 26366;
 
 // Note: This test requires the dsco vpn to run as it uses both Mongo and Gearman
-test('it successfully generates a catalog spreadsheet that can be re-uploaded', async () => {
-    const identityId = await initAWSCredentials(userId);
+//test('it successfully generates a catalog spreadsheet that can be re-uploaded', async () => {
+//    const identityId = await initAWSCredentials(userId);
 
-    const randomCategory = await getRandomCategoryPath();
-    const generatedSpreadsheet = await locallyInvokeGenerateSpreadsheetApi(randomCategory, retailerId, identityId);
+//    const randomCategory = await getRandomCategoryPath();
+//    const generatedSpreadsheet = await locallyInvokeGenerateSpreadsheetApi(randomCategory, retailerId, identityId);
 
-    const uploadUrl = await locallyInvokeGetSpreadsheetUploadUrlApi(randomCategory, retailerId, identityId);
+//    const uploadUrl = await locallyInvokeGetSpreadsheetUploadUrlApi(randomCategory, retailerId, identityId);
 
     // Write the generated spreadsheet to the s3 bucket
-    await axios.put(uploadUrl, generatedSpreadsheet);
+//    await axios.put(uploadUrl, generatedSpreadsheet);
 
-    await locallyInvokePublishBot(uploadUrl);
-}, 60_000);
+//    await locallyInvokePublishBot(uploadUrl);
+// }, 60_000);
 
 async function getRandomCategoryPath() {
     const categoryPaths = await getTopLevelCategoryNames(retailerId);
