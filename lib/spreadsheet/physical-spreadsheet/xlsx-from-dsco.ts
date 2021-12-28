@@ -233,7 +233,24 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
     }
 
     if (data === null || data === undefined) {
-        return undefined;
+        switch (col.validation.format) {
+            case 'boolean':
+            case 'array':
+            case 'date':
+            case 'date-time':
+            case 'time':
+            case 'email':
+            case 'enum':
+            case 'image':
+            case 'string':
+            case 'uri':
+                return { t: 's', v: undefined };
+            case 'integer':
+            case 'number':
+                return { t: 'n', v: undefined };
+            default:
+                return undefined;
+        }
     }
 
     switch (col.validation.format) {
