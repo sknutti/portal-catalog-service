@@ -31,6 +31,8 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
     let curColIdx = -1;
     let cur: PipelineErrorType | 'none' = PipelineErrorType.error;
 
+    const cellsWithValidationErrors: string[] = [];
+
     for (const col of spreadsheet) {
         if (col.validation.required !== cur) {
             highlightBanded(highlightStart, curColIdx, cur, sheet);
@@ -48,9 +50,18 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
             const cellData = getCellData(row.catalog, col, retailerId);
 
             if (cellData) {
-                checkForAndAddKnownCellValidationErrors(cellData, col.fieldName, row.catalog);
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
+                const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
+                    col.fieldName,
+                    row.catalog,
+                );
+
                 sheet[cell] = cellData;
+
+                if (validationErrorsForThisCell.length > 0) {
+                    addKnownCellValidationErrors(cellData, validationErrorsForThisCell);
+                    cellsWithValidationErrors.push(cell);
+                }
             }
 
             curRowIdx++;
@@ -64,6 +75,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
     });
 
+    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors, 0x000000, 0xfbff7e);
     return new XlsxSpreadsheet(workBook, sheet);
 }
 
@@ -145,10 +157,6 @@ function highlightBanded(
         f: 'TRUE',
         s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle },
     });
-
-    // utils.sheet_set_range_style(sheet, {
-    //
-    // }, { bgColor: {rgb: 0xFF0000}, ...borderStyle});
 
     // Then style the rows beneath
     condfmt.push({
@@ -353,23 +361,19 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
 }
 
 /**
- * Validation errors would've been determined long before reaching this point
- * If any such errors exist, they will be specified in the given catalogData
  * This function will add the description(s) of the error to the given cell as a comment
+ * @param cell - cell object to add comment to
+ * @param validationError - validation error to communicate to customer
  */
-function checkForAndAddKnownCellValidationErrors(cell: CellObject, columnName: string, catalogData: CoreCatalog): void {
-    const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(columnName, catalogData);
-    if (validationErrorsForThisCell.length > 0) {
-        // Add any found validation errors as an in-cell comment
-        cell.c = [
-            {
-                a: 'CommerceHub',
-                t: validationErrorsForThisCell.join('\n'),
-            },
-        ];
-        cell.c.hidden = true;
-        cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationErrorsForThisCell.join('\n')) };
-    }
+function addKnownCellValidationErrors(cell: CellObject, validationError: string[]): void {
+    cell.c = [
+        {
+            a: 'CommerceHub',
+            t: validationError.join('\n'),
+        },
+    ];
+    cell.c.hidden = true;
+    cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationError.join('\n')) };
 }
 
 /**
@@ -392,4 +396,35 @@ export function getValidationErrorsForAColumnFromCatalogData(columnName: string,
         return field_error.errorMessage;
     });
     return arrayOfErrorMessages;
+}
+
+/**
+ *
+ * function adds to conditional formatting as a way of highlighting a list of select cells of interest
+ * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings
+ * @param sheet - sheetJS object that will be modified
+ * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton
+ * @param fontColorHex - hexidecimal value for rgb font color value
+ * @param cellFillColorHex - hexidecimal value for rgb cell fill color value
+ */
+function highlightSelectCellsByConditionalFormatting(
+    sheet: WorkSheet,
+    cellAddresses: string[],
+    fontColorHex: number,
+    cellFillColorHex: number,
+): void {
+    const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
+
+    const borderStyle: Partial<Style> = {
+        //this matched border style in highlightBanding fn
+        left: { style: 'thin', color: { rgb: 0xcacaca } },
+        right: { style: 'thin', color: { rgb: 0xcacaca } },
+    };
+
+    conditionalFormattingRules.unshift({
+        ref: cellAddresses.join(' '),
+        t: 'formula',
+        f: 'TRUE',
+        s: { bgColor: { rgb: cellFillColorHex }, color: { rgb: fontColorHex }, ...borderStyle },
+    });
 }
