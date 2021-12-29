@@ -13,8 +13,8 @@ test('Validation error search can extract validation errors from a CoreCatalog o
         longdescription: 'test data only',
         compliance_map: {
             1234: {
-                'categories_map': {
-                    'dsco': {
+                categories_map: {
+                    dsco: {
                         compliance_state: 'not-compliant',
                         compliance_date: '2021-12-29T02:38:00.000Z',
                         compliance_errors: [
@@ -23,12 +23,12 @@ test('Validation error search can extract validation errors from a CoreCatalog o
                                 error_state: 'error',
                                 attribute: 'longdescription',
                                 error_type: 'length',
-                                error_code: 'LENGTH_ERROR'
-                            }
-                        ]
-                    }
-                }
-            }
+                                error_code: 'LENGTH_ERROR',
+                            },
+                        ],
+                    },
+                },
+            },
         },
     };
     const expectedResult = ['this is a test error'];
@@ -87,6 +87,10 @@ test('Validation error search returns empty array when there are no matches with
         },
     };
     const expectedResult: string[] = [];
-    const testResult = getValidationErrorsForAColumnFromCatalogData(RETAILER_ID, 'this wont match anything', testCatalogData);
+    const testResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        'this wont match anything',
+        testCatalogData,
+    );
     expect(testResult).toEqual(expectedResult);
 });
