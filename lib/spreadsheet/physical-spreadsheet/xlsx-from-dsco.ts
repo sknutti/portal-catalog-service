@@ -1,5 +1,5 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
-import { CoreCatalog, CatalogFieldError, interpretCatalogFieldError } from '@lib/core-catalog';
+import { CoreCatalog, CatalogContentComplianceError } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
@@ -52,6 +52,8 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
             if (cellData) {
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
                 const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
+                    retailerId,
+                    cellData,
                     col.fieldName,
                     row.catalog,
                 );
@@ -241,24 +243,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
     }
 
     if (data === null || data === undefined) {
-        switch (col.validation.format) {
-            case 'boolean':
-            case 'array':
-            case 'date':
-            case 'date-time':
-            case 'time':
-            case 'email':
-            case 'enum':
-            case 'image':
-            case 'string':
-            case 'uri':
-                return { t: 's', v: undefined };
-            case 'integer':
-            case 'number':
-                return { t: 'n', v: undefined };
-            default:
-                return undefined;
-        }
+        return { t: 'z' };
     }
 
     switch (col.validation.format) {
@@ -380,20 +365,30 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
  * Given a catalog item and a column name, extract all validation errors from the item data for the given column
  * Return the results as an array of strings, where each element in the array is an error code
  */
-export function getValidationErrorsForAColumnFromCatalogData(columnName: string, catalogData: CoreCatalog): string[] {
+export function getValidationErrorsForAColumnFromCatalogData(
+    retailerId: number,
+    cell: CellObject,
+    columnName: string,
+    catalogData: CoreCatalog,
+): string[] {
     // TODO CCR - this can fail if the column name was changed before we got here, which can happen
     // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
-    if (!catalogData.compliance) {
+    if (!catalogData.compliance_map?.[retailerId]?.categories_map) {
         return []; // No compliance errors, return empty array
     }
-    const allCatalogFieldErrors: CatalogFieldError[] = catalogData.compliance.field_errors.map((field_error) =>
-        interpretCatalogFieldError(field_error),
+    const allComplianceErrorsForRetailerCategory = catalogData.compliance_map[retailerId].categories_map;
+
+    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
+        (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
     );
-    const filteredErrorsForGivenColumn: CatalogFieldError[] = allCatalogFieldErrors.filter((field_error) => {
-        return field_error.fieldName === columnName;
-    });
+    const filteredErrorsForGivenColumn = complianceErrors
+        .reduce((acc, val) => acc.concat(val), [])
+        .filter((compliance_error) => {
+            return compliance_error.attribute === columnName;
+        });
+
     const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.errorMessage;
+        return field_error.error_message.replace('${value}', `"${cell.v}"`);
     });
     return arrayOfErrorMessages;
 }
