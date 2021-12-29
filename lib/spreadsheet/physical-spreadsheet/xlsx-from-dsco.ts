@@ -357,8 +357,17 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
  * If any such errors exist, they will be specified in the given catalogData
  * This function will add the description(s) of the error to the given cell as a comment
  */
-function checkForAndAddKnownCellValidationErrors(retailerId: number, cell: CellObject, columnName: string, catalogData: CoreCatalog): void {
-    const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(retailerId, columnName, catalogData);
+function checkForAndAddKnownCellValidationErrors(
+    retailerId: number,
+    cell: CellObject,
+    columnName: string,
+    catalogData: CoreCatalog,
+): void {
+    const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
+        retailerId,
+        columnName,
+        catalogData,
+    );
     if (validationErrorsForThisCell.length > 0) {
         // Add any found validation errors as an in-cell comment
         cell.c = [
@@ -376,7 +385,11 @@ function checkForAndAddKnownCellValidationErrors(retailerId: number, cell: CellO
  * Given a catalog item and a column name, extract all validation errors from the item data for the given column
  * Return the results as an array of strings, where each element in the array is an error code
  */
-export function getValidationErrorsForAColumnFromCatalogData(retailerId: number, columnName: string, catalogData: CoreCatalog): string[] {
+export function getValidationErrorsForAColumnFromCatalogData(
+    retailerId: number,
+    columnName: string,
+    catalogData: CoreCatalog,
+): string[] {
     // TODO CCR - this can fail if the column name was changed before we got here, which can happen
     // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
     if (!catalogData.compliance_map) {
@@ -384,10 +397,14 @@ export function getValidationErrorsForAColumnFromCatalogData(retailerId: number,
     }
     const allComplianceErrorsForRetailerCategory = catalogData.compliance_map[retailerId].categories_map;
 
-    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory)
-        .map((category) => allComplianceErrorsForRetailerCategory[category].compliance_errors);
-    const filteredErrorsForGivenColumn = complianceErrors.reduce((acc, val) => acc.concat(val), [])
-        .filter((compliance_error) => {return compliance_error.attribute === columnName});
+    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
+        (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
+    );
+    const filteredErrorsForGivenColumn = complianceErrors
+        .reduce((acc, val) => acc.concat(val), [])
+        .filter((compliance_error) => {
+            return compliance_error.attribute === columnName;
+        });
 
     const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
         return field_error.error_message;
