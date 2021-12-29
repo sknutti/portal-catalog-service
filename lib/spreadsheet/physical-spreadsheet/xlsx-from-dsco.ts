@@ -253,10 +253,10 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
             case 'image':
             case 'string':
             case 'uri':
-                return { t: 's', v: undefined };
+                return { t: 's', v: '' };
             case 'integer':
             case 'number':
-                return { t: 'n', v: undefined };
+                return { t: 'n', v: '' };
             default:
                 return undefined;
         }
