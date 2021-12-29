@@ -25,8 +25,35 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         code: string;
         quantity: number;
     }>;
-    compliance?: CatalogContentCompliance;
+    compliance_map?: CatalogContentComplianceMap;
     [key: string]: any;
+}
+
+export interface CatalogContentComplianceMap {
+    [key: number]: CatalogContentComplianceCategoriesMap;
+}
+
+export interface CatalogContentComplianceCategoriesMap {
+    categories_map: CatalogComplianceContentCategories;
+}
+
+export interface CatalogComplianceContentCategories {
+    [categoryPath: string]: CatalogContentCategoryCompliance;
+}
+
+export interface CatalogContentCategoryCompliance {
+    compliance_state: string;
+    compliance_date: string;
+    compliance_errors: CatalogContentComplianceError[];
+}
+
+export interface CatalogContentComplianceError {
+    error_message: string;
+    error_state: string;
+    error_details: string;
+    error_type: string;
+    error_code: string;
+    attribute: string;
 }
 
 // Following https://chb.atlassian.net/wiki/spaces/CCAR/pages/98302329486/Data+Contract
