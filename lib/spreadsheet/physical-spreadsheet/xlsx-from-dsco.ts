@@ -53,6 +53,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
                 const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
                     retailerId,
+                    cellData,
                     col.fieldName,
                     row.catalog,
                 );
@@ -366,6 +367,7 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
  */
 export function getValidationErrorsForAColumnFromCatalogData(
     retailerId: number,
+    cell: CellObject,
     columnName: string,
     catalogData: CoreCatalog,
 ): string[] {
@@ -386,7 +388,7 @@ export function getValidationErrorsForAColumnFromCatalogData(
         });
 
     const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.error_message;
+        return field_error.error_message.replace('${value}', `"${cell.v}"`);
     });
     return arrayOfErrorMessages;
 }
