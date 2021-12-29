@@ -35,7 +35,12 @@ test('Validation error search can extract validation errors from a CoreCatalog o
         },
     };
     const expectedResult = ['this is a test error'];
-    const testResult = getValidationErrorsForAColumnFromCatalogData(RETAILER_ID, BLANK_CELL, 'longdescription', testCatalogData);
+    const testResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        'longdescription',
+        testCatalogData,
+    );
     expect(testResult).toEqual(expectedResult);
 });
 
@@ -49,7 +54,12 @@ test('Validation error search returns empty array when compliance data is not pr
         longdescription: 'test data only',
     };
     const expectedResult: string[] = [];
-    const testResult = getValidationErrorsForAColumnFromCatalogData(RETAILER_ID, BLANK_CELL, 'longdescription', testCatalogData);
+    const testResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        'longdescription',
+        testCatalogData,
+    );
     expect(testResult).toEqual(expectedResult);
 });
 
@@ -66,7 +76,12 @@ test('Validation error search returns empty array when field_errors is empty', (
         },
     };
     const expectedResult: string[] = [];
-    const testResult = getValidationErrorsForAColumnFromCatalogData(RETAILER_ID, BLANK_CELL, 'longdescription', testCatalogData);
+    const testResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        'longdescription',
+        testCatalogData,
+    );
     expect(testResult).toEqual(expectedResult);
 });
 
