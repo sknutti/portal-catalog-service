@@ -27,7 +27,7 @@ export const generateCatalogExceptionsSpreadsheet = apiWrapper<GenerateCatalogEx
         }
         const supplierId = user.accountId;
 
-        //console.log(`generateCatalogExceptionsSpreadsheet called with: sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
+        console.log(`generateCatalogExceptionsSpreadsheet called with: sid=${supplierId} rid=${retailerId} cpath=${categoryPath}`);
 
         const catalogExceptionItems: CoreCatalog[] = await catalogExceptionsItemSearch(
             supplierId,
