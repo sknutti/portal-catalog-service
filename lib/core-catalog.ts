@@ -30,7 +30,7 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
 }
 
 export interface CatalogContentComplianceMap {
-    [key: number]: CatalogContentComplianceCategoriesMap;
+    [retailerId: number]: CatalogContentComplianceCategoriesMap;
 }
 
 export interface CatalogContentComplianceCategoriesMap {
@@ -50,7 +50,7 @@ export interface CatalogContentCategoryCompliance {
 export interface CatalogContentComplianceError {
     error_message: string;
     error_state: string;
-    error_details: string;
+    error_details?: string;
     error_type: string;
     error_code: string;
     attribute: string;
