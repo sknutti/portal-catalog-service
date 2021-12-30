@@ -12,6 +12,7 @@ import {
     locallyInvokeGetAssortmentsApi,
     locallyInvokeGetSpreadsheetUploadUrlApi,
     locallyInvokePublishBot,
+    locallyInvokeGetContentExceptionsApi,
     TEST_ACCOUNTS,
     TestAccount,
 } from '../test/test-utils';
@@ -37,8 +38,11 @@ const testTypes: Record<TestType, TestTypeDef> = {
     getAssortments: {
         name: 'Get Assortments',
     },
+    getContentExceptions: {
+        name: 'Get Content Exceptions',
+    },
 };
-type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments';
+type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments' | 'getContentExceptions';
 
 interface TestTypeDef {
     name: string;
@@ -118,6 +122,10 @@ async function main() {
             );
         case 'getAssortments':
             return await getAssortments(identityId);
+        case 'getContentExceptions':
+            // TODO CCR - this only works in a narrow scope (when using supplierId=1000012302 and reatilerId=1000012301 in test)
+            // Expand on this as part of https://chb.atlassian.net/browse/CCR-134
+            return await getContentExceptions('Food', retailerId, identityId);
         default:
             assertUnreachable(testType, 'testType');
     }
@@ -179,6 +187,12 @@ async function getUploadUrl(category: string, retailerId: number, identityId: st
 async function getAssortments(identityId: string) {
     const resp = await locallyInvokeGetAssortmentsApi(identityId);
     console.log(`\nSuccessfully got assortments: ${JSON.stringify(resp, null, 4)}`);
+}
+
+async function getContentExceptions(categoryPath: string, retailerId: number, identityId: string) {
+    const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, retailerId, identityId);
+    await fs.writeFile('test-get-content-exceptions-output-file.xlsx', resp);
+    console.log('\nSuccessfully saved content exceptions to file.');
 }
 
 async function fileExists(path: string): Promise<boolean> {

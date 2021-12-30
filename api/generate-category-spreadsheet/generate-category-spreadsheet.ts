@@ -1,9 +1,10 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
-import { getLeoAuthUserTable } from '@lib/environment';
+import { getLeoAuthUserTable, getPortalCatalogS3BucketName } from '@lib/environment';
+import { createCatalogItemS3DownloadPath, getSignedS3DownloadUrl, writeS3Object } from '@lib/s3';
 import { DscoCatalogRow, DscoSpreadsheet, generateDscoSpreadsheet } from '@lib/spreadsheet';
 import { xlsxFromDsco } from '@lib/spreadsheet/physical-spreadsheet/xlsx-from-dsco';
-import { catalogItemSearch, gzipAsync } from '@lib/utils';
+import { catalogItemSearch } from '@lib/utils';
 import { GenerateCategorySpreadsheetRequest } from './generate-category-spreadsheet.request';
 
 export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadsheetRequest>(async (event) => {
@@ -39,8 +40,19 @@ export const generateCategorySpreadsheet = apiWrapper<GenerateCategorySpreadshee
 
     const workbook = xlsxFromDsco(spreadsheet, retailerId);
 
+    const downloadPath = createCatalogItemS3DownloadPath(supplierId, retailerId, user.userId, categoryPath);
+    await writeS3Object(getPortalCatalogS3BucketName(), downloadPath, workbook.toBuffer());
+
     return {
         success: true,
-        gzippedFile: await gzipAsync(workbook.toBuffer()),
+        downloadUrl: await getSignedS3DownloadUrl(
+            downloadPath,
+            `Catalog Spreadsheet - ${getLastCategoryPath(categoryPath)}.xlsx`,
+        ),
     };
 });
+
+function getLastCategoryPath(fullCategoryPath: string): string {
+    const split = fullCategoryPath.split('||');
+    return split[split.length - 1];
+}

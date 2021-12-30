@@ -1,7 +1,7 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getIsRunningLocally, getLeoAuthUserTable } from '@lib/environment';
-import { CatalogSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3Url } from '@lib/s3';
+import { CatalogSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3UploadUrl } from '@lib/s3';
 import { GetCategorySpreadsheetUploadUrlRequest } from './get-category-spreadsheet-upload-url.request';
 
 export const getCategorySpreadsheetUploadUrl = apiWrapper<GetCategorySpreadsheetUploadUrlRequest>(async (event) => {
@@ -29,7 +29,7 @@ export const getCategorySpreadsheetUploadUrl = apiWrapper<GetCategorySpreadsheet
 
     return {
         success: true,
-        uploadUrl: await getSignedS3Url(
+        uploadUrl: await getSignedS3UploadUrl(
             createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId, categoryPath),
             uploadMeta,
         ),

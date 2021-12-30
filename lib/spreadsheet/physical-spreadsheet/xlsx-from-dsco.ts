@@ -1,5 +1,5 @@
 import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
-import { CoreCatalog } from '@lib/core-catalog';
+import { CoreCatalog, CatalogContentComplianceError } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
@@ -31,6 +31,8 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
     let curColIdx = -1;
     let cur: PipelineErrorType | 'none' = PipelineErrorType.error;
 
+    const cellsWithValidationErrors: string[] = [];
+
     for (const col of spreadsheet) {
         if (col.validation.required !== cur) {
             highlightBanded(highlightStart, curColIdx, cur, sheet);
@@ -49,7 +51,19 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
 
             if (cellData) {
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
+                const validationErrorsForThisCell = getValidationErrorsForAColumnFromCatalogData(
+                    retailerId,
+                    cellData,
+                    col.fieldName,
+                    row.catalog,
+                );
+
                 sheet[cell] = cellData;
+
+                if (validationErrorsForThisCell.length > 0) {
+                    addKnownCellValidationErrors(cellData, validationErrorsForThisCell);
+                    cellsWithValidationErrors.push(cell);
+                }
             }
 
             curRowIdx++;
@@ -63,6 +77,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         e: { r: validationSheetInfo.maxRowIdx, c: validationSheetInfo.curColIdx },
     });
 
+    highlightSelectCellsByConditionalFormatting(sheet, cellsWithValidationErrors, 0x000000, 0xfbff7e);
     return new XlsxSpreadsheet(workBook, sheet);
 }
 
@@ -144,10 +159,6 @@ function highlightBanded(
         f: 'TRUE',
         s: { bgColor: { rgb: getColor(cur, true) }, bold: true, ...borderStyle },
     });
-
-    // utils.sheet_set_range_style(sheet, {
-    //
-    // }, { bgColor: {rgb: 0xFF0000}, ...borderStyle});
 
     // Then style the rows beneath
     condfmt.push({
@@ -232,7 +243,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
     }
 
     if (data === null || data === undefined) {
-        return undefined;
+        return { t: 'z' };
     }
 
     switch (col.validation.format) {
@@ -256,6 +267,8 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
         case 'number':
             const num = +data;
             return { t: 'n', v: isNaN(num) ? undefined : num };
+        default:
+            return;
     }
 }
 
@@ -330,4 +343,83 @@ function getValidationWorksheet(): [WorkSheet, ValidationSheetInfo] {
     };
 
     return [validationSheet, validationSheetInfo];
+}
+
+/**
+ * This function will add the description(s) of the error to the given cell as a comment
+ * @param cell - cell object to add comment to
+ * @param validationError - validation error to communicate to customer
+ */
+function addKnownCellValidationErrors(cell: CellObject, validationError: string[]): void {
+    cell.c = [
+        {
+            a: 'CommerceHub',
+            t: validationError.join('\n'),
+        },
+    ];
+    cell.c.hidden = true;
+    cell.c['!pos'] = { x: 0, y: 0, ...calcCommentSize(validationError.join('\n')) };
+}
+
+/**
+ * Given a catalog item and a column name, extract all validation errors from the item data for the given column
+ * Return the results as an array of strings, where each element in the array is an error code
+ */
+export function getValidationErrorsForAColumnFromCatalogData(
+    retailerId: number,
+    cell: CellObject,
+    columnName: string,
+    catalogData: CoreCatalog,
+): string[] {
+    // TODO CCR - this can fail if the column name was changed before we got here, which can happen
+    // TODO CCR - Addressed by https://chb.atlassian.net/browse/CCR-113
+    if (!catalogData.compliance_map?.[retailerId]?.categories_map) {
+        return []; // No compliance errors, return empty array
+    }
+    const allComplianceErrorsForRetailerCategory = catalogData.compliance_map[retailerId].categories_map;
+
+    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
+        (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
+    );
+    const filteredErrorsForGivenColumn = complianceErrors
+        .reduce((acc, val) => acc.concat(val), [])
+        .filter((compliance_error) => {
+            return compliance_error.attribute === columnName;
+        });
+
+    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
+        return field_error.error_message.replace('${value}', `"${cell.v}"`);
+    });
+    return arrayOfErrorMessages;
+}
+
+/**
+ *
+ * function adds to conditional formatting as a way of highlighting a list of select cells of interest
+ * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings
+ * @param sheet - sheetJS object that will be modified
+ * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton
+ * @param fontColorHex - hexidecimal value for rgb font color value
+ * @param cellFillColorHex - hexidecimal value for rgb cell fill color value
+ */
+function highlightSelectCellsByConditionalFormatting(
+    sheet: WorkSheet,
+    cellAddresses: string[],
+    fontColorHex: number,
+    cellFillColorHex: number,
+): void {
+    const conditionalFormattingRules = (sheet['!condfmt'] = sheet['!condfmt'] || []);
+
+    const borderStyle: Partial<Style> = {
+        //this matched border style in highlightBanding fn
+        left: { style: 'thin', color: { rgb: 0xcacaca } },
+        right: { style: 'thin', color: { rgb: 0xcacaca } },
+    };
+
+    conditionalFormattingRules.unshift({
+        ref: cellAddresses.join(' '),
+        t: 'formula',
+        f: 'TRUE',
+        s: { bgColor: { rgb: cellFillColorHex }, color: { rgb: fontColorHex }, ...borderStyle },
+    });
 }

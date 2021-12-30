@@ -62,6 +62,10 @@ provider:
                       ExpirationInDays: 90
                       Prefix: 'uploads/'
                       Status: 'Enabled'
+                    - Id: ExpireCatalogItemDownloads
+                      ExpirationInDays: 30
+                      Prefix: 'downloads/'
+                      Status: 'Enabled'
             publicAccessBlockConfiguration:
                 BlockPublicAcls: true
                 BlockPublicPolicy: true
@@ -96,6 +100,11 @@ provider:
               - lambda:InvokeFunction
           Resource:
               - 'arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}'
+        - Effect: 'Allow'
+          Action:
+              - ses:SendEmail
+          Resource:
+              - 'arn:aws:ses:${self:provider.region}:#{AWS::AccountId}:identity/notifications@dsco.io'
         - ${file(./leo-iam.yml):kinesis}
         - ${file(./leo-iam.yml):firehose}
         - ${file(./leo-iam.yml):s3}
@@ -106,3 +115,4 @@ functions:
     - ${file(./api/get-category-spreadsheet-upload-url/serverless.yml)}
     - ${file(./bot/fanatics-upload-handler/serverless.yml)}
     - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
+    - ${file(./api/get-content-exceptions-spreadsheet/serverless.yml)}

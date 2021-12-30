@@ -13,7 +13,7 @@ function getS3Client(): AWS.S3 {
     }
 }
 
-export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
+export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
     const params = {
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
@@ -22,6 +22,17 @@ export function getSignedS3Url<M>(path: string, metadata: M): Promise<string> {
     };
 
     return getS3Client().getSignedUrlPromise('putObject', params);
+}
+
+export function getSignedS3DownloadUrl<M>(path: string, downloadFilename: string): Promise<string> {
+    const params = {
+        Bucket: getPortalCatalogS3BucketName(),
+        Key: path,
+        Expires: 60 * 60, // expire the link in 1 hour
+        ResponseContentDisposition: `attachment; filename ="${encodeURIComponent(downloadFilename)}"`,
+    };
+
+    return getS3Client().getSignedUrlPromise('getObject', params);
 }
 
 function prepareMetadata<M>(metadata: M): Record<string, string> {
@@ -74,7 +85,10 @@ export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata:
         .promise();
 }
 
-export async function downloadS3Metadata<Metadata>(path: string): Promise<Metadata> {
+/**
+ * @returns [Metadata, Date] the s3 file metadata, and the last modify date of the file
+ */
+export async function downloadS3Metadata<Metadata>(path: string): Promise<[Metadata, Date]> {
     const resp = await getS3Client()
         .headObject({
             Bucket: getPortalCatalogS3BucketName(),
@@ -87,10 +101,10 @@ export async function downloadS3Metadata<Metadata>(path: string): Promise<Metada
         meta[key] = decodeURIComponent(val);
     }
 
-    return meta as any as Metadata;
+    return [meta as any as Metadata, resp.LastModified || new Date()];
 }
 
-export async function writeS3Object(bucket: string, path: string, body: string): Promise<void> {
+export async function writeS3Object(bucket: string, path: string, body: string | Buffer): Promise<void> {
     await getS3Client()
         .putObject({
             Bucket: bucket,
@@ -108,6 +122,16 @@ export function createCatalogItemS3UploadPath(
 ): string {
     const uploadId = uuid.v4();
     return `uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
+}
+
+export function createCatalogItemS3DownloadPath(
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
+): string {
+    const downloadId = uuid.v4();
+    return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
 export function parseCatalogItemS3UploadUrl(
@@ -137,4 +161,5 @@ export interface CatalogSpreadsheetS3Metadata {
     skipped_row_indexes?: string;
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
+    source_s3_path?: string;
 }

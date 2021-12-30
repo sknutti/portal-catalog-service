@@ -9,7 +9,9 @@ pipelines:
               name: Install, Format, Lint, Test, Build
               caches:
                   - node
+              runs-on: self.hosted
               script:
+                  - aws-init.sh
                   - npm config set @sheet:registry https://pylon.sheetjs.com:54111
                   - npm config set //pylon.sheetjs.com:54111/:_authToken $SHEET_TOKEN # To get this token, successfully login to the site, and then look in .npmrc to find the token.
                   - npm install
@@ -18,7 +20,8 @@ pipelines:
                   - npm run test
                   - npm run build
               artifacts:
-                  - dist/**
+                  - build/artifact/**
+                  - build/lib/**
 
     branches:
         master: #Override, Runs for master branch
@@ -31,6 +34,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - npx sls deploy --stage test
             - step:
                   name: Staging Deploy
@@ -41,6 +45,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - npx sls deploy --stage staging
             - step:
                   name: Production Deploy
@@ -51,6 +56,7 @@ pipelines:
                   script:
                       - cd build/artifact
                       - aws-init.sh
+                      - npm install
                       - npx sls deploy --stage prod
             - step:
                   name: Library Deploy
@@ -61,5 +67,5 @@ pipelines:
                   script:
                       - cd build/lib
                       - npm config set @dsco:registry https://registry.npmjs.org
-                      - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
-                      - npm publish --dry-run
+                      - npm config set //registry.npmjs.org/:_authToken $NPM_PUBLISH_TOKEN
+                      - npm publish

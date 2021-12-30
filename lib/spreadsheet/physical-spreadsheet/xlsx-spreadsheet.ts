@@ -1,3 +1,4 @@
+import { isInRange } from '@lib/utils';
 import { CellObject, Range, read, utils, WorkBook, WorkSheet, write, writeFile } from '@sheet/image';
 import { PhysicalSpreadsheet } from './physical-spreadsheet';
 import { XlsxSpreadsheetRow } from './physical-spreadsheet-row';
@@ -47,8 +48,15 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         });
     }
 
-    toFile(name = 'output.xlsx'): void {
-        writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}`);
+    toFile(name = 'output'): void {
+        //writeFile(this.workbook, `/Users/aidan/ds/portal-catalog-service/${name}.xlsx`);
+        writeFile(
+            this.workbook,
+            `/Users/emiller/Documents/2021-11-12-excel-file-dumpster/${name}-${new Date()
+                .toISOString()
+                .slice(0, 19)
+                .replace(/:/g, '')}.xlsx`,
+        );
     }
 
     *rows(): IterableIterator<XlsxSpreadsheetRow> {
@@ -57,12 +65,16 @@ export class XlsxSpreadsheet extends PhysicalSpreadsheet {
         }
     }
 
-    skus(): string[] {
+    skus(fromRowIdx?: number, toRowIdx?: number): string[] {
         const result: string[] = [];
 
         // + 1 to skip the header row
         let rowNum = this.range.s.r + 1;
         for (; rowNum <= this.range.e.r; rowNum++) {
+            if (!isInRange(rowNum, fromRowIdx, toRowIdx)) {
+                continue;
+            }
+
             const skuCell = this.getCell(rowNum, this.skuHeaderIdx);
             let sku;
             if (skuCell) {

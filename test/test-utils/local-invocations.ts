@@ -1,10 +1,12 @@
 import { generateCategorySpreadsheet } from '@api/generate-category-spreadsheet/generate-category-spreadsheet';
 import { getAssortments } from '@api/get-assortments/get-assortments';
 import { getCategorySpreadsheetUploadUrl } from '@api/get-category-spreadsheet-upload-url/get-category-spreadsheet-upload-url';
+import { generateCatalogExceptionsSpreadsheet } from '@api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet';
 import {
     Assortment,
     CatalogSpreadsheetWebsocketEvents,
     GenerateCategorySpreadsheetRequest,
+    GenerateCatalogExceptionsSpreadsheetRequest,
     GetAssortmentsRequest,
     GetCategorySpreadsheetUploadUrlRequest,
 } from '@api/index';
@@ -12,10 +14,10 @@ import { publishCategorySpreadsheet } from '@bot/publish-category-spreadsheet/pu
 import { createContext } from '@dsco/service-utils';
 import { DsRequest, DsRequestBody, DsRequestResponse } from '@dsco/ts-models';
 import { XlsxSpreadsheet } from '@lib/spreadsheet';
-import { gunzipAsync } from '@lib/utils';
 import { setTestWebsocketHandler } from '@lib/utils/send-websocket-event';
 import type { S3CreateEvent } from 'aws-lambda';
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import axios, { AxiosResponse } from 'axios';
 
 async function locallyInvokeHandler<R extends DsRequest<any, any, any>>(
     handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>,
@@ -109,12 +111,33 @@ export async function locallyInvokeGenerateSpreadsheetApi(
         identityId,
     );
 
-    expect(resp.gzippedFile).toBeTruthy();
+    expect(resp.downloadUrl).toBeTruthy();
 
-    const unzipped = await gunzipAsync(resp.gzippedFile);
-    expect(XlsxSpreadsheet.isXlsx(unzipped)).toBe(true);
+    // Download via the signed url
+    const s3Resp = await axios.get<any, AxiosResponse<Buffer>>(resp.downloadUrl, { responseType: 'arraybuffer' });
+    expect(XlsxSpreadsheet.isXlsx(s3Resp.data)).toBe(true);
 
-    return unzipped;
+    return s3Resp.data;
+}
+
+export async function locallyInvokeGetContentExceptionsApi(
+    categoryPath: string,
+    retailerId: number,
+    identityId: string,
+): Promise<Buffer> {
+    const resp = await locallyInvokeHandler<GenerateCatalogExceptionsSpreadsheetRequest>(
+        generateCatalogExceptionsSpreadsheet,
+        { retailerId, categoryPath },
+        identityId,
+    );
+
+    expect(resp.downloadUrl).toBeTruthy();
+
+    // Download via the signed url
+    const s3Resp = await axios.get<any, AxiosResponse<Buffer>>(resp.downloadUrl, { responseType: 'arraybuffer' });
+    expect(XlsxSpreadsheet.isXlsx(s3Resp.data)).toBe(true);
+
+    return s3Resp.data;
 }
 
 function waitForWebsocketSuccess(): Promise<void> {

@@ -24,6 +24,21 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             defaultCategoryPath: 'Fan Gear',
         },
     },
+    'Demo Retailer 3': {
+        prod: {
+            retailerId: 1000010787,
+            supplierId: 1000010792,
+            userId: 18419,
+        },
+    },
+    'KNS x Belk': {
+        prod: {
+            isRealCustomer: true,
+            supplierId: 1000044156,
+            retailerId: 1000043588,
+            userId: 17844,
+        },
+    },
 };
 
 export type TestAccount = Partial<Record<Exclude<DscoEnv, 'dev'>, TestAccountInfo>>;

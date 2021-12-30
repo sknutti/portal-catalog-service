@@ -86,6 +86,7 @@ async function generateSpreadsheetCols(
         core: {} as Record<string, DscoColumn>,
         extended: {} as Record<string, DscoColumn>,
     };
+
     const ensureCol = (name: string, rule: PipelineRule): DscoColumn => {
         const type = rule.attrType === 'custom' ? 'extended' : 'core';
 
