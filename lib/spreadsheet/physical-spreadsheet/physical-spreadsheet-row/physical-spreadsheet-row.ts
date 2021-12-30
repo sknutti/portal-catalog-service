@@ -101,10 +101,10 @@ export abstract class PhysicalSpreadsheetRow {
         const result: CatalogImage[] = [];
 
         for (const image of images) {
-            if (image.name && image.source_url) {
+            if (image.name && image.sourceUrl) {
                 result.push({
                     name: image.name,
-                    source_url: image.source_url,
+                    sourceUrl: image.sourceUrl,
                 });
             }
         }

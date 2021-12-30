@@ -26,7 +26,7 @@ class TestPhysicalSpreadsheetRow extends PhysicalSpreadsheetRow {
 
 const [retailerId, supplierId] = [1000, 2000];
 
-test('Images are merged with existing images, keeping only name and source_url', async () => {
+test('Images are merged with existing images, keeping only name and sourceUrl', async () => {
     const dscoSpreadsheet = new DscoSpreadsheet('test');
     dscoSpreadsheet.addColumn(new DscoColumn('sku', undefined, 'core'));
     dscoSpreadsheet.addColumn(
@@ -54,13 +54,13 @@ test('Images are merged with existing images, keeping only name and source_url',
             images: [
                 {
                     name: 'thumbnail',
-                    source_url: 'http://www.image.com/thumbnail.png',
+                    sourceUrl: 'http://www.image.com/thumbnail.png',
                     hash: 'XYZ',
                     type: 'png',
                 },
                 {
                     name: 'banner',
-                    source_url: 'http://www.image.com/banner.png',
+                    sourceUrl: 'http://www.image.com/banner.png',
                     hash: 'ABC',
                 },
             ],
@@ -71,15 +71,15 @@ test('Images are merged with existing images, keeping only name and source_url',
     expect(parsed.catalog.images).toEqual<CatalogImage[]>([
         {
             name: 'thumbnail',
-            source_url: 'http://www.image.com/thumbnail.png',
+            sourceUrl: 'http://www.image.com/thumbnail.png',
         },
         {
             name: 'banner',
-            source_url: 'http://www.image.com/banner-new.png',
+            sourceUrl: 'http://www.image.com/banner-new.png',
         },
         {
             name: 'icon',
-            source_url: 'http://www.image.com/icon.png',
+            sourceUrl: 'http://www.image.com/icon.png',
         },
     ]);
 
