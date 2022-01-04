@@ -81,11 +81,11 @@ export class DscoColumn {
                 arr.push(found);
             }
 
-            if (found.source_url !== valueToSet) {
+            if (found.sourceUrl !== valueToSet) {
                 row.modified = true;
             }
 
-            found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
+            found.sourceUrl = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
             const valToSave =
                 this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;

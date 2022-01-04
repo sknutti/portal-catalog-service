@@ -235,7 +235,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
 
     if (col.validation.format === 'image') {
         const [arrName, imgName] = col.imageNames;
-        data = catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.source_url;
+        data = catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.sourceUrl;
     } else if (col.type === 'core') {
         data = extractFieldFromCoreCatalog(col.fieldName, catalog);
     } else if (col.type === 'extended') {
