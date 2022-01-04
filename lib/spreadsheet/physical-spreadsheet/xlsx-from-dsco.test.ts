@@ -36,7 +36,7 @@ test('Validation error search can extract validation errors from a CoreCatalog o
             },
         },
     };
-    const testColumn: DscoColumn = new DscoColumn('longdescription', 'test description only', 'core', {
+    const testColumn = new DscoColumn('longdescription', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
@@ -59,7 +59,7 @@ test('Validation error search returns empty array when compliance data is not pr
         sku: '7',
         longdescription: 'test data only',
     };
-    const testColumn: DscoColumn = new DscoColumn('longdescription', 'test description only', 'core', {
+    const testColumn = new DscoColumn('longdescription', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
@@ -93,7 +93,7 @@ test('Validation error search returns empty array when compliance_errors is empt
             },
         },
     };
-    const testColumn: DscoColumn = new DscoColumn('longdescription', 'test description only', 'core', {
+    const testColumn = new DscoColumn('longdescription', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
@@ -149,7 +149,7 @@ test('Validation error search returns empty array when there are no matches with
             },
         },
     };
-    const testColumn: DscoColumn = new DscoColumn('this wont match anything', 'test description only', 'core', {
+    const testColumn = new DscoColumn('this wont match anything', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
@@ -205,7 +205,7 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
     };
 
     // Testing core attribute exceptions
-    const testCoreColumn: DscoColumn = new DscoColumn('longdescription', 'test description only', 'core', {
+    const testCoreColumn = new DscoColumn('longdescription', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
@@ -219,7 +219,7 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
     expect(coreTestResult).toEqual(expectedCoreTestResult);
 
     // Testing extended attribute exceptions
-    const testExtendedColumn: DscoColumn = new DscoColumn('longdescription', 'test description only', 'extended', {
+    const testExtendedColumn = new DscoColumn('longdescription', 'test description only', 'extended', {
         required: PipelineErrorType.info,
         format: 'string',
     });
