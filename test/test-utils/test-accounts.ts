@@ -1,13 +1,13 @@
 import { DscoEnv } from '@dsco/ts-models';
 
 export const TEST_ACCOUNTS: Record<string, TestAccount> = {
-    'Aidan Test Supplier - (Food)':{
-        test:{
-            defaultCategoryPath:'Food',
+    'Aidan Test Supplier - (Food)': {
+        test: {
+            defaultCategoryPath: 'Food',
             supplierId: 1000012302,
             userId: 26366,
             retailerId: 1000012301,
-        }
+        },
     },
     'E2E-Supplier - (Shaun||Images1080p)': {
         test: {
