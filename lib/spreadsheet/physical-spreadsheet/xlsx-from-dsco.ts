@@ -235,7 +235,7 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
 
     if (col.validation.format === 'image') {
         const [arrName, imgName] = col.imageNames;
-        data = catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.sourceUrl;
+        data = catalog[arrName].find((img: CatalogImage) => img.name === imgName)?.source_url;
     } else if (col.type === 'core') {
         data = extractFieldFromCoreCatalog(col.fieldName, catalog);
     } else if (col.type === 'extended') {
@@ -376,8 +376,24 @@ export function getValidationErrorsForAColumnFromCatalogData(
     if (!catalogData.compliance_map?.[retailerId]?.categories_map) {
         return []; // No compliance errors, return empty array
     }
-    const allComplianceErrorsForRetailerCategory = catalogData.compliance_map[retailerId].categories_map;
 
+    let complianceType: ComplianceType;
+    let complianceLocation = 'compliance_map';
+
+    if (column.validation.format === 'image'){
+        complianceLocation = 'compliance_image_map';
+        complianceType = ComplianceType.IMAGE_COMPLIANCE;
+    }
+    else if (column.type === 'core') {
+        complianceType = ComplianceType.CATEGORY;
+    } else if (column.type === 'extended') {
+        complianceType = ComplianceType.EXTENDED_ATTRIBUTE;
+    } else {
+        return []; // Column was not one of the types we care about
+    }
+
+    const allComplianceErrorsForRetailerCategory: CatalogComplianceContentCategories = catalogData[complianceLocation][retailerId].categories_map;
+    
     const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
         (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
     );
