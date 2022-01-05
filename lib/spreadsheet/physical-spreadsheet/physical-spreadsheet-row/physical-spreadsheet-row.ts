@@ -98,7 +98,7 @@ export abstract class PhysicalSpreadsheetRow {
      * The catalog images we load from Mongo have tons of metadata on them that the Gearman endpoint cant handle.
      * This strips those images down to the bare minimum
      */
-    private copyImageArray(images: DscoImage[]): Partial<DscoImage>[] {
+    private copyImageArray(images: Partial<DscoImage>[]): Partial<DscoImage>[] {
         const result: Partial<DscoImage>[] = [];
 
         for (const image of images) {
