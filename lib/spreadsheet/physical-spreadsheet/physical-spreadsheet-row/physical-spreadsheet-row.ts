@@ -1,4 +1,5 @@
-import { CatalogImage, ProductStatus } from '@dsco/ts-models';
+import { DscoImage } from '@dsco/bus-models';
+import { ProductStatus } from '@dsco/ts-models';
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';
 import { CellValue, DscoCatalogRow, DscoColumn, DscoSpreadsheet } from '@lib/spreadsheet';
@@ -97,14 +98,14 @@ export abstract class PhysicalSpreadsheetRow {
      * The catalog images we load from Mongo have tons of metadata on them that the Gearman endpoint cant handle.
      * This strips those images down to the bare minimum
      */
-    private copyImageArray(images: CatalogImage[]): CatalogImage[] {
-        const result: CatalogImage[] = [];
+    private copyImageArray(images: DscoImage[]): Partial<DscoImage>[] {
+        const result: Partial<DscoImage>[] = [];
 
         for (const image of images) {
-            if (image.name && image.sourceUrl) {
+            if (image.name && image.source_url) {
                 result.push({
                     name: image.name,
-                    sourceUrl: image.sourceUrl,
+                    source_url: image.source_url,
                 });
             }
         }

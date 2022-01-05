@@ -15,6 +15,6 @@
     "homepage": "https://bitbucket.org/dscodsco/portal-catalog-service#readme",
     "readme": "README.md",
     "peerDependencies": {
-        "@dsco/ts-models": "1.0.72"
+        "@dsco/ts-models": "^1.0.101"
     }
 }
