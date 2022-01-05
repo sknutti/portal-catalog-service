@@ -373,8 +373,14 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
 }
 
 /**
- * Given a catalog item and a column name, extract all validation errors from the item data for the given column
+ *  * Given a catalog item and a column name, extract all validation errors from the item data for the given column
  * Return the results as an array of strings, where each element in the array is an error code
+ * error messages have variable sustituions made for escape phrase $\{value\}
+ * @param retailerId -
+ * @param cell - excel like cell object used for text value
+ * @param column - excel like column used to match column field name to filter compliance errors
+ * @param catalogData -
+ * @returns
  */
 export function getValidationErrorsForAColumnFromCatalogData(
     retailerId: number,
@@ -392,6 +398,7 @@ export function getValidationErrorsForAColumnFromCatalogData(
     const filteredErrorsForGivenColumn = getComplianceErrorsForRetailerFilteredByAttributeAndType(
         retailerId,
         catalogData,
+        column,
         complianceLocationKey,
         complianceType,
     );
@@ -403,16 +410,13 @@ export function getValidationErrorsForAColumnFromCatalogData(
 }
 
 /**
- *
- * @param retailerId
- * @param catalogData
- * @param complianceLocationKey
- * @param complianceType
- * @returns
+ * collect the compliance errors from the item data object using the compliance location key
+ * flattens into one array and filters by matching compliance type and field name from column header
  */
 function getComplianceErrorsForRetailerFilteredByAttributeAndType(
     retailerId: number,
     catalogData: CoreCatalog,
+    column: DscoColumn,
     complianceLocationKey: ComplianceLocationKey,
     complianceType: ComplianceType,
 ): CatalogContentComplianceError[] {
@@ -431,9 +435,9 @@ function getComplianceErrorsForRetailerFilteredByAttributeAndType(
 }
 
 /**
- *
- * @param column
- * @returns
+ * switch like function helps map the location of matching compliance type and item object info by checking column type or validation format
+ * @param column - data from a single column of spreadsheet used to extract catalog data
+ * @returns item object location of compliance error and determins compliance type for Images, Extended attributes or Core/Category
  */
 function getComplianceTypeAndComplianceMapKey(column: DscoColumn): [ComplianceLocationKey?, ComplianceType?] {
     let complianceType: ComplianceType;
