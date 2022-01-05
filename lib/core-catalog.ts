@@ -1,4 +1,5 @@
-import { Catalog, CatalogImage, ProductStatus, SnakeCase } from '@dsco/ts-models';
+import { DscoImage } from '@dsco/bus-models';
+import { Catalog, ProductStatus, SnakeCase } from '@dsco/ts-models';
 
 // This allows us to access snake_cased values on the catalog.
 // TODO We should be able to get this interface from "@dsco/bus-models": "^0.1.63" rather than declaring it here
@@ -11,10 +12,10 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     extended_attributes: {
         [partnerId: number]: Record<string, any>;
     };
-    images?: CatalogImage[];
-    brand_logo_images?: CatalogImage[];
-    product_images?: CatalogImage[];
-    swatch_images?: CatalogImage[];
+    images?: Partial<DscoImage>[];
+    brand_logo_images?: Partial<DscoImage>[];
+    product_images?: Partial<DscoImage>[];
+    swatch_images?: Partial<DscoImage>[];
     toSnakeCase: undefined;
     last_update_date?: string;
     sku?: string;

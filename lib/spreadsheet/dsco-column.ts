@@ -1,9 +1,9 @@
-import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
+import { DscoImage } from '@dsco/bus-models';
+import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog, getDSFField } from '@lib/format-conversions';
 import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';
-
 /**
  * Represents a single column in the spreadsheet.
  * Contains validation information, and can be used to extract data from catalog
@@ -72,7 +72,7 @@ export class DscoColumn {
         if (this.validation.format === 'image') {
             // Images need to be handled differently
             const [arrName, imgName] = this.imageNames;
-            const arr: CatalogImage[] = (catalog[arrName] = catalog[arrName] || []);
+            const arr: Partial<DscoImage>[] = (catalog[arrName] = catalog[arrName] || []);
             let found = arr.find((img) => img.name === imgName);
             if (!found) {
                 found = {
@@ -81,11 +81,11 @@ export class DscoColumn {
                 arr.push(found);
             }
 
-            if (found.sourceUrl !== valueToSet) {
+            if (found.source_url !== valueToSet) {
                 row.modified = true;
             }
 
-            found.sourceUrl = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
+            found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else if (this.type === 'core') {
             const valToSave =
                 this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;

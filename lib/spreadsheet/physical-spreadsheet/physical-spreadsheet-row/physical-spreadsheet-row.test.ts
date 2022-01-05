@@ -1,4 +1,5 @@
-import { CatalogImage, PipelineErrorType } from '@dsco/ts-models';
+import { DscoImage } from '@dsco/bus-models';
+import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { CellValue, DscoColumn, DscoSpreadsheet, PhysicalSpreadsheetRow } from '@lib/spreadsheet';
 
@@ -26,7 +27,7 @@ class TestPhysicalSpreadsheetRow extends PhysicalSpreadsheetRow {
 
 const [retailerId, supplierId] = [1000, 2000];
 
-test('Images are merged with existing images, keeping only name and sourceUrl', async () => {
+test('Images are merged with existing images, keeping only name and source_url', async () => {
     const dscoSpreadsheet = new DscoSpreadsheet('test');
     dscoSpreadsheet.addColumn(new DscoColumn('sku', undefined, 'core'));
     dscoSpreadsheet.addColumn(
@@ -54,13 +55,13 @@ test('Images are merged with existing images, keeping only name and sourceUrl', 
             images: [
                 {
                     name: 'thumbnail',
-                    sourceUrl: 'http://www.image.com/thumbnail.png',
+                    source_url: 'http://www.image.com/thumbnail.png',
                     hash: 'XYZ',
                     type: 'png',
                 },
                 {
                     name: 'banner',
-                    sourceUrl: 'http://www.image.com/banner.png',
+                    source_url: 'http://www.image.com/banner.png',
                     hash: 'ABC',
                 },
             ],
@@ -68,18 +69,18 @@ test('Images are merged with existing images, keeping only name and sourceUrl', 
     });
 
     // First check the images were merged correctly
-    expect(parsed.catalog.images).toEqual<CatalogImage[]>([
+    expect(parsed.catalog.images).toEqual<Partial<DscoImage>[]>([
         {
             name: 'thumbnail',
-            sourceUrl: 'http://www.image.com/thumbnail.png',
+            source_url: 'http://www.image.com/thumbnail.png',
         },
         {
             name: 'banner',
-            sourceUrl: 'http://www.image.com/banner-new.png',
+            source_url: 'http://www.image.com/banner-new.png',
         },
         {
             name: 'icon',
-            sourceUrl: 'http://www.image.com/icon.png',
+            source_url: 'http://www.image.com/icon.png',
         },
     ]);
 
