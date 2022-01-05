@@ -376,12 +376,10 @@ export function getValidationErrorsForAColumnFromCatalogData(
     column: DscoColumn,
     catalogData: CoreCatalog,
 ): string[] {
-    if (!catalogData.compliance_map?.[retailerId]?.categories_map) {
-        return []; // No compliance errors, return empty array
-    }
+    
 
     let complianceType: ComplianceType;
-    let complianceLocation = 'compliance_map';
+    let complianceLocation:string;
 
     if (column.validation.format === 'image'){
         complianceLocation = 'compliance_image_map';
@@ -389,10 +387,16 @@ export function getValidationErrorsForAColumnFromCatalogData(
     }
     else if (column.type === 'core') {
         complianceType = ComplianceType.CATEGORY;
+        complianceLocation = 'compliance_map';
     } else if (column.type === 'extended') {
         complianceType = ComplianceType.EXTENDED_ATTRIBUTE;
+        complianceLocation = 'compliance_map';
     } else {
         return []; // Column was not one of the types we care about
+    }
+
+    if (!catalogData[complianceLocation]?.[retailerId]?.categories_map) {
+        return []; // No compliance errors, return empty array
     }
 
     const allComplianceErrorsForRetailerCategory: CatalogComplianceContentCategories = catalogData[complianceLocation][retailerId].categories_map;
