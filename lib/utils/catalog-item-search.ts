@@ -8,7 +8,6 @@ import { assertUnreachable, getApiCredentials } from '@lib/utils';
 import { FilterQuery, MongoClient } from 'mongodb';
 import { ItemSearchV2Request } from './item-search-v2.request';
 import { ItemExceptionSearchRequest } from './item-exceptions-search.request';
-import { batch, map } from './iter-tools';
 
 interface MongoSecret {
     portalCatalogConnectString: string;
@@ -131,6 +130,7 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 /**
  * Looks for items with content exceptions using ElasticSearch
  * Takes item ids from ES results and loads those items from Mongo
+ * Note: Item object format in Mongo is different from the Item object format in ElasticSearch
  */
 export async function catalogExceptionsItemSearch(
     supplierId: number,
