@@ -233,7 +233,6 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
     expect(extendedTestResult).toEqual(expectedExtendedTestResult);
 });
 
-
 test('Validation errors search can locate IMAGE attributes and error messages', () => {
     const errorMessage = 'error is error';
     const testCatalogData: CoreCatalog = {
@@ -250,23 +249,23 @@ test('Validation errors search can locate IMAGE attributes and error messages', 
         },
         compliance_image_map: {
             [RETAILER_ID]: {
-              categories_map: {
-                'Shaun||Images1080p': {
-                  compliance_errors: [
-                    {
-                      error_details: '1000040297.testAttribute.minHeight',
-                      error_message: errorMessage,
-                      error_type: ComplianceType.IMAGE_COMPLIANCE,
-                      error_code: 'minHeight',
-                      attribute: 'testAttribute'
-                    }
-                  ],
-                  compliance_state: 'non_compliant'
-                }
-              }
-            }
-          },
-          compliance_map: {
+                categories_map: {
+                    'Shaun||Images1080p': {
+                        compliance_errors: [
+                            {
+                                error_details: '1000040297.testAttribute.minHeight',
+                                error_message: errorMessage,
+                                error_type: ComplianceType.IMAGE_COMPLIANCE,
+                                error_code: 'minHeight',
+                                attribute: 'testAttribute',
+                            },
+                        ],
+                        compliance_state: 'non_compliant',
+                    },
+                },
+            },
+        },
+        compliance_map: {
             [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
@@ -326,23 +325,23 @@ test('Validation errors are reported when adjacent compliance maps are undefined
         },
         compliance_image_map: {
             [RETAILER_ID]: {
-              categories_map: {
-                'Shaun||Images1080p': {
-                  compliance_errors: [
-                    {
-                      error_details: '1000040297.testAttribute.minHeight',
-                      error_message: errorMessageImage,
-                      error_type: ComplianceType.IMAGE_COMPLIANCE,
-                      error_code: 'minHeight',
-                      attribute: 'testAttribute'
-                    }
-                  ],
-                  compliance_state: 'non_compliant'
-                }
-              }
-            }
-          },
-          compliance_map: {
+                categories_map: {
+                    'Shaun||Images1080p': {
+                        compliance_errors: [
+                            {
+                                error_details: '1000040297.testAttribute.minHeight',
+                                error_message: errorMessageImage,
+                                error_type: ComplianceType.IMAGE_COMPLIANCE,
+                                error_code: 'minHeight',
+                                attribute: 'testAttribute',
+                            },
+                        ],
+                        compliance_state: 'non_compliant',
+                    },
+                },
+            },
+        },
+        compliance_map: {
             [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
@@ -369,7 +368,7 @@ test('Validation errors are reported when adjacent compliance maps are undefined
         required: PipelineErrorType.info,
         format: 'image',
     });
-    const blankComplianceMapCatalogData = {...testCatalogData};
+    const blankComplianceMapCatalogData = { ...testCatalogData };
     blankComplianceMapCatalogData.compliance_map = undefined;
     const expectedImageTestResult = [errorMessageImage];
     const imageTestResult = getValidationErrorsForAColumnFromCatalogData(
@@ -378,15 +377,15 @@ test('Validation errors are reported when adjacent compliance maps are undefined
         testImageColumn,
         blankComplianceMapCatalogData,
     );
-    
+
     expect(imageTestResult).toEqual(expectedImageTestResult);
 
     const testCoreColumn = new DscoColumn('longdescription', 'test description only', 'core', {
         required: PipelineErrorType.info,
         format: 'string',
     });
-    
-    const blankComplianceImageMapCatalogData = {...testCatalogData};
+
+    const blankComplianceImageMapCatalogData = { ...testCatalogData };
     blankComplianceImageMapCatalogData.compliance_image_map = undefined;
     const expectedCoreTestResult = [errorMessageCore];
     const coreTestResult = getValidationErrorsForAColumnFromCatalogData(
@@ -397,5 +396,4 @@ test('Validation errors are reported when adjacent compliance maps are undefined
     );
 
     expect(coreTestResult).toEqual(expectedCoreTestResult);
-
 });
