@@ -385,7 +385,7 @@ test('Validation errors are reported when adjacent compliance maps are undefined
         required: PipelineErrorType.info,
         format: 'string',
     });
-    console.log(testCatalogData)
+    
     const blankComplianceImageMapCatalogData = {...testCatalogData};
     blankComplianceImageMapCatalogData.compliance_image_map = undefined;
     const expectedCoreTestResult = [errorMessageCore];
