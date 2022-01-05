@@ -26,9 +26,9 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
     existingItems.MYSKU2123.quantity_available = overriddenWarehouseQuantity;
     existingItems.MYSKU2123.warehouses = [overriddenWarehouse];
     existingItems.MYSKU2123.images = [
-        { sourceUrl: 'http://hi.com/img.png', name: 'hi', height: 32, width: 100 },
+        { source_url: 'http://hi.com/img.png', name: 'hi', height: 32, width: 100 },
         {
-            sourceUrl: 'http://old-front-image.com/old.png',
+            source_url: 'http://old-front-image.com/old.png',
             name: 'Front_Image',
             height: 500,
             width: 500,
@@ -69,11 +69,11 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
                 ],
                 images: [
                     {
-                        sourceUrl: 'http://hi.com/img.png',
+                        source_url: 'http://hi.com/img.png',
                         name: 'hi',
                     },
                     {
-                        sourceUrl: 'http://shoe.img/front.png',
+                        source_url: 'http://shoe.img/front.png',
                         name: 'Front_Image',
                     },
                 ],
@@ -107,7 +107,7 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
                     },
                 ],
                 product_status: 'inactive',
-                images: [{ name: 'Front_Image', sourceUrl: 'http://shoe.img/back.png' }],
+                images: [{ name: 'Front_Image', source_url: 'http://shoe.img/back.png' }],
             },
             modified: true,
             emptyRow: false,
