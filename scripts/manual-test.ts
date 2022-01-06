@@ -125,7 +125,9 @@ async function main() {
         case 'getContentExceptions':
             // TODO CCR - this only works in a narrow scope (when using supplierId=1000012302 and reatilerId=1000012301 in test)
             // Expand on this as part of https://chb.atlassian.net/browse/CCR-134
-            return await getContentExceptions('Food', retailerId, identityId);
+
+            //THIS IS A TEMP CHANGE TO GET THE RIGHT CATEGORY PATHS
+            return await getContentExceptions(defaultCategoryPath!, retailerId, identityId);
         default:
             assertUnreachable(testType, 'testType');
     }

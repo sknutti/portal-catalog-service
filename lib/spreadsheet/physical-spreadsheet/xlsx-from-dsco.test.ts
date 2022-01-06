@@ -232,3 +232,168 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
     );
     expect(extendedTestResult).toEqual(expectedExtendedTestResult);
 });
+
+test('Validation errors search can locate IMAGE attributes and error messages', () => {
+    const errorMessage = 'error is error';
+    const testCatalogData: CoreCatalog = {
+        supplier_id: SUPPLIER_ID,
+        categories: {},
+        extended_attributes: {},
+        toSnakeCase: undefined,
+        sku: '7',
+        longdescription: 'a core/dsco attribute description',
+        extendedAttributes: {
+            RETAILER_ID: {
+                longdescription: 'an extended attribute description',
+            },
+        },
+        compliance_image_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    'Shaun||Images1080p': {
+                        compliance_errors: [
+                            {
+                                error_details: '1000040297.testAttribute.minHeight',
+                                error_message: errorMessage,
+                                error_type: ComplianceType.IMAGE_COMPLIANCE,
+                                error_code: 'minHeight',
+                                attribute: 'testAttribute',
+                            },
+                        ],
+                        compliance_state: 'non_compliant',
+                    },
+                },
+            },
+        },
+        compliance_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    dsco: {
+                        compliance_state: 'not-compliant',
+                        compliance_date: '2022-01-04T02:38:00.000Z',
+                        compliance_errors: [
+                            {
+                                error_message: 'this is a test error on the core/dsco attribute',
+                                error_state: 'error',
+                                attribute: 'longdescription',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'TEST_ERROR',
+                            },
+                            {
+                                error_message: 'this is a test error on the extended attribute',
+                                error_state: 'error',
+                                attribute: 'longdescription',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'TEST_ERROR',
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+    };
+
+    // Testing core attribute exceptions
+    const testCoreColumn = new DscoColumn('testAttribute', 'test description only', 'core', {
+        required: PipelineErrorType.info,
+        format: 'image',
+    });
+    const expectedCoreTestResult = [errorMessage];
+    const coreTestResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        testCoreColumn,
+        testCatalogData,
+    );
+    expect(coreTestResult).toEqual(expectedCoreTestResult);
+});
+
+test('Validation errors are reported when adjacent compliance maps are undefined (compliance_map/ compliance_image_map)', () => {
+    const errorMessageImage = 'error is error';
+    const errorMessageCore = 'error is about';
+    const testCatalogData: CoreCatalog = {
+        supplier_id: SUPPLIER_ID,
+        categories: {},
+        extended_attributes: {},
+        toSnakeCase: undefined,
+        sku: '7',
+        longdescription: 'a core/dsco attribute description',
+        extendedAttributes: {
+            RETAILER_ID: {
+                longdescription: 'an extended attribute description',
+            },
+        },
+        compliance_image_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    'Shaun||Images1080p': {
+                        compliance_errors: [
+                            {
+                                error_details: '1000040297.testAttribute.minHeight',
+                                error_message: errorMessageImage,
+                                error_type: ComplianceType.IMAGE_COMPLIANCE,
+                                error_code: 'minHeight',
+                                attribute: 'testAttribute',
+                            },
+                        ],
+                        compliance_state: 'non_compliant',
+                    },
+                },
+            },
+        },
+        compliance_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    dsco: {
+                        compliance_state: 'not-compliant',
+                        compliance_date: '2022-01-04T02:38:00.000Z',
+                        compliance_errors: [
+                            {
+                                error_message: errorMessageCore,
+                                error_state: 'error',
+                                attribute: 'longdescription',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'code',
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+    };
+
+    // Testing core attribute exceptions
+
+    const testImageColumn = new DscoColumn('testAttribute', 'test description only', 'core', {
+        required: PipelineErrorType.info,
+        format: 'image',
+    });
+    const blankComplianceMapCatalogData = { ...testCatalogData };
+    blankComplianceMapCatalogData.compliance_map = undefined;
+    const expectedImageTestResult = [errorMessageImage];
+    const imageTestResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        testImageColumn,
+        blankComplianceMapCatalogData,
+    );
+
+    expect(imageTestResult).toEqual(expectedImageTestResult);
+
+    const testCoreColumn = new DscoColumn('longdescription', 'test description only', 'core', {
+        required: PipelineErrorType.info,
+        format: 'string',
+    });
+
+    const blankComplianceImageMapCatalogData = { ...testCatalogData };
+    blankComplianceImageMapCatalogData.compliance_image_map = undefined;
+    const expectedCoreTestResult = [errorMessageCore];
+    const coreTestResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        testCoreColumn,
+        blankComplianceImageMapCatalogData,
+    );
+
+    expect(coreTestResult).toEqual(expectedCoreTestResult);
+});

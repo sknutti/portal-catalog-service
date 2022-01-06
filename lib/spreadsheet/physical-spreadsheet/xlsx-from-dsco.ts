@@ -13,6 +13,11 @@ import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
 
+enum ComplianceLocationKey {
+    COMPLIANCE_MAP = 'compliance_map',
+    COMPLIANCE_IMAGE_MAP = 'compliance_image_map',
+}
+
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
     const workBook = utils.book_new();
     const sheet: WorkSheet = {
@@ -368,8 +373,14 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
 }
 
 /**
- * Given a catalog item and a column name, extract all validation errors from the item data for the given column
+ *  * Given a catalog item and a column name, extract all validation errors from the item data for the given column
  * Return the results as an array of strings, where each element in the array is an error code
+ * error messages have variable sustituions made for escape phrase $\{value\}
+ * @param retailerId -
+ * @param cell - excel like cell object used for text value
+ * @param column - excel like column used to match column field name to filter compliance errors
+ * @param catalogData -
+ * @returns
  */
 export function getValidationErrorsForAColumnFromCatalogData(
     retailerId: number,
@@ -377,22 +388,40 @@ export function getValidationErrorsForAColumnFromCatalogData(
     column: DscoColumn,
     catalogData: CoreCatalog,
 ): string[] {
-    if (!catalogData.compliance_map?.[retailerId]?.categories_map) {
+    const [complianceLocationKey, complianceType] = getComplianceTypeAndComplianceMapKey(column);
+    if (!complianceType || !complianceLocationKey) return [];
+
+    if (!catalogData[complianceLocationKey]?.[retailerId]?.categories_map) {
         return []; // No compliance errors, return empty array
     }
 
-    let complianceType: ComplianceType;
-    // TODO CCR: This does not handle image exceptions as it is. Addressed by https://chb.atlassian.net/browse/CCR-147
-    if (column.type === 'core') {
-        complianceType = ComplianceType.CATEGORY;
-    } else if (column.type === 'extended') {
-        complianceType = ComplianceType.EXTENDED_ATTRIBUTE;
-    } else {
-        return []; // Column was not one of the types we care about
-    }
+    const filteredErrorsForGivenColumn = getComplianceErrorsForRetailerFilteredByAttributeAndType(
+        retailerId,
+        catalogData,
+        column,
+        complianceLocationKey,
+        complianceType,
+    );
 
+    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
+        return field_error.error_message.replace('${value}', `"${cell.v}"`);
+    });
+    return arrayOfErrorMessages;
+}
+
+/**
+ * collect the compliance errors from the item data object using the compliance location key
+ * flattens into one array and filters by matching compliance type and field name from column header
+ */
+function getComplianceErrorsForRetailerFilteredByAttributeAndType(
+    retailerId: number,
+    catalogData: CoreCatalog,
+    column: DscoColumn,
+    complianceLocationKey: ComplianceLocationKey,
+    complianceType: ComplianceType,
+): CatalogContentComplianceError[] {
     const allComplianceErrorsForRetailerCategory: CatalogComplianceContentCategories =
-        catalogData.compliance_map[retailerId].categories_map;
+        catalogData[complianceLocationKey][retailerId].categories_map;
 
     const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
         (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
@@ -402,11 +431,32 @@ export function getValidationErrorsForAColumnFromCatalogData(
         .filter((compliance_error) => {
             return compliance_error.attribute === column.fieldName && compliance_error.error_type === complianceType;
         });
+    return filteredErrorsForGivenColumn;
+}
 
-    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.error_message.replace('${value}', `"${cell.v}"`);
-    });
-    return arrayOfErrorMessages;
+/**
+ * switch like function helps map the location of matching compliance type and item object info by checking column type or validation format
+ * @param column - data from a single column of spreadsheet used to extract catalog data
+ * @returns item object location of compliance error and determins compliance type for Images, Extended attributes or Core/Category
+ */
+function getComplianceTypeAndComplianceMapKey(column: DscoColumn): [ComplianceLocationKey?, ComplianceType?] {
+    let complianceType: ComplianceType;
+    let complianceLocation: ComplianceLocationKey;
+
+    if (column.validation.format === 'image') {
+        complianceLocation = ComplianceLocationKey.COMPLIANCE_IMAGE_MAP;
+        complianceType = ComplianceType.IMAGE_COMPLIANCE;
+    } else if (column.type === 'core') {
+        complianceLocation = ComplianceLocationKey.COMPLIANCE_MAP;
+        complianceType = ComplianceType.CATEGORY;
+    } else if (column.type === 'extended') {
+        complianceLocation = ComplianceLocationKey.COMPLIANCE_MAP;
+        complianceType = ComplianceType.EXTENDED_ATTRIBUTE;
+    } else {
+        return []; // Column was not one of the types we care about
+    }
+
+    return [complianceLocation, complianceType];
 }
 
 /**
