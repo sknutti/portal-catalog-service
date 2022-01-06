@@ -1,11 +1,6 @@
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage, CategoriesComplianceMap, ComplianceError, ComplianceType } from '@dsco/bus-models';
 import { PipelineErrorType } from '@dsco/ts-models';
-import {
-    CoreCatalog,
-    CatalogContentComplianceError,
-    ComplianceType,
-    CatalogComplianceContentCategories,
-} from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
@@ -368,8 +363,8 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
 }
 
 /**
- * Given a catalog item and a column name, extract all validation errors from the item data for the given column
- * Return the results as an array of strings, where each element in the array is an error code
+ * Given a catalog item and a column object, extract all validation errors from the item data for the given column
+ * Return the results as an array of strings, where each element in the array is an error message
  */
 export function getValidationErrorsForAColumnFromCatalogData(
     retailerId: number,
@@ -391,20 +386,20 @@ export function getValidationErrorsForAColumnFromCatalogData(
         return []; // Column was not one of the types we care about
     }
 
-    const allComplianceErrorsForRetailerCategory: CatalogComplianceContentCategories =
-        catalogData.compliance_map[retailerId].categories_map;
+    const allComplianceErrorsForRetailerCategory: CategoriesComplianceMap = catalogData.compliance_map[retailerId];
 
-    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
-        (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
-    );
-    const filteredErrorsForGivenColumn: CatalogContentComplianceError[] = complianceErrors
+    const filteredErrorsForGivenColumn: ComplianceError[] = Object.keys(allComplianceErrorsForRetailerCategory)
+        .map((category) => allComplianceErrorsForRetailerCategory.categories_map[category].compliance_errors)
         .reduce((acc, val) => acc.concat(val), [])
         .filter((compliance_error) => {
             return compliance_error.attribute === column.fieldName && compliance_error.error_type === complianceType;
         });
 
     const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.error_message.replace('${value}', `"${cell.v}"`);
+        return (
+            field_error.error_message?.replace('${value}', `"${cell.v}"`) ||
+            `ERROR DUMP: ${JSON.stringify(field_error)}`
+        );
     });
     return arrayOfErrorMessages;
 }
