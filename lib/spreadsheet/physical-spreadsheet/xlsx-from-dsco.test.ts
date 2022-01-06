@@ -1,5 +1,6 @@
 import { PipelineErrorType } from '@dsco/ts-models';
-import { CoreCatalog, ComplianceType } from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
+import { ComplianceType, ComplianceStateEnum } from '@dsco/bus-models';
 import { CellObject } from '@sheet/image/types';
 import { DscoColumn } from '../dsco-column';
 import { getValidationErrorsForAColumnFromCatalogData } from './xlsx-from-dsco';
@@ -20,8 +21,8 @@ test('Validation error search can extract validation errors from a CoreCatalog o
             1234: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2021-12-29T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_message: 'this is a test error we will filter for',
@@ -85,8 +86,8 @@ test('Validation error search returns empty array when compliance_errors is empt
             1234: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2021-12-29T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [],
                     },
                 },
@@ -119,8 +120,8 @@ test('Validation error search returns empty array when there are no matches with
             1234: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2021-12-29T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_message: 'this is a test error',
@@ -180,8 +181,8 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
             1234: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2022-01-04T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_message: 'this is a test error on the core/dsco attribute',
@@ -251,6 +252,8 @@ test('Validation errors search can locate IMAGE attributes and error messages', 
             [RETAILER_ID]: {
                 categories_map: {
                     'Shaun||Images1080p': {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_details: '1000040297.testAttribute.minHeight',
@@ -260,7 +263,6 @@ test('Validation errors search can locate IMAGE attributes and error messages', 
                                 attribute: 'testAttribute',
                             },
                         ],
-                        compliance_state: 'non_compliant',
                     },
                 },
             },
@@ -269,8 +271,8 @@ test('Validation errors search can locate IMAGE attributes and error messages', 
             [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2022-01-04T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_message: 'this is a test error on the core/dsco attribute',
@@ -327,6 +329,8 @@ test('Validation errors are reported when adjacent compliance maps are undefined
             [RETAILER_ID]: {
                 categories_map: {
                     'Shaun||Images1080p': {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_details: '1000040297.testAttribute.minHeight',
@@ -336,7 +340,6 @@ test('Validation errors are reported when adjacent compliance maps are undefined
                                 attribute: 'testAttribute',
                             },
                         ],
-                        compliance_state: 'non_compliant',
                     },
                 },
             },
@@ -345,8 +348,8 @@ test('Validation errors are reported when adjacent compliance maps are undefined
             [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
-                        compliance_state: 'not-compliant',
-                        compliance_date: '2022-01-04T02:38:00.000Z',
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2021-12-29T02:38:00.000Z'),
                         compliance_errors: [
                             {
                                 error_message: errorMessageCore,
