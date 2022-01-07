@@ -1,4 +1,4 @@
-import { DscoImage, CategoriesComplianceMap, ComplianceError, ComplianceType } from '@dsco/bus-models';
+import { DscoImage, CategoriesComplianceMap, ComplianceError, ComplianceType } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
@@ -423,7 +423,7 @@ function getComplianceErrorsForRetailerFilteredByAttributeAndType(
 
     if (!allComplianceErrorsForRetailerCategory) return [];
 
-    return Object.keys(allComplianceErrorsForRetailerCategory)
+    return Object.keys(allComplianceErrorsForRetailerCategory.categories_map)
         .map((category) => allComplianceErrorsForRetailerCategory.categories_map[category].compliance_errors)
         .reduce((acc, val) => acc.concat(val), [])
         .filter((compliance_error) => {

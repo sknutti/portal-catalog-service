@@ -1,6 +1,6 @@
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import { ComplianceType, ComplianceStateEnum } from '@dsco/bus-models';
+import { ComplianceType, ComplianceStateEnum } from '@dsco/bus-models/dist/item';
 import { CellObject } from '@sheet/image/types';
 import { DscoColumn } from '../dsco-column';
 import { getValidationErrorsForAColumnFromCatalogData } from './xlsx-from-dsco';

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage, ComplianceMap } from '@dsco/bus-models/dist/item';
 import { Catalog, ProductStatus, SnakeCase } from '@dsco/ts-models';
-import * as dbm from '@dsco/bus-models';
+//import * as dbm from '@dsco/bus-models';
 
 // This allows us to access snake_cased values on the catalog.
 // TODO We should be able to get this interface from "@dsco/bus-models": "^0.1.63" rather than declaring it here
@@ -28,8 +28,8 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         code: string;
         quantity: number;
     }>;
-    compliance_map?: dbm.ComplianceMap;
-    compliance_image_map?: dbm.ComplianceMap;
+    compliance_map?: ComplianceMap;
+    compliance_image_map?: ComplianceMap;
     [key: string]: any;
 }
 
