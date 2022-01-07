@@ -1,11 +1,7 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
 import { DscoImage, ComplianceMap } from '@dsco/bus-models/dist/item';
 import { Catalog, ProductStatus, SnakeCase } from '@dsco/ts-models';
-//import * as dbm from '@dsco/bus-models';
 
 // This allows us to access snake_cased values on the catalog.
-// TODO We should be able to get this interface from "@dsco/bus-models": "^0.1.63" rather than declaring it here
-// Addressed by: https://chb.atlassian.net/browse/CCR-135
 export interface CoreCatalog extends SnakeCase<Catalog> {
     supplier_id: number;
     categories: {

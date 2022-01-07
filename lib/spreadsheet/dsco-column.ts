@@ -1,4 +1,4 @@
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog, getDSFField } from '@lib/format-conversions';
