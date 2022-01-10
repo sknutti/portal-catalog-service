@@ -1,9 +1,7 @@
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage, ComplianceMap } from '@dsco/bus-models/dist/item';
 import { Catalog, ProductStatus, SnakeCase } from '@dsco/ts-models';
 
 // This allows us to access snake_cased values on the catalog.
-// TODO We should be able to get this interface from "@dsco/bus-models": "^0.1.63" rather than declaring it here
-// Addressed by: https://chb.atlassian.net/browse/CCR-135
 export interface CoreCatalog extends SnakeCase<Catalog> {
     supplier_id: number;
     categories: {
@@ -26,42 +24,9 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         code: string;
         quantity: number;
     }>;
-    compliance_map?: CatalogContentComplianceMap;
+    compliance_map?: ComplianceMap;
+    compliance_image_map?: ComplianceMap;
     [key: string]: any;
-}
-
-// Following https://chb.atlassian.net/wiki/spaces/CCAR/pages/98302329486/Data+Contract
-export interface CatalogContentComplianceMap {
-    [retailerId: number]: CatalogContentComplianceCategoriesMap;
-}
-
-export interface CatalogContentComplianceCategoriesMap {
-    categories_map: CatalogComplianceContentCategories;
-}
-
-export interface CatalogComplianceContentCategories {
-    [categoryPath: string]: CatalogContentCategoryCompliance;
-}
-
-export interface CatalogContentCategoryCompliance {
-    compliance_state: string;
-    compliance_date: string;
-    compliance_errors: CatalogContentComplianceError[];
-}
-
-export interface CatalogContentComplianceError {
-    error_message: string;
-    error_state: string;
-    error_details?: string;
-    error_type: ComplianceType;
-    error_code: string;
-    attribute: string;
-}
-
-export enum ComplianceType {
-    CATEGORY = 'CATEGORY',
-    EXTENDED_ATTRIBUTE = 'EXTENDED_ATTRIBUTE',
-    IMAGE_COMPLIANCE = 'IMAGE_COMPLIANCE',
 }
 
 export function createCoreCatalog(

@@ -1,4 +1,4 @@
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage } from '@dsco/bus-models/dist/item';
 import { ProductStatus } from '@dsco/ts-models';
 import { CoreCatalog, createCoreCatalog } from '@lib/core-catalog';
 import { TinyWarehouse } from '@lib/requests';

@@ -1,11 +1,6 @@
-import { DscoImage } from '@dsco/bus-models';
+import { DscoImage, CategoriesComplianceMap, ComplianceError, ComplianceType } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
-import {
-    CoreCatalog,
-    CatalogContentComplianceError,
-    ComplianceType,
-    CatalogComplianceContentCategories,
-} from '@lib/core-catalog';
+import { CoreCatalog } from '@lib/core-catalog';
 import { extractFieldFromCoreCatalog } from '@lib/format-conversions';
 import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
@@ -404,7 +399,10 @@ export function getValidationErrorsForAColumnFromCatalogData(
     );
 
     const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
-        return field_error.error_message.replace('${value}', `"${cell.v}"`);
+        return (
+            field_error.error_message?.replace('${value}', `"${cell.v}"`) ||
+            `Could not interpret message - DUMPING OBJECT: ${JSON.stringify(field_error)}`
+        );
     });
     return arrayOfErrorMessages;
 }
@@ -419,25 +417,24 @@ function getComplianceErrorsForRetailerFilteredByAttributeAndType(
     column: DscoColumn,
     complianceLocationKey: ComplianceLocationKey,
     complianceType: ComplianceType,
-): CatalogContentComplianceError[] {
-    const allComplianceErrorsForRetailerCategory: CatalogComplianceContentCategories =
-        catalogData[complianceLocationKey][retailerId].categories_map;
+): ComplianceError[] {
+    const allComplianceErrorsForRetailerCategory: CategoriesComplianceMap | undefined =
+        catalogData[complianceLocationKey]?.[retailerId];
 
-    const complianceErrors = Object.keys(allComplianceErrorsForRetailerCategory).map(
-        (category) => allComplianceErrorsForRetailerCategory[category].compliance_errors,
-    );
-    const filteredErrorsForGivenColumn: CatalogContentComplianceError[] = complianceErrors
+    if (!allComplianceErrorsForRetailerCategory) return [];
+
+    return Object.keys(allComplianceErrorsForRetailerCategory.categories_map)
+        .map((category) => allComplianceErrorsForRetailerCategory.categories_map[category].compliance_errors)
         .reduce((acc, val) => acc.concat(val), [])
         .filter((compliance_error) => {
             return compliance_error.attribute === column.fieldName && compliance_error.error_type === complianceType;
         });
-    return filteredErrorsForGivenColumn;
 }
 
 /**
  * switch like function helps map the location of matching compliance type and item object info by checking column type or validation format
  * @param column - data from a single column of spreadsheet used to extract catalog data
- * @returns item object location of compliance error and determins compliance type for Images, Extended attributes or Core/Category
+ * @returns item object location of compliance error and determines compliance type for Images, Extended attributes or Core/Category
  */
 function getComplianceTypeAndComplianceMapKey(column: DscoColumn): [ComplianceLocationKey?, ComplianceType?] {
     let complianceType: ComplianceType;
