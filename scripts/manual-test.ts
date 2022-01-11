@@ -15,6 +15,7 @@ import {
     locallyInvokeGetContentExceptionsApi,
     TEST_ACCOUNTS,
     TestAccount,
+    getItemExceptionSummaryPrompts,
 } from '../test/test-utils';
 
 const testTypes: Record<TestType, TestTypeDef> = {
@@ -40,6 +41,7 @@ const testTypes: Record<TestType, TestTypeDef> = {
     },
     getContentExceptions: {
         name: 'Get Content Exceptions',
+        categoryMessage: 'Which category would you like exceptions for?',
     },
 };
 type TestType = 'upload' | 'generate' | 'getUploadUrl' | 'getAssortments' | 'getContentExceptions';
@@ -76,7 +78,7 @@ async function main() {
         { type: 'list', name: 'environment', choices: (prompt) => Object.keys(prompt.account) },
     ]);
 
-    const { retailerId, userId, isRealCustomer, defaultCategoryPath } = prompt.account[prompt.environment]!;
+    const { retailerId, supplierId, userId, isRealCustomer, defaultCategoryPath } = prompt.account[prompt.environment]!;
     const { environment, testType } = prompt;
     const testTypeDef = testTypes[testType];
 
@@ -123,11 +125,11 @@ async function main() {
         case 'getAssortments':
             return await getAssortments(identityId);
         case 'getContentExceptions':
-            // TODO CCR - this only works in a narrow scope (when using supplierId=1000012302 and reatilerId=1000012301 in test)
-            // Expand on this as part of https://chb.atlassian.net/browse/CCR-134
-
-            //THIS IS A TEMP CHANGE TO GET THE RIGHT CATEGORY PATHS
-            return await getContentExceptions(defaultCategoryPath!, retailerId, identityId);
+            return await getContentExceptions(
+                await promptExceptionCategoryPath(testTypeDef.categoryMessage!, retailerId, supplierId),
+                retailerId,
+                identityId,
+            );
         default:
             assertUnreachable(testType, 'testType');
     }
@@ -159,6 +161,16 @@ async function promptCategoryPath(message: string, retailerId: number, defaultPa
         { type: 'input', name: 'category', message, when: (p) => p.category === other, askAnswered: true },
     ]);
     return resp.category;
+}
+
+async function promptExceptionCategoryPath(message: string, retailerId: number, supplierId: number): Promise<string> {
+    let exceptionSummaryChoices = await getItemExceptionSummaryPrompts(retailerId, supplierId);
+    exceptionSummaryChoices = [...exceptionSummaryChoices, { name: other, value: other }];
+    const resp = await inquirer.prompt<{ categoryPath: string }>([
+        { type: 'list', name: 'categoryPath', message, choices: exceptionSummaryChoices },
+        { type: 'input', name: 'categoryPath', message, when: (p) => p.categoryPath === other, askAnswered: true },
+    ]);
+    return resp.categoryPath;
 }
 
 async function uploadFile(category: string, retailerId: number, filePath: string, identityId: string) {

@@ -1,7 +1,7 @@
 import { DscoEnv } from '@dsco/ts-models';
 
 export const TEST_ACCOUNTS: Record<string, TestAccount> = {
-    'Aidan Test Supplier - (Food)': {
+    'Aidan Test Supplier': {
         test: {
             defaultCategoryPath: 'Food',
             supplierId: 1000012302,
@@ -9,25 +9,9 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             retailerId: 1000012301,
         },
     },
-    'E2E-Supplier - (Shaun||Images1080p)': {
+    'E2E-Supplier': {
         test: {
-            defaultCategoryPath: 'Shaun||Images1080p',
-            supplierId: 1000040296,
-            userId: 54352,
-            retailerId: 1000040297,
-        },
-    },
-    'E2E-Supplier - (Bananas||Peels)': {
-        test: {
-            defaultCategoryPath: 'Bananas||Peels',
-            supplierId: 1000040296,
-            userId: 54352,
-            retailerId: 1000040297,
-        },
-    },
-    'E2E-Supplier - (Clothes||Shirts)': {
-        test: {
-            defaultCategoryPath: 'Clothes||Shirts',
+            defaultCategoryPath: 'Gifting||Gift Baskets',
             supplierId: 1000040296,
             userId: 54352,
             retailerId: 1000040297,
