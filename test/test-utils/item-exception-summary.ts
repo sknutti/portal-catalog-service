@@ -5,19 +5,19 @@
 
 import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
-export interface ItemExceptionSummaryBody {
+interface ItemExceptionSummaryBody {
     retailerId?: number;
     supplierId?: number;
 }
 
-export interface ItemExceptionCount {
+interface ItemExceptionCount {
     channelId: string;
     categoryPath: string;
     count: number;
     [key: string]: any;
 }
 
-export interface ItemExceptionSummaryResponse extends DsResponse {
+interface ItemExceptionSummaryResponse extends DsResponse {
     exceptionCounts: Array<ItemExceptionCount>;
     duration: number; // ms
 }
