@@ -11,10 +11,14 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
     },
     'E2E-Supplier': {
         test: {
-            defaultCategoryPath: 'Gifting||Gift Baskets',
             supplierId: 1000040296,
             userId: 54352,
             retailerId: 1000040297,
+        },
+        staging: {
+            supplierId: 1000007983,
+            retailerId: 1000007985,
+            userId: 1000011261,
         },
     },
     Fanatics: {

@@ -368,14 +368,14 @@ function addKnownCellValidationErrors(cell: CellObject, validationError: string[
 }
 
 /**
- *  * Given a catalog item and a column name, extract all validation errors from the item data for the given column
+ * Given a catalog item and a column name, extract all validation errors from the item data for the given column
  * Return the results as an array of strings, where each element in the array is an error code
  * error messages have variable sustituions made for escape phrase $\{value\}
  * @param retailerId -
  * @param cell - excel like cell object used for text value
  * @param column - excel like column used to match column field name to filter compliance errors
  * @param catalogData -
- * @returns
+ * @returns - an array of error messages with any duplicate messages removed
  */
 export function getValidationErrorsForAColumnFromCatalogData(
     retailerId: number,
@@ -383,87 +383,54 @@ export function getValidationErrorsForAColumnFromCatalogData(
     column: DscoColumn,
     catalogData: CoreCatalog,
 ): string[] {
-    const [complianceLocationKey, complianceType] = getComplianceTypeAndComplianceMapKey(column);
-    if (!complianceType || !complianceLocationKey) return [];
-
-    if (!catalogData[complianceLocationKey]?.[retailerId]?.categories_map) {
-        return []; // No compliance errors, return empty array
+    let allComplianceErrors: ComplianceError[] = [];
+    if (catalogData.compliance_image_map?.[retailerId]) {
+        allComplianceErrors = allComplianceErrors.concat(
+            getComplianceErrorsFromCategoriesMap(catalogData.compliance_image_map[retailerId]),
+        );
+    }
+    if (catalogData.compliance_map?.[retailerId]) {
+        allComplianceErrors = allComplianceErrors.concat(
+            getComplianceErrorsFromCategoriesMap(catalogData.compliance_map[retailerId]),
+        );
     }
 
-    const filteredErrorsForGivenColumn = getComplianceErrorsForRetailerFilteredByAttributeAndType(
-        retailerId,
-        catalogData,
-        column,
-        complianceLocationKey,
-        complianceType,
-    );
+    const filteredComplianceErrors = allComplianceErrors.filter((e) => {
+        return (
+            e.attribute === column.fieldName &&
+            (column.type === 'core'
+                ? e.error_type !== ComplianceType.EXTENDED_ATTRIBUTE
+                : e.error_type !== ComplianceType.CATEGORY)
+        );
+    });
 
-    const arrayOfErrorMessages: string[] = filteredErrorsForGivenColumn.map((field_error) => {
+    const arrayOfErrorMessages: string[] = filteredComplianceErrors.map((field_error) => {
         return (
             field_error.error_message?.replace('${value}', `"${cell.v}"`) ||
             `Could not interpret message - DUMPING OBJECT: ${JSON.stringify(field_error)}`
         );
     });
-    return arrayOfErrorMessages;
+
+    return removeDuplicateMessages(arrayOfErrorMessages);
+}
+
+function getComplianceErrorsFromCategoriesMap(retailerCategoriesMap: CategoriesComplianceMap): ComplianceError[] {
+    return Object.keys(retailerCategoriesMap.categories_map)
+        .map((k) => retailerCategoriesMap.categories_map[k].compliance_errors)
+        .reduce((acc, val) => acc.concat(val), []);
+}
+
+function removeDuplicateMessages(messages: string[]): string[] {
+    return [...new Set(messages)];
 }
 
 /**
- * collect the compliance errors from the item data object using the compliance location key
- * flattens into one array and filters by matching compliance type and field name from column header
- */
-function getComplianceErrorsForRetailerFilteredByAttributeAndType(
-    retailerId: number,
-    catalogData: CoreCatalog,
-    column: DscoColumn,
-    complianceLocationKey: ComplianceLocationKey,
-    complianceType: ComplianceType,
-): ComplianceError[] {
-    const allComplianceErrorsForRetailerCategory: CategoriesComplianceMap | undefined =
-        catalogData[complianceLocationKey]?.[retailerId];
-
-    if (!allComplianceErrorsForRetailerCategory) return [];
-
-    return Object.keys(allComplianceErrorsForRetailerCategory.categories_map)
-        .map((category) => allComplianceErrorsForRetailerCategory.categories_map[category].compliance_errors)
-        .reduce((acc, val) => acc.concat(val), [])
-        .filter((compliance_error) => {
-            return compliance_error.attribute === column.fieldName && compliance_error.error_type === complianceType;
-        });
-}
-
-/**
- * switch like function helps map the location of matching compliance type and item object info by checking column type or validation format
- * @param column - data from a single column of spreadsheet used to extract catalog data
- * @returns item object location of compliance error and determines compliance type for Images, Extended attributes or Core/Category
- */
-function getComplianceTypeAndComplianceMapKey(column: DscoColumn): [ComplianceLocationKey?, ComplianceType?] {
-    let complianceType: ComplianceType;
-    let complianceLocation: ComplianceLocationKey;
-
-    if (column.validation.format === 'image') {
-        complianceLocation = ComplianceLocationKey.COMPLIANCE_IMAGE_MAP;
-        complianceType = ComplianceType.IMAGE_COMPLIANCE;
-    } else if (column.type === 'core') {
-        complianceLocation = ComplianceLocationKey.COMPLIANCE_MAP;
-        complianceType = ComplianceType.CATEGORY;
-    } else if (column.type === 'extended') {
-        complianceLocation = ComplianceLocationKey.COMPLIANCE_MAP;
-        complianceType = ComplianceType.EXTENDED_ATTRIBUTE;
-    } else {
-        return []; // Column was not one of the types we care about
-    }
-
-    return [complianceLocation, complianceType];
-}
-
-/**
- *
  * function adds to conditional formatting as a way of highlighting a list of select cells of interest
  * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings
  * @param sheet - sheetJS object that will be modified
  * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton
- * @param fontColorHex - hexidecimal value for rgb font color value
- * @param cellFillColorHex - hexidecimal value for rgb cell fill color value
+ * @param fontColorHex - hexadecimal value for rgb font color value
+ * @param cellFillColorHex - hexadecimal value for rgb cell fill color value
  */
 function highlightSelectCellsByConditionalFormatting(
     sheet: WorkSheet,
