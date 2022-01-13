@@ -384,32 +384,29 @@ export function getValidationErrorsForAColumnFromCatalogData(
     catalogData: CoreCatalog,
 ): string[] {
     let allComplianceErrors: ComplianceError[] = [];
-    if (catalogData.compliance_image_map?.[retailerId]) {
-        allComplianceErrors = allComplianceErrors.concat(
-            getComplianceErrorsFromCategoriesMap(catalogData.compliance_image_map[retailerId]),
-        );
-    }
-    if (catalogData.compliance_map?.[retailerId]) {
-        allComplianceErrors = allComplianceErrors.concat(
-            getComplianceErrorsFromCategoriesMap(catalogData.compliance_map[retailerId]),
-        );
-    }
-
-    const filteredComplianceErrors = allComplianceErrors.filter((e) => {
-        return (
-            e.attribute === column.fieldName &&
-            (column.type === 'extended') === (e.error_type === ComplianceType.EXTENDED_ATTRIBUTE) // XNOR
-        );
+    ['compliance_image_map', 'compliance_map'].forEach((k) => {
+        if (catalogData[k]?.[retailerId]) {
+            allComplianceErrors = allComplianceErrors.concat(
+                getComplianceErrorsFromCategoriesMap(catalogData[k][retailerId]),
+            );
+        }
     });
 
-    const arrayOfErrorMessages: string[] = filteredComplianceErrors.map((field_error) => {
-        return (
-            field_error.error_message?.replace('${value}', `"${cell.v}"`) ||
-            `Could not interpret message - DUMPING OBJECT: ${JSON.stringify(field_error)}`
-        );
-    });
-
-    return removeDuplicateMessages(arrayOfErrorMessages);
+    return removeDuplicateMessages(
+        allComplianceErrors
+            .filter((e) => {
+                return (
+                    e.attribute === column.fieldName &&
+                    (column.type === 'extended') === (e.error_type === ComplianceType.EXTENDED_ATTRIBUTE) // XNOR
+                );
+            })
+            .map((field_error) => {
+                return (
+                    field_error.error_message?.replace('${value}', `"${cell.v}"`) ||
+                    `Could not interpret message - DUMPING OBJECT: ${JSON.stringify(field_error)}`
+                );
+            }),
+    );
 }
 
 function getComplianceErrorsFromCategoriesMap(retailerCategoriesMap: CategoriesComplianceMap): ComplianceError[] {
