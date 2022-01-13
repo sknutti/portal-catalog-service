@@ -18,7 +18,7 @@ test('Validation error search can extract validation errors from a CoreCatalog o
         sku: '7',
         longdescription: 'test data only',
         compliance_map: {
-            1234: {
+            [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
                         compliance_state: ComplianceStateEnum.not_compliant,
@@ -53,7 +53,7 @@ test('Validation error search can extract validation errors from a CoreCatalog o
 
 test('Validation error search returns empty array when compliance data is not present', () => {
     const testCatalogData: CoreCatalog = {
-        supplier_id: 1234,
+        supplier_id: SUPPLIER_ID,
         categories: {},
         extended_attributes: {},
         toSnakeCase: undefined,
@@ -76,14 +76,14 @@ test('Validation error search returns empty array when compliance data is not pr
 
 test('Validation error search returns empty array when compliance_errors is empty', () => {
     const testCatalogData: CoreCatalog = {
-        supplier_id: 1234,
+        supplier_id: SUPPLIER_ID,
         categories: {},
         extended_attributes: {},
         toSnakeCase: undefined,
         sku: '7',
         longdescription: 'test data only',
         compliance_map: {
-            1234: {
+            [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
                         compliance_state: ComplianceStateEnum.not_compliant,
@@ -110,14 +110,14 @@ test('Validation error search returns empty array when compliance_errors is empt
 
 test('Validation error search returns empty array when there are no matches with the given column name', () => {
     const testCatalogData: CoreCatalog = {
-        supplier_id: 1234,
+        supplier_id: SUPPLIER_ID,
         categories: {},
         extended_attributes: {},
         toSnakeCase: undefined,
         sku: '7',
         longdescription: 'test data only',
         compliance_map: {
-            1234: {
+            [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
                         compliance_state: ComplianceStateEnum.not_compliant,
@@ -166,7 +166,7 @@ test('Validation error search returns empty array when there are no matches with
 
 test('Validation error search can distinguish between CATEGORY (core/dsco) attributes and EXTENDED_ATTRIBUTEs', () => {
     const testCatalogData: CoreCatalog = {
-        supplier_id: 1234,
+        supplier_id: SUPPLIER_ID,
         categories: {},
         extended_attributes: {},
         toSnakeCase: undefined,
@@ -178,7 +178,7 @@ test('Validation error search can distinguish between CATEGORY (core/dsco) attri
             },
         },
         compliance_map: {
-            1234: {
+            [RETAILER_ID]: {
                 categories_map: {
                     dsco: {
                         compliance_state: ComplianceStateEnum.not_compliant,
@@ -399,4 +399,209 @@ test('Validation errors are reported when adjacent compliance maps are undefined
     );
 
     expect(coreTestResult).toEqual(expectedCoreTestResult);
+});
+
+test('Can detect multiple errors accross several ComplianceError objects for the same column', () => {
+    const testCatalogData: CoreCatalog = {
+        supplier_id: SUPPLIER_ID,
+        categories: {},
+        extended_attributes: {},
+        toSnakeCase: undefined,
+        sku: '7',
+        longdescription: 'a core/dsco attribute description',
+        extendedAttributes: {
+            [RETAILER_ID]: {
+                longdescription: 'an extended attribute description',
+            },
+        },
+        compliance_image_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    IMAGE_COMPLIANCE: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'REQUIRED',
+                                error_message: 'a',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+        compliance_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    'Bananas||Peels': {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'REQUIRED',
+                                error_message: 'b',
+                                error_details: null,
+                            },
+                            {
+                                attribute: 'red herring attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'REQUIRED',
+                                error_message: 'red herring message',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                    DEFAULT: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'REQUIRED',
+                                error_message: 'c',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                    Bananas: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.CATEGORY,
+                                error_code: 'REQUIRED',
+                                error_message: 'd',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+    };
+    const testColumn = new DscoColumn('my test attribute', 'test description only', 'core', {
+        required: PipelineErrorType.info,
+        format: 'string',
+    });
+    const expectedResult = new Set(['a', 'b', 'c', 'd']);
+    const testResult = new Set(
+        getValidationErrorsForAColumnFromCatalogData(RETAILER_ID, BLANK_CELL, testColumn, testCatalogData),
+    );
+    expect(testResult).toEqual(expectedResult);
+});
+
+test('Do not allow duplicate error messages for the same column', () => {
+    const testCatalogData: CoreCatalog = {
+        supplier_id: SUPPLIER_ID,
+        categories: {},
+        extended_attributes: {},
+        toSnakeCase: undefined,
+        sku: '7',
+        longdescription: 'a core/dsco attribute description',
+        extendedAttributes: {
+            [RETAILER_ID]: {
+                longdescription: 'an extended attribute description',
+            },
+        },
+        compliance_image_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    IMAGE_COMPLIANCE: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'REQUIRED',
+                                error_message: 'I am a duplicate',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+        compliance_map: {
+            [RETAILER_ID]: {
+                categories_map: {
+                    'Bananas||Peels': {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'REQUIRED',
+                                error_message: 'I am a duplicate',
+                                error_details: null,
+                            },
+                            {
+                                attribute: 'red herring attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'REQUIRED',
+                                error_message: 'red herring message',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                    DEFAULT: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'REQUIRED',
+                                error_message: 'I am a duplicate',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                    Bananas: {
+                        compliance_state: ComplianceStateEnum.not_compliant,
+                        compliance_date: new Date('2022-01-13T18:06:00.000Z'),
+                        compliance_errors: [
+                            {
+                                attribute: 'my test attribute',
+                                error_state: 'error',
+                                error_type: ComplianceType.EXTENDED_ATTRIBUTE,
+                                error_code: 'REQUIRED',
+                                error_message: 'I am a duplicate',
+                                error_details: null,
+                            },
+                        ],
+                    },
+                },
+            },
+        },
+    };
+    const testColumn = new DscoColumn('my test attribute', 'test description only', 'extended', {
+        required: PipelineErrorType.info,
+        format: 'string',
+    });
+    const expectedResult = ['I am a duplicate'];
+    const testResult = getValidationErrorsForAColumnFromCatalogData(
+        RETAILER_ID,
+        BLANK_CELL,
+        testColumn,
+        testCatalogData,
+    );
+    expect(testResult).toEqual(expectedResult);
 });

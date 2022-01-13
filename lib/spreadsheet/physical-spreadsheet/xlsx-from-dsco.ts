@@ -398,9 +398,7 @@ export function getValidationErrorsForAColumnFromCatalogData(
     const filteredComplianceErrors = allComplianceErrors.filter((e) => {
         return (
             e.attribute === column.fieldName &&
-            (column.type === 'core'
-                ? e.error_type !== ComplianceType.EXTENDED_ATTRIBUTE
-                : e.error_type !== ComplianceType.CATEGORY)
+            (column.type === 'extended') === (e.error_type === ComplianceType.EXTENDED_ATTRIBUTE) // XNOR
         );
     });
 
