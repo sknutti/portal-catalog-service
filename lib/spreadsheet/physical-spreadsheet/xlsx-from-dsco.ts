@@ -8,11 +8,6 @@ import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
 
-enum ComplianceLocationKey {
-    COMPLIANCE_MAP = 'compliance_map',
-    COMPLIANCE_IMAGE_MAP = 'compliance_image_map',
-}
-
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
     const workBook = utils.book_new();
     const sheet: WorkSheet = {
@@ -236,7 +231,7 @@ function addValidation(
     }
 }
 
-function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number): CellObject | undefined {
+export function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number): CellObject | undefined {
     let data: any;
 
     if (col.validation.format === 'image') {
@@ -245,7 +240,15 @@ function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: number):
     } else if (col.type === 'core') {
         data = extractFieldFromCoreCatalog(col.fieldName, catalog);
     } else if (col.type === 'extended') {
-        data = catalog.extended_attributes?.[retailerId]?.[col.fieldName];
+        if (
+            typeof catalog.extended_attributes?.[retailerId] === 'object' &&
+            !Array.isArray(catalog.extended_attributes?.[retailerId]) &&
+            catalog.extended_attributes?.[retailerId] !== null
+        ) {
+            data = catalog.extended_attributes?.[retailerId]?.[col.fieldName];
+        } else {
+            data = null;
+        }
     }
 
     if (data === null || data === undefined) {

@@ -8,7 +8,7 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
         [partnerId: number]: string[];
     };
     extended_attributes: {
-        [partnerId: number]: Record<string, any>;
+        [key: string]: any;
     };
     images?: Partial<DscoImage>[];
     brand_logo_images?: Partial<DscoImage>[];
