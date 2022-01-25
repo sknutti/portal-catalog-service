@@ -6,6 +6,8 @@ export interface ItemExceptionSearchBody {
     channelId: number;
     categoryPath: string;
     version: 1;
+    pageSize?: number;
+    paginationKey?: null | number[];
 }
 
 export interface ItemExceptionSearchResponse extends DsResponse {
