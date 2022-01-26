@@ -126,12 +126,10 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
     return mongoResp;
 }
-//TODO:CCR-176 change item/api/exceptions to only return item ids, then change below function to accept response of item id not item objects
 /**
  * Looks for items with content exceptions using ElasticSearch paging 10,000 at a time
  * Takes item ids from ES results and loads those items from Mongo
  * Note: Item object format in Mongo is different from the Item object format in ElasticSearch
- * Note: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html response size limit is 6mb (roughly 375 items at this time)
  */
 export async function catalogExceptionsItemSearch(
     supplierId: number,
@@ -142,16 +140,17 @@ export async function catalogExceptionsItemSearch(
 
     // ES Query
     let itemIds: number[] = [];
-    let paginationKey: null | number[] = null;
+    let paginationKey: any = null;
     let totalItemsToGet = 0;
     do {
-        const searchResp: any = await axiosRequest(
+        const searchResp = await axiosRequest(
             new ItemExceptionSearchRequest(env, {
                 supplierId: supplierId,
                 channelId: retailerId,
+                fullDetail: false, //requests only the item ids instead of the whole item object
                 categoryPath: categoryPath,
                 version: 1,
-                pageSize: 250, //Invocation payload for lambda limited to 6mb for sync response
+                pageSize: 10_000,
                 paginationKey: paginationKey,
             }),
             env,
@@ -168,7 +167,7 @@ export async function catalogExceptionsItemSearch(
             break;
         }
 
-        itemIds = itemIds.concat(searchResp.data.items.map((item: any) => item.item_id));
+        itemIds = itemIds.concat(searchResp.data.items);
         paginationKey = searchResp.data.paginationKey;
     } while (totalItemsToGet > itemIds.length);
 
@@ -180,6 +179,5 @@ export async function catalogExceptionsItemSearch(
 
     if (itemIds.length === 0) return [];
 
-    // Then we load those items from mongo
     return await loadCatalogItemsFromMongo(supplierId, 'item_id', itemIds);
 }
