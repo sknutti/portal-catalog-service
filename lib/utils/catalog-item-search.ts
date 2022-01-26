@@ -126,11 +126,12 @@ export async function loadCatalogItemsFromMongo<Identifier extends 'sku' | 'item
 
     return mongoResp;
 }
-
+//TODO:CCR-176 change item/api/exceptions to only return item ids, then change below function to accept response of item id not item objects
 /**
- * Looks for items with content exceptions using ElasticSearch
+ * Looks for items with content exceptions using ElasticSearch paging 10,000 at a time
  * Takes item ids from ES results and loads those items from Mongo
  * Note: Item object format in Mongo is different from the Item object format in ElasticSearch
+ * Note: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html response size limit is 6mb (roughly 375 items at this time)
  */
 export async function catalogExceptionsItemSearch(
     supplierId: number,
@@ -140,25 +141,43 @@ export async function catalogExceptionsItemSearch(
     const env = getDscoEnv();
 
     // ES Query
-    const searchResp = await axiosRequest(
-        new ItemExceptionSearchRequest(env, {
-            supplierId: supplierId,
-            channelId: retailerId,
-            categoryPath: categoryPath,
-            version: 1,
-        }),
-        env,
-        getApiCredentials(),
-        getAwsRegion(),
-    );
+    let itemIds: number[] = [];
+    let paginationKey: null | number[] = null;
+    let totalItemsToGet = 0;
+    do {
+        const searchResp: any = await axiosRequest(
+            new ItemExceptionSearchRequest(env, {
+                supplierId: supplierId,
+                channelId: retailerId,
+                categoryPath: categoryPath,
+                version: 1,
+                pageSize: 250, //Invocation payload for lambda limited to 6mb for sync response
+                paginationKey: paginationKey,
+            }),
+            env,
+            getApiCredentials(),
+            getAwsRegion(),
+        );
 
-    if (!searchResp.data.success) {
-        throw new Error(`Bad response from item exception search: ${JSON.stringify(searchResp.data)}`);
+        if (!searchResp.data.success) {
+            throw new Error(`Bad response from item exception search: ${JSON.stringify(searchResp.data)}`);
+        }
+
+        totalItemsToGet = searchResp.data.total.value;
+        if (!searchResp.data.items.length || totalItemsToGet === 0) {
+            break;
+        }
+
+        itemIds = itemIds.concat(searchResp.data.items.map((item: any) => item.item_id));
+        paginationKey = searchResp.data.paginationKey;
+    } while (totalItemsToGet > itemIds.length);
+
+    if (itemIds.length < 10) {
+        console.log(`Got item ids: ${JSON.stringify(itemIds)}`);
+    } else {
+        console.log(`Got ${itemIds.length} item ids`);
     }
 
-    // Filter results to just have the item ids
-    const itemIds: number[] = searchResp.data.items.map((item) => item.item_id);
-    console.log(`Got item ids: ${JSON.stringify(itemIds)}`);
     if (itemIds.length === 0) return [];
 
     // Then we load those items from mongo
