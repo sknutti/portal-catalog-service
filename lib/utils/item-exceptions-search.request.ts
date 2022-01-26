@@ -15,7 +15,7 @@ interface ItemExceptionSearchResponseTotal {
     value: number;
     relation: string;
 }
-//TODO: This should be imported to match item/api/exception response
+//TODO: CCR-181 This should be imported to match item/api/exception response
 export interface ItemExceptionSearchResponse<FULL_DETAIL extends boolean = true> extends DsResponse {
     items: FULL_DETAIL extends true ? CoreCatalog[] : number[];
     duration: number;
