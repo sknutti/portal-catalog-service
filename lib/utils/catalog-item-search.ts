@@ -140,10 +140,10 @@ export async function catalogExceptionsItemSearch(
 
     // ES Query
     let itemIds: number[] = [];
-    let paginationKey: null | number[] = null;
+    let paginationKey: any = null;
     let totalItemsToGet = 0;
     do {
-        const searchResp: any = await axiosRequest(
+        const searchResp = await axiosRequest(
             new ItemExceptionSearchRequest(env, {
                 supplierId: supplierId,
                 channelId: retailerId,
