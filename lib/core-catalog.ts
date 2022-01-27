@@ -20,7 +20,7 @@ export interface CoreCatalog extends SnakeCase<Catalog> {
     product_status?: ProductStatus;
     quantity_available?: number;
     warehouses?: Array<{
-        warehouse_id: string;
+        dsco_id: string;
         code: string;
         quantity: number;
     }>;

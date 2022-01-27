@@ -133,7 +133,8 @@ export abstract class PhysicalSpreadsheetRow {
                 continue;
             }
 
-            existingWarehouses.add(existingWarehouse.warehouse_id);
+            existingWarehouses.add(existingWarehouse.dsco_id);
+			existingWarehouses.add(existingWarehouse.code);
             newWarehouses.push(existingWarehouse);
             if (!existingWarehouse.quantity) {
                 existingWarehouse.quantity = 0;
@@ -143,14 +144,15 @@ export abstract class PhysicalSpreadsheetRow {
         // TODO: Should all warehouses to be set to zero, or should they not be in the array at all?
         // Then add quantities for any remaining warehouses.
         for (const warehouse of warehouses) {
-            if (existingWarehouses.has(warehouse.warehouseId)) {
+            if (existingWarehouses.has(warehouse.warehouseId) || existingWarehouses.has(warehouse.code)) {
                 continue;
             }
 
             existingWarehouses.add(warehouse.warehouseId);
+			existingWarehouses.add(warehouse.code);
             newWarehouses.push({
                 quantity: 0,
-                warehouse_id: warehouse.warehouseId,
+                dsco_id: warehouse.warehouseId,
                 code: warehouse.code,
             });
         }
