@@ -1,7 +1,7 @@
 get-content-exceptions-spreadsheet:
     handler: api/get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet.generateCatalogExceptionsSpreadsheet
-    memorySize: 1024
-    timeout: 60
+    memorySize: 3072
+    timeout: 180
     vpc: ${self:custom.environment.gearman-and-mongo-vpc}
     events:
         - http:
