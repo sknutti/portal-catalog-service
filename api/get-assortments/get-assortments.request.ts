@@ -4,7 +4,7 @@ export interface Assortment {
     name: string;
     id: string;
     status: 'active' | 'deleted';
-	is_dynamic?: boolean;
+    is_dynamic?: boolean;
 }
 
 export interface GetAssortmentsResponse extends DsResponse {
