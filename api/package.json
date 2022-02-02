@@ -1,7 +1,7 @@
 {
     "name": "@dsco/portal-catalog-service",
     "description": "Set of apis used by the portal for interacting with catalog data.",
-    "version": "0.0.22",
+    "version": "0.0.23",
     "main": "index.js",
     "module": "./fesm2015/index.js",
     "fesm2015": "./fesm2015/index.js",
@@ -15,6 +15,6 @@
     "homepage": "https://bitbucket.org/dscodsco/portal-catalog-service#readme",
     "readme": "README.md",
     "peerDependencies": {
-        "@dsco/ts-models": "^1.0.101"
+        "@dsco/ts-models": "^1.0.106"
     }
 }
