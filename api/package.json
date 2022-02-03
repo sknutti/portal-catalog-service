@@ -1,7 +1,7 @@
 {
     "name": "@dsco/portal-catalog-service",
     "description": "Set of apis used by the portal for interacting with catalog data.",
-    "version": "0.0.23",
+    "version": "0.0.24",
     "main": "index.js",
     "module": "./fesm2015/index.js",
     "fesm2015": "./fesm2015/index.js",
