@@ -16,6 +16,10 @@ export function getPortalCatalogS3BucketName(): string {
     return ensureEnvironmentVar('S3_BUCKET');
 }
 
+export function getMigrateRetailModels3BucketName(): string {
+    return ensureEnvironmentVar('S3_BUCKET_ITEMS_MIGRATE_RETAIL_MODELS');
+}
+
 export function getAwsRegion(): string {
     return ensureEnvironmentVar('AWS_REGION');
 }

@@ -1,10 +1,10 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getIsRunningLocally, getLeoAuthUserTable } from '@lib/environment';
-import { ItemsUploadMigrateRetailModelSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3UploadUrl } from '@lib/s3';
+import { ItemsUploadMigrateRetailModelSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3UploadUrlMigrateRetailModel } from '@lib/s3';
 import { GetUploadItemsSpreadsheetMigrateRetailModelsRequest } from './get-upload-items-spreadsheet-migrate-retail-models.request';
 
-export const getUploadItemsSpreadsheetMigrateRetailModels = apiWrapper<GetUploadItemsSpreadsheetMigrateRetailModelsRequest>(async (event) => {
+export const getUploadItemsSpreadsheetMigrateRetailModelsUrl = apiWrapper<GetUploadItemsSpreadsheetMigrateRetailModelsRequest>(async (event) => {
     if (!event.body.retailerId) {
         return new MissingRequiredFieldError('retailerId');
     }
@@ -25,7 +25,7 @@ export const getUploadItemsSpreadsheetMigrateRetailModels = apiWrapper<GetUpload
 
     return {
         success: true,
-        uploadUrl: await getSignedS3UploadUrl(
+        uploadUrl: await getSignedS3UploadUrlMigrateRetailModel(
             createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId,'spreadsheets'),
             uploadMeta,
         ),
