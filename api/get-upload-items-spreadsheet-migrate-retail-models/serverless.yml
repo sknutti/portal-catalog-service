@@ -1,0 +1,11 @@
+get-items-upload-migrate-redail-models:
+    handler: api/get-upload-items-spreadsheet-migrate-retail-models/get-upload-items-spreadsheet-migrate-retail-models.getUploadItemsSpreadsheetMigrateRetailModelsUrl
+    memorySize: 1024
+    timeout: 10
+    events:
+        - http:
+              path: spreadsheet/upload-items-migrate-retail-models
+              method: post
+              cors: true
+              integration: lambda-proxy
+              authorizer: aws_iam
