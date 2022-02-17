@@ -16,8 +16,8 @@ export function getPortalCatalogS3BucketName(): string {
     return ensureEnvironmentVar('S3_BUCKET');
 }
 
-export function getMigrateRetailModelsS3BucketName(): string {
-    return ensureEnvironmentVar('S3_BUCKET_ITEMS_MIGRATE_RETAIL_MODELS');
+export function getChannelOverridesS3BucketName(): string {
+    return ensureEnvironmentVar('S3_BUCKET_CHANNEL_OVERRIDES');
 }
 
 export function getAwsRegion(): string {
@@ -62,5 +62,5 @@ export function setupEnvironmentForRunningLocally(env: Exclude<DscoEnv, 'dev'>):
     process.env.AUTH_USER_TABLE = vars.authTable;
     process.env.GEARMAN_HOST = `gearman.${env === 'prod' ? 'local' : env}`;
     process.env.S3_BUCKET = `portal-catalog-${env}`;
-    process.env.S3_BUCKET_ITEMS_MIGRATE_RETAIL_MODELS = `items-migrate-retail-models-${env}`;
+    process.env.S3_BUCKET_CHANNEL_OVERRIDES = `catalog-channel-overrides-${env}`;
 }

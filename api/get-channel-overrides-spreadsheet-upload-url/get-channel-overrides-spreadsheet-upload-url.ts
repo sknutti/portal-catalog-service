@@ -1,7 +1,7 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getIsRunningLocally, getLeoAuthUserTable } from '@lib/environment';
-import { ChannelOverrideSpreadsheetUploadS3Metadata, createCatalogChannelOverridesS3UploadPath, getSignedS3UploadChannelOverrides } from '@lib/s3';
+import { CatalogChannelOverrideSpreadsheetUploadS3Metadata, createCatalogChannelOverridesS3UploadPath, getSignedChannelOverridesS3UploadUrl } from '@lib/s3';
 import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-overrides-spreadsheet-upload-url.request';
 
 export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOverridesSpreadsheetUploadUrlRequest>(async (event) => {
@@ -18,14 +18,14 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
 
     const { retailerId, skippedRowIndexes } = event.body;
 
-    const uploadMeta: ChannelOverrideSpreadsheetUploadS3Metadata = {
+    const uploadMeta: CatalogChannelOverrideSpreadsheetUploadS3Metadata = {
         skipped_row_indexes: skippedRowIndexes?.join(','),
         is_local_test: getIsRunningLocally() ? 'true' : undefined,
     };
 
     return {
         success: true,
-        uploadUrl: await getSignedS3UploadChannelOverrides(
+        uploadUrl: await getSignedChannelOverridesS3UploadUrl(
             createCatalogChannelOverridesS3UploadPath(user.accountId, retailerId, user.userId,'spreadsheets'),
             uploadMeta,
         ),

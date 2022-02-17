@@ -1,4 +1,4 @@
-import { getAwsRegion, getPortalCatalogS3BucketName,getMigrateRetailModelsS3BucketName } from '@lib/environment';
+import { getAwsRegion, getPortalCatalogS3BucketName,getChannelOverridesS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -24,9 +24,9 @@ export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<stri
     return getS3Client().getSignedUrlPromise('putObject', params);
 }
 
-export function getSignedS3UploadUrlMigrateRetailModel<M>(path: string, metadata: M): Promise<string> {
+export function getSignedChannelOverridesS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
     const params = {
-        Bucket: getMigrateRetailModelsS3BucketName(),
+        Bucket: getChannelOverridesS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
         Metadata: prepareMetadata(metadata),
@@ -145,6 +145,28 @@ export function createCatalogItemS3DownloadPath(
     return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
+export function createCatalogChannelOverridesS3UploadPath(
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
+): string {
+    const uploadId = uuid.v4();
+    return `channel-overrides/uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
+}
+
+export function createCatalogChannelOverridesS3DownloadPath(
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
+): string {
+    const downloadId = uuid.v4();
+    return `channel-overrides/downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
+}
+
+
+
 export function parseCatalogItemS3UploadUrl(
     url: string,
 ): { supplierId: number; retailerId: number; userId: number } | 'error' {
@@ -178,7 +200,7 @@ export interface CatalogSpreadsheetS3Metadata {
 /**
  * These keys are snake_case as metadata keys must be lowercase
  */
- export interface ItemsUploadMigrateRetailModelSpreadsheetS3Metadata {
+ export interface CatalogChannelOverrideSpreadsheetUploadS3Metadata {
     // Comma separated
     skipped_row_indexes?: string;
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
