@@ -163,3 +163,14 @@ export interface CatalogSpreadsheetS3Metadata {
     is_local_test?: 'true' | 'false';
     source_s3_path?: string;
 }
+
+/**
+ * These keys are snake_case as metadata keys must be lowercase
+ */
+ export interface ItemsUploadMigrateRetailModelSpreadsheetS3Metadata {
+    // Comma separated
+    skipped_row_indexes?: string;
+    // Signifies this file was uploaded via a local test and should be skipped from automated processing
+    is_local_test?: 'true' | 'false';
+    source_s3_path?: string;
+}
