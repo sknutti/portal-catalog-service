@@ -1,4 +1,4 @@
-import { getAwsRegion, getPortalCatalogS3BucketName,getMigrateRetailModelsS3BucketName } from '@lib/environment';
+import { getAwsRegion, getPortalCatalogS3BucketName, getMigrateRetailModelsS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -178,7 +178,7 @@ export interface CatalogSpreadsheetS3Metadata {
 /**
  * These keys are snake_case as metadata keys must be lowercase
  */
- export interface ItemsUploadMigrateRetailModelSpreadsheetS3Metadata {
+export interface ItemsUploadMigrateRetailModelSpreadsheetS3Metadata {
     // Comma separated
     skipped_row_indexes?: string;
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
