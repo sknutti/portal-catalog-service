@@ -58,4 +58,5 @@ export function setupEnvironmentForRunningLocally(env: Exclude<DscoEnv, 'dev'>):
     process.env.AUTH_USER_TABLE = vars.authTable;
     process.env.GEARMAN_HOST = `gearman.${env === 'prod' ? 'local' : env}`;
     process.env.S3_BUCKET = `portal-catalog-${env}`;
+    process.env.S3_BUCKET_ITEMS_MIGRATE_RETAIL_MODEL = `items-migrate-retail-models-${env}`;
 }
