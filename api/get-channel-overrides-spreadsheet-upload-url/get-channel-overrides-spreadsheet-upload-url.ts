@@ -15,11 +15,8 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
     if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {
         return new UnauthorizedError();
     }
-
-    const { retailerId, skippedRowIndexes } = event.body;
-
+    const retailerId = event.body.retailerId;
     const uploadMeta: CatalogChannelOverrideSpreadsheetUploadS3Metadata = {
-        skipped_row_indexes: skippedRowIndexes?.join(','),
         is_local_test: getIsRunningLocally() ? 'true' : undefined,
     };
 
