@@ -16,8 +16,8 @@ export interface GetUploadItemsSpreadsheetMigrateRetailModelsResponse extends Ds
  * Accepts both xlsx and csv files
  */
 export class GetUploadItemsSpreadsheetMigrateRetailModelsRequest extends DsRequest<
-GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody,
-GetUploadItemsSpreadsheetMigrateRetailModelsResponse,
+    GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody,
+    GetUploadItemsSpreadsheetMigrateRetailModelsResponse,
     DsError
 > {
     constructor(env: DscoEnv, body: GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody) {
@@ -28,4 +28,5 @@ GetUploadItemsSpreadsheetMigrateRetailModelsResponse,
 /**
  * @deprecated - now called PublishCategorySpreadsheetRequest
  */
-export const PublishUploadItemsSpreadsheetMigrateRetailModelsRequest = GetUploadItemsSpreadsheetMigrateRetailModelsRequest;
+export const PublishUploadItemsSpreadsheetMigrateRetailModelsRequest =
+    GetUploadItemsSpreadsheetMigrateRetailModelsRequest;
