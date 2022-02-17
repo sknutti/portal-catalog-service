@@ -1,4 +1,4 @@
-import { getAwsRegion, getPortalCatalogS3BucketName,getChannelOverridesS3BucketName } from '@lib/environment';
+import { getAwsRegion, getPortalCatalogS3BucketName, getChannelOverridesS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -162,10 +162,11 @@ export function createCatalogChannelOverridesS3DownloadPath(
     path: string,
 ): string {
     const downloadId = uuid.v4();
-    return `channel-overrides/downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
+    return `channel-overrides/downloads/${supplierId}/${retailerId}/${userId}/${path.replace(
+        /\|\|/g,
+        '/',
+    )}/${downloadId}`;
 }
-
-
 
 export function parseCatalogItemS3UploadUrl(
     url: string,
@@ -200,7 +201,7 @@ export interface CatalogSpreadsheetS3Metadata {
 /**
  * These keys are snake_case as metadata keys must be lowercase
  */
- export interface CatalogChannelOverrideSpreadsheetUploadS3Metadata {
+export interface CatalogChannelOverrideSpreadsheetUploadS3Metadata {
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
     source_s3_path?: string;

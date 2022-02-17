@@ -20,6 +20,11 @@ export class GetChannelOverridesSpreadsheetUploadUrlRequest extends DsRequest<
     DsError
 > {
     constructor(env: DscoEnv, body: GetChannelOverridesSpreadsheetUploadUrlRequestBody) {
-        super('POST', '/portal-catalog/spreadsheet/channel-overrides-upload-url', DsRequest.getHost(env, 'micro'), body);
+        super(
+            'POST',
+            '/portal-catalog/spreadsheet/channel-overrides-upload-url',
+            DsRequest.getHost(env, 'micro'),
+            body,
+        );
     }
 }
