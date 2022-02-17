@@ -1,5 +1,5 @@
 get-channel-override-spreadsheet-upload-url:
-    handler: api/get-channel-override-spreadsheet-upload-url/get-channel-override-spreadsheet-upload-url.getChannelOverrideSpreadsheetUploadUrl
+    handler: api/get-channel-overrides-spreadsheet-upload-url/get-channel-overrides-spreadsheet-upload-url.getChannelOverridesSpreadsheetUploadUrl
     memorySize: 1024
     timeout: 10
     events:
