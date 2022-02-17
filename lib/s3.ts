@@ -1,4 +1,4 @@
-import { getAwsRegion, getPortalCatalogS3BucketName } from '@lib/environment';
+import { getAwsRegion, getPortalCatalogS3BucketName,getMigrateRetailModelsS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -16,6 +16,17 @@ function getS3Client(): AWS.S3 {
 export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
     const params = {
         Bucket: getPortalCatalogS3BucketName(),
+        Key: path,
+        Expires: 60 * 60, // expire the link in 1 hour
+        Metadata: prepareMetadata(metadata),
+    };
+
+    return getS3Client().getSignedUrlPromise('putObject', params);
+}
+
+export function getSignedS3UploadUrlMigrateRetailModel<M>(path: string, metadata: M): Promise<string> {
+    const params = {
+        Bucket: getMigrateRetailModelsS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
         Metadata: prepareMetadata(metadata),
