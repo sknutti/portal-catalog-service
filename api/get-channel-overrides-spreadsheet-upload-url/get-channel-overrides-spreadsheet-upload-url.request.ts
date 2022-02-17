@@ -1,11 +1,10 @@
 import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
-export interface GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody {
+export interface GetChannelOverridesSpreadsheetUploadUrlRequestBody {
     retailerId: number;
-    skippedRowIndexes: number[];
 }
 
-export interface GetUploadItemsSpreadsheetMigrateRetailModelsResponse extends DsResponse {
+export interface GetChannelOverridesSpreadsheetUploadUrlResponse extends DsResponse {
     uploadUrl: string;
 }
 
@@ -15,17 +14,12 @@ export interface GetUploadItemsSpreadsheetMigrateRetailModelsResponse extends Ds
  *
  * Accepts both xlsx and csv files
  */
-export class GetUploadItemsSpreadsheetMigrateRetailModelsRequest extends DsRequest<
-GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody,
-GetUploadItemsSpreadsheetMigrateRetailModelsResponse,
+export class GetChannelOverridesSpreadsheetUploadUrlRequest extends DsRequest<
+    GetChannelOverridesSpreadsheetUploadUrlRequestBody,
+    GetChannelOverridesSpreadsheetUploadUrlResponse,
     DsError
 > {
-    constructor(env: DscoEnv, body: GetUploadItemsSpreadsheetMigrateRetailModelsRequestBody) {
-        super('POST', '/portal-catalog/spreadsheet/upload-url', DsRequest.getHost(env, 'micro'), body);
+    constructor(env: DscoEnv, body: GetChannelOverridesSpreadsheetUploadUrlRequestBody) {
+        super('POST', '/portal-catalog/spreadsheet/channel-overrides-upload-url', DsRequest.getHost(env, 'micro'), body);
     }
 }
-
-/**
- * @deprecated - now called PublishCategorySpreadsheetRequest
- */
-export const PublishUploadItemsSpreadsheetMigrateRetailModelsRequest = GetUploadItemsSpreadsheetMigrateRetailModelsRequest;

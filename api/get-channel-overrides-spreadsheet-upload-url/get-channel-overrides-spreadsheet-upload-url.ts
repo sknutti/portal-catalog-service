@@ -1,10 +1,10 @@
 import { apiWrapper, getUser } from '@dsco/service-utils';
 import { MissingRequiredFieldError, UnauthorizedError } from '@dsco/ts-models';
 import { getIsRunningLocally, getLeoAuthUserTable } from '@lib/environment';
-import { ItemsUploadMigrateRetailModelSpreadsheetS3Metadata, createCatalogItemS3UploadPath, getSignedS3UploadUrlMigrateRetailModel } from '@lib/s3';
-import { GetUploadItemsSpreadsheetMigrateRetailModelsRequest } from './get-upload-items-spreadsheet-migrate-retail-models.request';
+import { ChannelOverrideSpreadsheetUploadS3Metadata, createCatalogChannelOverridesS3UploadPath, getSignedS3UploadChannelOverrides } from '@lib/s3';
+import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-overrides-spreadsheet-upload-url.request';
 
-export const getUploadItemsSpreadsheetMigrateRetailModelsUrl = apiWrapper<GetUploadItemsSpreadsheetMigrateRetailModelsRequest>(async (event) => {
+export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOverridesSpreadsheetUploadUrlRequest>(async (event) => {
     if (!event.body.retailerId) {
         return new MissingRequiredFieldError('retailerId');
     }
@@ -18,15 +18,15 @@ export const getUploadItemsSpreadsheetMigrateRetailModelsUrl = apiWrapper<GetUpl
 
     const { retailerId, skippedRowIndexes } = event.body;
 
-    const uploadMeta: ItemsUploadMigrateRetailModelSpreadsheetS3Metadata = {
+    const uploadMeta: ChannelOverrideSpreadsheetUploadS3Metadata = {
         skipped_row_indexes: skippedRowIndexes?.join(','),
         is_local_test: getIsRunningLocally() ? 'true' : undefined,
     };
 
     return {
         success: true,
-        uploadUrl: await getSignedS3UploadUrlMigrateRetailModel(
-            createCatalogItemS3UploadPath(user.accountId, retailerId, user.userId,'spreadsheets'),
+        uploadUrl: await getSignedS3UploadChannelOverrides(
+            createCatalogChannelOverridesS3UploadPath(user.accountId, retailerId, user.userId,'spreadsheets'),
             uploadMeta,
         ),
     };

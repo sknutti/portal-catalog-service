@@ -1,10 +1,10 @@
-get-items-upload-migrate-redail-models:
-    handler: api/get-upload-items-spreadsheet-migrate-retail-models/get-upload-items-spreadsheet-migrate-retail-models.getUploadItemsSpreadsheetMigrateRetailModelsUrl
+get-channel-override-spreadsheet-upload-url:
+    handler: api/get-channel-override-spreadsheet-upload-url/get-channel-override-spreadsheet-upload-url.getChannelOverrideSpreadsheetUploadUrl
     memorySize: 1024
     timeout: 10
     events:
         - http:
-              path: spreadsheet/upload-items-migrate-retail-models
+              path: spreadsheet/upload-items-channel-overrides
               method: post
               cors: true
               integration: lambda-proxy
