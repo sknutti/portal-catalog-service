@@ -9,15 +9,15 @@ get-channel-overrides-upload-url:
               integration: lambda-proxy
               authorizer: aws_iam
               cors:
-                origins:
-                    - https://*.dsco.io
-                headers:
-                    - Content-Type
-                    - X-Amz-Date
-                    - Authorization
-                    - X-Api-Key
-                    - X-Amz-Security-Token
-                    - X-Amz-User-Agent
-                    - Cache-Control
-                allowCredentials: true
-                cacheControl: 'private, no-cache, no-store, must-revalidate, proxy-revalidate'
+                  origins:
+                      - https://*.dsco.io
+                  headers:
+                      - Content-Type
+                      - X-Amz-Date
+                      - Authorization
+                      - X-Api-Key
+                      - X-Amz-Security-Token
+                      - X-Amz-User-Agent
+                      - Cache-Control
+                  allowCredentials: true
+                  cacheControl: 'private, no-cache, no-store, must-revalidate, proxy-revalidate'

@@ -145,11 +145,7 @@ export function createCatalogItemS3DownloadPath(
     return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
-export function createCatalogChannelOverridesS3UploadPath(
-    retailerId: number,
-    userId: number,
-    path: string,
-): string {
+export function createCatalogChannelOverridesS3UploadPath(retailerId: number, userId: number, path: string): string {
     const uploadId = uuid.v4();
     return `channel-overrides/uploads/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
 }
