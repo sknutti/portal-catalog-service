@@ -6,7 +6,6 @@ get-channel-overrides-upload-url:
         - http:
               path: spreadsheet/channel-overrides/upload-url
               method: post
-              cors: true
               integration: lambda-proxy
               authorizer: aws_iam
               cors:
