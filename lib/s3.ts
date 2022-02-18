@@ -24,6 +24,17 @@ export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<stri
     return getS3Client().getSignedUrlPromise('putObject', params);
 }
 
+export function getSignedChannelOverridesS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
+    const params = {
+        Bucket: getPortalCatalogS3BucketName(),
+        Key: path,
+        Expires: 60 * 60, // expire the link in 1 hour
+        Metadata: prepareMetadata(metadata),
+    };
+
+    return getS3Client().getSignedUrlPromise('putObject', params);
+}
+
 export function getSignedS3DownloadUrl<M>(path: string, downloadFilename: string): Promise<string> {
     const params = {
         Bucket: getPortalCatalogS3BucketName(),
@@ -134,6 +145,29 @@ export function createCatalogItemS3DownloadPath(
     return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
+export function createCatalogChannelOverridesS3UploadPath(
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
+): string {
+    const uploadId = uuid.v4();
+    return `channel-overrides/uploads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
+}
+
+export function createCatalogChannelOverridesS3DownloadPath(
+    supplierId: number,
+    retailerId: number,
+    userId: number,
+    path: string,
+): string {
+    const downloadId = uuid.v4();
+    return `channel-overrides/downloads/${supplierId}/${retailerId}/${userId}/${path.replace(
+        /\|\|/g,
+        '/',
+    )}/${downloadId}`;
+}
+
 export function parseCatalogItemS3UploadUrl(
     url: string,
 ): { supplierId: number; retailerId: number; userId: number } | 'error' {
@@ -159,6 +193,15 @@ export interface CatalogSpreadsheetS3Metadata {
     category_path: string;
     // Comma separated
     skipped_row_indexes?: string;
+    // Signifies this file was uploaded via a local test and should be skipped from automated processing
+    is_local_test?: 'true' | 'false';
+    source_s3_path?: string;
+}
+
+/**
+ * These keys are snake_case as metadata keys must be lowercase
+ */
+export interface CatalogChannelOverrideSpreadsheetUploadS3Metadata {
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
     source_s3_path?: string;

@@ -1,0 +1,11 @@
+get-channel-overrides-upload-url:
+    handler: api/get-channel-overrides-upload-url/get-channel-overrides-upload-url.getChannelOverridesSpreadsheetUploadUrl
+    memorySize: 1024
+    timeout: 10
+    events:
+        - http:
+              path: spreadsheet/channel-overrides/upload-url
+              method: post
+              cors: true
+              integration: lambda-proxy
+              authorizer: aws_iam
