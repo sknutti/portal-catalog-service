@@ -17,10 +17,9 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
         const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
         // Must be logged in
-        if (!user?.accountId || !user.retailerIds?.includes(event.body.retailerId)) {
+        if (!user?.accountId) {
             return new UnauthorizedError();
         }
-        const retailerId = event.body.retailerId;
         const uploadMeta: CatalogChannelOverrideSpreadsheetUploadS3Metadata = {
             is_local_test: getIsRunningLocally() ? 'true' : undefined,
         };
@@ -28,7 +27,7 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
         return {
             success: true,
             uploadUrl: await getSignedChannelOverridesS3UploadUrl(
-                createCatalogChannelOverridesS3UploadPath(user.accountId, retailerId, user.userId, 'spreadsheets'),
+                createCatalogChannelOverridesS3UploadPath(user.accountId, user.userId, 'spreadsheets'),
                 uploadMeta,
             ),
         };
