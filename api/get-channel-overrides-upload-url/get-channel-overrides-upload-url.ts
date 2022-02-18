@@ -6,7 +6,7 @@ import {
     createCatalogChannelOverridesS3UploadPath,
     getSignedChannelOverridesS3UploadUrl,
 } from '@lib/s3';
-import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-overrides-spreadsheet-upload-url.request';
+import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-overrides-upload-url.request';
 
 export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOverridesSpreadsheetUploadUrlRequest>(
     async (event) => {

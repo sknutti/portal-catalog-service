@@ -16,10 +16,6 @@ export function getPortalCatalogS3BucketName(): string {
     return ensureEnvironmentVar('S3_BUCKET');
 }
 
-export function getChannelOverridesS3BucketName(): string {
-    return ensureEnvironmentVar('S3_BUCKET_CHANNEL_OVERRIDES');
-}
-
 export function getAwsRegion(): string {
     return ensureEnvironmentVar('AWS_REGION');
 }

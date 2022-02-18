@@ -1,4 +1,4 @@
-import { getAwsRegion, getPortalCatalogS3BucketName, getChannelOverridesS3BucketName } from '@lib/environment';
+import { getAwsRegion, getPortalCatalogS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
 
@@ -26,7 +26,7 @@ export function getSignedS3UploadUrl<M>(path: string, metadata: M): Promise<stri
 
 export function getSignedChannelOverridesS3UploadUrl<M>(path: string, metadata: M): Promise<string> {
     const params = {
-        Bucket: getChannelOverridesS3BucketName(),
+        Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
         Metadata: prepareMetadata(metadata),
