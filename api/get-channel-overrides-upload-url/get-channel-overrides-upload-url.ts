@@ -10,10 +10,6 @@ import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-ov
 
 export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOverridesSpreadsheetUploadUrlRequest>(
     async (event) => {
-        if (!event.body.retailerId) {
-            return new MissingRequiredFieldError('retailerId');
-        }
-
         const user = await getUser(event.requestContext, getLeoAuthUserTable());
 
         // Must be logged in
