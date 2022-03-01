@@ -39,10 +39,6 @@ const DSF_TO_MSF: Record<string, string> = {
  * Reads a field from either the catalog or extend attributes, resolving the field xpath (E.G. title_i18n/en-US)
  */
 export function extractFieldFromCoreCatalog(fieldXPath: string, catalog: Partial<CoreCatalog>, retailerId: number, type: 'core' | 'extended'): any {
-	if (fieldXPath.includes('i18n')) {
-		debugger;
-	}
-
 	// Handle special-cased core 'cost' field
 	if (type === 'core' && fieldXPath === 'cost' && catalog.__pricing_tiers && 'price01' in catalog.__pricing_tiers) {
 		return catalog.__pricing_tiers.price01;
