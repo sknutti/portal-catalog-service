@@ -134,7 +134,7 @@ export abstract class PhysicalSpreadsheetRow {
             }
 
             existingWarehouses.add(existingWarehouse.dsco_id);
-			existingWarehouses.add(existingWarehouse.code);
+            existingWarehouses.add(existingWarehouse.code);
             newWarehouses.push(existingWarehouse);
             if (!existingWarehouse.quantity) {
                 existingWarehouse.quantity = 0;
@@ -149,7 +149,7 @@ export abstract class PhysicalSpreadsheetRow {
             }
 
             existingWarehouses.add(warehouse.warehouseId);
-			existingWarehouses.add(warehouse.code);
+            existingWarehouses.add(warehouse.code);
             newWarehouses.push({
                 quantity: 0,
                 dsco_id: warehouse.warehouseId,

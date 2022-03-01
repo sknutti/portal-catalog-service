@@ -1,7 +1,7 @@
 import { DscoImage } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import {extractFieldFromCoreCatalog, getDSFField, writeValueToCatalog} from '@lib/format-conversions';
+import { extractFieldFromCoreCatalog, getDSFField, writeValueToCatalog } from '@lib/format-conversions';
 import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';
 /**
@@ -28,7 +28,9 @@ export class DscoColumn {
     }
 
     get name(): string {
-        return this.shouldHaveDscoPrefix ? DscoColumn.DSCO_PREFIX + this.userReadableFieldXPath : this.userReadableFieldXPath;
+        return this.shouldHaveDscoPrefix
+            ? DscoColumn.DSCO_PREFIX + this.userReadableFieldXPath
+            : this.userReadableFieldXPath;
     }
 
     /**
@@ -37,24 +39,24 @@ export class DscoColumn {
     */
     shouldHaveDscoPrefix = false;
 
-	/**
-	 * The fields xpath with slashes replaced with dots
-	 */
-	userReadableFieldXPath: string;
+    /**
+     * The fields xpath with slashes replaced with dots
+     */
+    userReadableFieldXPath: string;
 
     constructor(
-		/**
-		 * The xpath path to the field: title_i18n/en-US
-		 */
-		public fieldXPath: string,
+        /**
+         * The xpath path to the field: title_i18n/en-US
+         */
+        public fieldXPath: string,
         public fieldDescription: string | undefined,
         public type: 'core' | 'extended',
         public validation: DscoColValidation = {
             required: 'none',
         },
     ) {
-		this.userReadableFieldXPath = this.fieldXPath.replace(/\//g, '.');
-	}
+        this.userReadableFieldXPath = this.fieldXPath.replace(/\//g, '.');
+    }
 
     writeCellValueToCatalog(
         cellValue: CellValue,
@@ -89,12 +91,15 @@ export class DscoColumn {
 
             found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
         } else {
-			if (existingCatalog && extractFieldFromCoreCatalog(this.fieldXPath, existingCatalog, retailerId, this.type) != valueToSet) {
-				row.modified = true;
-			}
+            if (
+                existingCatalog &&
+                extractFieldFromCoreCatalog(this.fieldXPath, existingCatalog, retailerId, this.type) != valueToSet
+            ) {
+                row.modified = true;
+            }
 
-			writeValueToCatalog(this.fieldXPath, valueToSet, catalog, retailerId, this.type);
-		}
+            writeValueToCatalog(this.fieldXPath, valueToSet, catalog, retailerId, this.type);
+        }
 
         // Even though there is technically a value, the value is the default, so keep emptyRow true
         if (this.validation.format === 'boolean' && valueToSet === false) {

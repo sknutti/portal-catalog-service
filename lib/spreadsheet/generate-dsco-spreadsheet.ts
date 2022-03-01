@@ -82,7 +82,7 @@ async function generateSpreadsheetCols(
     }
 
     const allCols: DscoColumn[] = [];
-	/// Maps from the columns fieldXPath to the column
+    /// Maps from the columns fieldXPath to the column
     const cols = {
         core: {} as Record<string, DscoColumn>,
         extended: {} as Record<string, DscoColumn>,
@@ -109,10 +109,10 @@ async function generateSpreadsheetCols(
         return result;
     };
 
-	const dscoFields = [];
+    const dscoFields = [];
     for (const dscoRule of allRulesResp.data.dsco || []) {
         if (dscoRule.objectType === 'catalog') {
-			dscoFields.push(dscoRule.field);
+            dscoFields.push(dscoRule.field);
             parsePipelineRule(dscoRule, ensureCol);
         }
     }
@@ -164,7 +164,10 @@ async function generateSpreadsheetCols(
 /**
  * Parses the pipeline rule, creating a column for it if necessary
  */
-function parsePipelineRule(rule: PipelineRule, ensureCol: (fieldXPath: string, rule: PipelineRule) => DscoColumn): void {
+function parsePipelineRule(
+    rule: PipelineRule,
+    ensureCol: (fieldXPath: string, rule: PipelineRule) => DscoColumn,
+): void {
     if ((rule.type === 'catalog_image' || rule.type === 'image') && !rule.field.endsWith(rule.imageName)) {
         rule.field = `${rule.field}.${rule.imageName}`;
     }
@@ -296,10 +299,10 @@ function shouldSkipCol(name: string): boolean {
         return false;
     }
 
-	// Some conditionally required rules hardcode this as a column
-	if (name === 'n/a') {
-		return true;
-	}
+    // Some conditionally required rules hardcode this as a column
+    if (name === 'n/a') {
+        return true;
+    }
 
     // Skip fields starting in two underscores: __create_date
     // Skip fields with array access: attributes[]/name
