@@ -91,7 +91,7 @@ function createHeader(col: DscoColumn): CellObject {
                 R: [
                     {
                         t: 's',
-                        v: `\n${col.fieldName} (${getRequiredName(col.validation.required)})\n\n`,
+                        v: `\n${col.name} (${getRequiredName(col.validation.required)})\n\n`,
                         s: {
                             sz: 14,
                             bold: true,
@@ -106,7 +106,7 @@ function createHeader(col: DscoColumn): CellObject {
                         },
                     },
                 ],
-                a: col.fieldName,
+                a: col.name,
             },
         ];
         comments.hidden = true;
@@ -237,18 +237,8 @@ export function getCellData(catalog: CoreCatalog, col: DscoColumn, retailerId: n
     if (col.validation.format === 'image') {
         const [arrName, imgName] = col.imageNames;
         data = catalog[arrName].find((img: DscoImage) => img.name === imgName)?.source_url;
-    } else if (col.type === 'core') {
-        data = extractFieldFromCoreCatalog(col.fieldName, catalog);
-    } else if (col.type === 'extended') {
-        if (
-            typeof catalog.extended_attributes?.[retailerId] === 'object' &&
-            !Array.isArray(catalog.extended_attributes?.[retailerId]) &&
-            catalog.extended_attributes?.[retailerId] !== null
-        ) {
-            data = catalog.extended_attributes?.[retailerId]?.[col.fieldName];
-        } else {
-            data = null;
-        }
+    } else {
+        data = extractFieldFromCoreCatalog(col.fieldXPath, catalog, retailerId, col.type);
     }
 
     if (data === null || data === undefined) {
@@ -399,7 +389,7 @@ export function getValidationErrorsForAColumnFromCatalogData(
         allComplianceErrors
             .filter((e) => {
                 return (
-                    e.attribute === column.fieldName &&
+                    e.attribute === column.fieldXPath &&
                     (column.type === 'extended') === (e.error_type === ComplianceType.EXTENDED_ATTRIBUTE) // XNOR
                 );
             })

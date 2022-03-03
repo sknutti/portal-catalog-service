@@ -25,11 +25,6 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
     };
 
     /**
-     * Maps from a column's save name to the actual column.
-     */
-    columnsBySaveName: Record<string, DscoColumn> = {};
-
-    /**
      * Maps from a column's display name to the actual column.
      */
     columnsByName: Record<string, DscoColumn> = {};
@@ -52,7 +47,6 @@ export class DscoSpreadsheet implements Iterable<DscoColumn> {
 
     addColumn(col: DscoColumn): void {
         this.columns[col.validation.required].push(col);
-        this.columnsBySaveName[col.saveName] = col;
         this.columnsByName[col.name] = col;
 
         if (col.validation.format === 'image') {

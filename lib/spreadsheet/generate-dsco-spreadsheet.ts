@@ -32,11 +32,11 @@ export async function generateDscoSpreadsheet(
     const spreadsheet = new DscoSpreadsheet(`${getDscoEnv()}||${supplierId}||${retailerId}||${categoryPath}`);
 
     // If the first column isn't sku, sort to enforce it.
-    if (colsOrErr[0].fieldName !== 'sku') {
+    if (colsOrErr[0].fieldXPath !== 'sku') {
         colsOrErr.sort((a, b) => {
-            if (a.fieldName === 'sku') {
+            if (a.fieldXPath === 'sku') {
                 return -1;
-            } else if (b.fieldName === 'sku') {
+            } else if (b.fieldXPath === 'sku') {
                 return 1;
             } else {
                 return 0;
@@ -82,18 +82,19 @@ async function generateSpreadsheetCols(
     }
 
     const allCols: DscoColumn[] = [];
+    /// Maps from the columns fieldXPath to the column
     const cols = {
         core: {} as Record<string, DscoColumn>,
         extended: {} as Record<string, DscoColumn>,
     };
 
-    const ensureCol = (name: string, rule: PipelineRule): DscoColumn => {
+    const ensureCol = (fieldXPath: string, rule: PipelineRule): DscoColumn => {
         const type = rule.attrType === 'custom' ? 'extended' : 'core';
 
-        let result = cols[type][name];
+        let result = cols[type][fieldXPath];
         if (!result) {
-            const description = (rule as any).attributeDescription || descriptions[name];
-            result = cols[type][name] = new DscoColumn(name, description, type, {
+            const description = (rule as any).attributeDescription || descriptions[fieldXPath];
+            result = cols[type][fieldXPath] = new DscoColumn(fieldXPath, description, type, {
                 // Custom attributes should default to info, not none
                 required: type === 'extended' ? PipelineErrorType.info : 'none',
             });
@@ -101,15 +102,17 @@ async function generateSpreadsheetCols(
         }
 
         // If there is both a core and extended attribute of the same name, prefix the core with "Dsco: "
-        if (cols.core[name] && cols.extended[name]) {
-            cols.core[name].shouldHaveDscoPrefix = true;
+        if (cols.core[fieldXPath] && cols.extended[fieldXPath]) {
+            cols.core[fieldXPath].shouldHaveDscoPrefix = true;
         }
 
         return result;
     };
 
+    const dscoFields = [];
     for (const dscoRule of allRulesResp.data.dsco || []) {
         if (dscoRule.objectType === 'catalog') {
+            dscoFields.push(dscoRule.field);
             parsePipelineRule(dscoRule, ensureCol);
         }
     }
@@ -161,7 +164,10 @@ async function generateSpreadsheetCols(
 /**
  * Parses the pipeline rule, creating a column for it if necessary
  */
-function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: PipelineRule) => DscoColumn): void {
+function parsePipelineRule(
+    rule: PipelineRule,
+    ensureCol: (fieldXPath: string, rule: PipelineRule) => DscoColumn,
+): void {
     if ((rule.type === 'catalog_image' || rule.type === 'image') && !rule.field.endsWith(rule.imageName)) {
         rule.field = `${rule.field}.${rule.imageName}`;
     }
@@ -171,11 +177,11 @@ function parsePipelineRule(rule: PipelineRule, ensureCol: (name: string, rule: P
     }
 
     function setValidation<K extends keyof DscoColValidation>(
-        field: string,
+        fieldXPath: string,
         key: K,
         value: DscoColValidation[K],
     ): void {
-        const col = ensureCol(field, rule);
+        const col = ensureCol(fieldXPath, rule);
         // Don't widen enums to strings
         if (key === 'format' && col.validation.format === 'enum' && value === 'string') {
             return;
@@ -293,7 +299,12 @@ function shouldSkipCol(name: string): boolean {
         return false;
     }
 
+    // Some conditionally required rules hardcode this as a column
+    if (name === 'n/a') {
+        return true;
+    }
+
     // Skip fields starting in two underscores: __create_date
-    // Skip fields with array or object access: attributes[]/name | attributes.name
-    return SKIPPED_COLS.has(name) || name.startsWith('__') || /\[]|\.|\//.test(name);
+    // Skip fields with array access: attributes[]/name
+    return SKIPPED_COLS.has(name) || name.startsWith('__') || /\[]/.test(name);
 }

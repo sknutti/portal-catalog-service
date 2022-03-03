@@ -1,7 +1,7 @@
 import { DscoImage } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import { extractFieldFromCoreCatalog, getDSFField } from '@lib/format-conversions';
+import { extractFieldFromCoreCatalog, getDSFField, writeValueToCatalog } from '@lib/format-conversions';
 import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';
 /**
@@ -19,40 +19,44 @@ export class DscoColumn {
      * Extracts [images, front_view] from "images.front_view"
      */
     get imageNames(): [string, string] {
-        const matches = this.fieldName.match(/^(.*)\.(.*)$/); // Extracts images.myName into [images.myName, images, myName]
+        const matches = this.userReadableFieldXPath.match(/^(.*)\.(.*)$/); // Extracts images.myName into [images.myName, images, myName]
         if (!matches) {
-            throw new Error(`Unknown image column name: ${this.fieldName}`);
+            throw new Error(`Unknown image column name: ${this.userReadableFieldXPath}`);
         }
 
         return [matches[1], matches[2]];
     }
 
     get name(): string {
-        return this.shouldHaveDscoPrefix ? DscoColumn.DSCO_PREFIX + this.fieldName : this.fieldName;
+        return this.shouldHaveDscoPrefix
+            ? DscoColumn.DSCO_PREFIX + this.userReadableFieldXPath
+            : this.userReadableFieldXPath;
     }
 
     /**
-     * Saved as metadata in the google spreadsheet.
-     * Used to associate data in the google spreadsheet with a DscoColumn.
-     */
-    get saveName(): string {
-        return `${this.type}@${this.fieldName}`;
-    }
-
-    /**
-     If there are both core and extended rules for the same name, this should be set to true.
+     If there are both core and extended rules for the same xpath, this should be set to true.
      The name will have the Dsco: prefix added.
     */
     shouldHaveDscoPrefix = false;
 
+    /**
+     * The fields xpath with slashes replaced with dots
+     */
+    userReadableFieldXPath: string;
+
     constructor(
-        public fieldName: string,
+        /**
+         * The xpath path to the field: title_i18n/en-US
+         */
+        public fieldXPath: string,
         public fieldDescription: string | undefined,
         public type: 'core' | 'extended',
         public validation: DscoColValidation = {
             required: 'none',
         },
-    ) {}
+    ) {
+        this.userReadableFieldXPath = this.fieldXPath.replace(/\//g, '.');
+    }
 
     writeCellValueToCatalog(
         cellValue: CellValue,
@@ -86,25 +90,15 @@ export class DscoColumn {
             }
 
             found.source_url = valueToSet as string; // the coerceCatalogValueFromCellValue only returns strings or null for image format
-        } else if (this.type === 'core') {
-            const valToSave =
-                this.fieldName === 'sku' && typeof valueToSet === 'string' ? valueToSet.toUpperCase() : valueToSet;
-
-            if (existingCatalog && extractFieldFromCoreCatalog(this.fieldName, existingCatalog) != valueToSet) {
+        } else {
+            if (
+                existingCatalog &&
+                extractFieldFromCoreCatalog(this.fieldXPath, existingCatalog, retailerId, this.type) != valueToSet
+            ) {
                 row.modified = true;
             }
 
-            // The core automatically uppercases all skus.  This ensures nothing goes out of date.
-            catalog[getDSFField(this.fieldName)] = valToSave;
-        } else if (this.type === 'extended') {
-            const extended = catalog.extended_attributes![retailerId];
-            const existingExtended = existingCatalog?.extended_attributes?.[retailerId];
-
-            if (existingExtended && existingExtended[this.fieldName] !== valueToSet) {
-                row.modified = true;
-            }
-
-            extended[this.fieldName] = valueToSet;
+            writeValueToCatalog(this.fieldXPath, valueToSet, catalog, retailerId, this.type);
         }
 
         // Even though there is technically a value, the value is the default, so keep emptyRow true

@@ -17,7 +17,7 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
     };
     const overriddenWarehouseQuantity = 5;
     const overriddenWarehouse = {
-        warehouse_id: secondWarehouse.warehouseId,
+        dsco_id: secondWarehouse.warehouseId,
         code: secondWarehouse.code,
         quantity: overriddenWarehouseQuantity,
     };
@@ -63,7 +63,7 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
                     overriddenWarehouse,
                     {
                         quantity: 0,
-                        warehouse_id: firstWarehouse.warehouseId,
+                        dsco_id: firstWarehouse.warehouseId,
                         code: firstWarehouse.code,
                     },
                 ],
@@ -97,12 +97,12 @@ export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) 
                 warehouses: [
                     {
                         quantity: 0,
-                        warehouse_id: firstWarehouse.warehouseId,
+                        dsco_id: firstWarehouse.warehouseId,
                         code: firstWarehouse.code,
                     },
                     {
                         quantity: 0,
-                        warehouse_id: secondWarehouse.warehouseId,
+                        dsco_id: secondWarehouse.warehouseId,
                         code: secondWarehouse.code,
                     },
                 ],
