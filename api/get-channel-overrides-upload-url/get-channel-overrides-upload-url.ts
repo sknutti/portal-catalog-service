@@ -8,7 +8,6 @@ import {
 } from '@lib/s3';
 import { GetChannelOverridesSpreadsheetUploadUrlRequest } from './get-channel-overrides-upload-url.request';
 import * as uuid from 'uuid';
-import { getConfig } from '@lib/utils/consul/api_consul';
 
 export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOverridesSpreadsheetUploadUrlRequest>(
     async (event, ctx) => {
@@ -19,8 +18,6 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
             return new UnauthorizedError();
         }
 
-        const cfg = await getConfig();
-
         const correlationId = uuid.v4();
         const uploadMeta: CatalogChannelOverrideSpreadsheetUploadS3Metadata = {
             is_local_test: getIsRunningLocally() ? 'true' : undefined,
@@ -29,10 +26,12 @@ export const getChannelOverridesSpreadsheetUploadUrl = apiWrapper<GetChannelOver
             accountType: 'RETAILER',
             userId: `${user.userId}`,
             correlationId,
-            itemType: cfg.api_microservice.catalog_override_large_batch.upload_dir,
+            itemType: 'channel-override',
             clUuid: ctx.awsRequestId,
             sourceIpAddress: event.requestContext.identity.sourceIp,
         };
+
+        console.log('s3 metadata:', JSON.stringify(uploadMeta, null, 2));
 
         return {
             success: true,

@@ -29,7 +29,10 @@ export function getSignedChannelOverridesS3UploadUrl<M>(path: string, metadata: 
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
-        Metadata: prepareMetadata(metadata),
+        ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        Metadata: {
+            data: JSON.stringify(metadata)
+        },
     };
 
     return getS3Client().getSignedUrlPromise('putObject', params);
@@ -146,7 +149,7 @@ export function createCatalogItemS3DownloadPath(
 }
 
 export function createCatalogChannelOverridesS3UploadPath(retailerId: number, userId: number, path: string, correlationId?: string): string {
-    const uploadId = correlationId ?? uuid.v4()
+    const uploadId = correlationId ?? uuid.v4();
     return `channel-overrides/uploads/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
 }
 
