@@ -29,7 +29,10 @@ export function getSignedChannelOverridesS3UploadUrl<M>(path: string, metadata: 
         Bucket: getPortalCatalogS3BucketName(),
         Key: path,
         Expires: 60 * 60, // expire the link in 1 hour
-        Metadata: prepareMetadata(metadata),
+        ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        Metadata: {
+            data: JSON.stringify(metadata),
+        },
     };
 
     return getS3Client().getSignedUrlPromise('putObject', params);
@@ -145,8 +148,13 @@ export function createCatalogItemS3DownloadPath(
     return `downloads/${supplierId}/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${downloadId}`;
 }
 
-export function createCatalogChannelOverridesS3UploadPath(retailerId: number, userId: number, path: string): string {
-    const uploadId = uuid.v4();
+export function createCatalogChannelOverridesS3UploadPath(
+    retailerId: number,
+    userId: number,
+    path: string,
+    correlationId?: string,
+): string {
+    const uploadId = correlationId ?? uuid.v4();
     return `channel-overrides/uploads/${retailerId}/${userId}/${path.replace(/\|\|/g, '/')}/${uploadId}`;
 }
 
@@ -200,4 +208,12 @@ export interface CatalogChannelOverrideSpreadsheetUploadS3Metadata {
     // Signifies this file was uploaded via a local test and should be skipped from automated processing
     is_local_test?: 'true' | 'false';
     source_s3_path?: string;
+    createDate: Date;
+    accountId: string;
+    accountType: 'RETAILER' | 'SUPPLIER';
+    userId: string;
+    correlationId: string;
+    itemType: string;
+    clUuid: string;
+    sourceIpAddress: string;
 }

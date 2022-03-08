@@ -17,7 +17,9 @@ custom:
     spreadsheetTable: ${self:service}-spreadsheet-${self:provider.stage}
     s3BucketName: ${self:service}-${self:provider.stage}
     fanaticsBucketName: fanatics-short-term-project-01
+    apiV3ChannelOverrideBucketName: apiv3-catalog-override-${self:provider.stage}
     publishSpreadsheetBotName: ${self:service}-${self:provider.stage}-publish-category-spreadsheet-bot
+    copyChannelOverrideSpreadsheetBotName: ${self:service}-${self:provider.stage}-copy-channel-override-spreadsheet-bot
     test:
         leoStack: TestBus
     staging:
@@ -44,6 +46,8 @@ provider:
         S3_BUCKET: ${self:custom.s3BucketName}
         FANATICS_BUCKET: ${self:custom.fanaticsBucketName}
         LEO_ENVIRONMENT: ${self:provider.stage}
+        API_V3_CHANNEL_OVERRIDE_BUCKET_NAME: ${self:custom.apiV3ChannelOverrideBucketName}
+        API_V3_CHANNEL_OVERRIDE_UPLOAD_DIR: catalog-override
     region: ${opt:region, 'us-east-1'}
     s3:
         CatalogItemBucket:
@@ -89,6 +93,11 @@ provider:
               - 'arn:aws:s3:::${self:custom.fanaticsBucketName}/*'
         - Effect: 'Allow'
           Action:
+              - s3:PutObject
+          Resource:
+              - 'arn:aws:s3:::${self:custom.apiV3ChannelOverrideBucketName}/*'
+        - Effect: 'Allow'
+          Action:
               - execute-api:Invoke
           Resource: # TODO: this could be more restrictive!  Only used for item search
               - 'arn:aws:execute-api:${self:provider.region}:#{AWS::AccountId}:*/*/*/*'
@@ -100,6 +109,11 @@ provider:
               - lambda:InvokeFunction
           Resource:
               - 'arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.publishSpreadsheetBotName}'
+        - Effect: 'Allow'
+          Action:
+              - lambda:InvokeFunction
+          Resource:
+              - 'arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:custom.copyChannelOverrideSpreadsheetBotName}'
         - Effect: 'Allow'
           Action:
               - ses:SendEmail
@@ -117,3 +131,4 @@ functions:
     - ${file(./bot/publish-category-spreadsheet/serverless.yml)}
     - ${file(./api/get-content-exceptions-spreadsheet/serverless.yml)}
     - ${file(./api/get-channel-overrides-upload-url/serverless.yml)}
+    - ${file(./bot/copy-channel-override-spreadsheet-to-apiv3/serverless.yml)}

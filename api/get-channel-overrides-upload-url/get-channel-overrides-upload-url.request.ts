@@ -1,9 +1,5 @@
 import { DscoEnv, DsError, DsRequest, DsResponse } from '@dsco/ts-models';
 
-export interface GetChannelOverridesSpreadsheetUploadUrlRequestBody {
-    retailerId: number;
-}
-
 export interface GetChannelOverridesSpreadsheetUploadUrlResponse extends DsResponse {
     uploadUrl: string;
 }
@@ -15,16 +11,16 @@ export interface GetChannelOverridesSpreadsheetUploadUrlResponse extends DsRespo
  * Accepts both xlsx and csv files
  */
 export class GetChannelOverridesSpreadsheetUploadUrlRequest extends DsRequest<
-    GetChannelOverridesSpreadsheetUploadUrlRequestBody,
+    null,
     GetChannelOverridesSpreadsheetUploadUrlResponse,
     DsError
 > {
-    constructor(env: DscoEnv, body: GetChannelOverridesSpreadsheetUploadUrlRequestBody) {
+    constructor(env: DscoEnv) {
         super(
             'POST',
             '/portal-catalog/spreadsheet/channel-overrides/upload-url',
             DsRequest.getHost(env, 'micro'),
-            body,
+            null,
         );
     }
 }
