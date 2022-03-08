@@ -34,7 +34,6 @@
         "csv-parse": "^4.16.3",
         "leo-sdk": "^5.0.10",
         "leo-streams": "^2.0.0",
-        "lodash.merge": "^4.6.2",
         "mongodb": "^3.5.9",
         "node-gearman": "^0.2.2",
         "ts-results": "^3.1.1",
