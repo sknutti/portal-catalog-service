@@ -1,7 +1,7 @@
 import { DscoImage } from '@dsco/bus-models/dist/item';
 import { PipelineErrorType } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
-import { extractFieldFromCoreCatalog, getDSFField, writeValueToCatalog } from '@lib/format-conversions';
+import { extractFieldFromCoreCatalog, writeValueToCatalog } from '@lib/format-conversions';
 import { DscoCatalogRow } from '@lib/spreadsheet/dsco-catalog-row';
 import { assertUnreachable } from '@lib/utils';
 /**

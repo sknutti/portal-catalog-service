@@ -273,7 +273,6 @@ async function getAccount(accountId: number): Promise<AccountElasticsearch> {
 
 async function getAccounts(accountIds: number[]): Promise<{[accountId: number]: AccountElasticsearch}> {
     if (accountIds.length === 0) {
-        // @ts-ignore
         return {};
     }
 
@@ -348,6 +347,9 @@ async function getAccounts(accountIds: number[]): Promise<{[accountId: number]: 
 
 // logz.info(`>>> response (new): ${JSON.stringify(response)}`);
         return response;
+    // eslint-disable-next-line no-empty
+    } finally {
+
     }
 }
 
