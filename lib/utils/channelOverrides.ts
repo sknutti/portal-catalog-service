@@ -1,5 +1,6 @@
 'use strict';
-
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable  @typescript-eslint/no-unused-vars */
 import {ChannelOverride, ItemReplacements, ListingStatus} from '@dsco/bus-models/dist/item';
 import {RetailModel} from '@dsco/bus-models/dist/retail-model';
 import {ItemSkuOverrideLeoEvent} from '@dsco/bus-models';
@@ -21,7 +22,7 @@ let cache: {
 export type ChangeLogType = 'ItemV3' | 'CatalogV3' | 'ItemOverrideV3' | 'OrderV3' /*| 'WebhookV3'*/ | 'InvoiceV3' | 'ReturnV3';
 const queues = {
     CATALOG_OVERRIDE: 'catalog-item-overrides'
-}
+};
 
 export interface ChangeLogContext {
     db: AWS.DynamoDB;
@@ -39,7 +40,7 @@ export interface RetailerContext {
 export interface s3MetaData {
 	createDate: Date,
 	accountId: string,
-	accountType: "RETAILER" | "SUPPLIER",
+	accountType: 'RETAILER' | 'SUPPLIER',
 	userId: string,
 	correlationId: string,
 	itemType: string,
@@ -48,10 +49,10 @@ export interface s3MetaData {
 }
 
 enum TradingPartnerStatus{
-    onboarding = "onboarding",
-    active = "active",
-    paused="paused",
-    terminated = "terminated"
+    onboarding = 'onboarding',
+    active = 'active',
+    paused='paused',
+    terminated = 'terminated'
   }
 
 type SQLTimestamp = string;
@@ -59,7 +60,7 @@ export type IsoString = string;
 
 
 interface TradingPartner {
-    accountId: OauthAccessToken["account_id"];
+    accountId: OauthAccessToken['account_id'];
     activeDate?: IsoString;
     status : TradingPartnerStatus;
     terminatedDate?: IsoString;
@@ -81,8 +82,8 @@ interface OauthAccessToken {
     last_update: SQLTimestamp;
 }
 
-export async function overridesSmallBatch(channelOverrides: ChannelOverride[], sourceIpAddress: string, retialerId_s: string, awsRequestId: string, correlationId: string) {
-	const botId = "apiv3_catalog_overrides_small_batch_to_catalog_item_overrides";
+export async function overridesSmallBatch(channelOverrides: ChannelOverride[], sourceIpAddress: string, retialerId_s: string, awsRequestId: string, correlationId: string): Promise<void> {
+	const botId = 'apiv3_catalog_overrides_small_batch_to_catalog_item_overrides';
 	const retailerId = parseInt(retialerId_s);
 	validateChannelOverrides(channelOverrides);
 	const tradingPartnerIdDictionary = await getTradingPartnerIdDictionary(retailerId);
@@ -99,9 +100,9 @@ export async function overridesSmallBatch(channelOverrides: ChannelOverride[], s
         retailerId,
         tradingPartnerIdDictionary,
         metaData: metaData
-    }
+    };
 
-    for (let channelOverride of channelOverrides) {
+    for (const channelOverride of channelOverrides) {
         if (await toItemOverridesStream(
             channelOverride,
             retailerContext,
@@ -121,14 +122,14 @@ export async function toItemOverridesStream(
     retailerContext: RetailerContext,
     targetStream: Writable
 ): Promise<boolean> {
-    let thereWasAnError = false
+    let thereWasAnError = false;
     try {
         const itemOverride = createItemOverride(channelOverride, retailerContext);
         targetStream.write(itemOverride);
     } catch (e) {
-        thereWasAnError = true
+        thereWasAnError = true;
         console.error({
-                message: "error processing item override",
+                message: 'error processing item override',
                 retailerId: retailerContext.retailerId,
                 sourceIpAddress: retailerContext.metaData.sourceIpAddress,
                 correlationId: retailerContext.metaData.correlationId,
@@ -139,7 +140,7 @@ export async function toItemOverridesStream(
             }
         );
     }
-    return thereWasAnError
+    return thereWasAnError;
 }
 
 export function getWritableStream(
@@ -148,36 +149,36 @@ export function getWritableStream(
     writeConfig = {}
 ): Writable {
     return leo.load(botId, destination, writeConfig);
-};
+}
 
 const MAX_REQUESTS = 50;
 export async function getTradingPartnerIdDictionary(retailerId: number): Promise<Map<string, string>> {
-    const tradingPartners = await getAllActiveTradingPartners(retailerId)
-    console.info(`Got trading partners ${JSON.stringify(tradingPartners)}`)
+    const tradingPartners = await getAllActiveTradingPartners(retailerId);
+    console.info(`Got trading partners ${JSON.stringify(tradingPartners)}`);
 
-    let tradingPartnerIdDictionary = new Map()
+    const tradingPartnerIdDictionary = new Map();
     tradingPartners.forEach((tradingPartner) => {
-        if (tradingPartner && tradingPartner.tradingPartnerId) {
-            tradingPartnerIdDictionary.set(tradingPartner.tradingPartnerId, tradingPartner.accountId)
+        if (tradingPartner?.tradingPartnerId) {
+            tradingPartnerIdDictionary.set(tradingPartner.tradingPartnerId, tradingPartner.accountId);
         } else {
-			console.warn({message: "tradingPartner without tradingPartnerId", tradingPartner: tradingPartner})
+			console.warn({message: 'tradingPartner without tradingPartnerId', tradingPartner: tradingPartner});
 		}
-    })
-    return tradingPartnerIdDictionary
+    });
+    return tradingPartnerIdDictionary;
 }
 
-export function validateChannelOverrides(channelOverrides: ChannelOverride[])
+export function validateChannelOverrides(channelOverrides: ChannelOverride[]): void
 {
     if (!channelOverrides || channelOverrides.length === 0) {
-        const error = new Error("Missing array of item overrides");
-        error.name = "validateChannelOverrides.missingOverrides";
+        const error = new Error('Missing array of item overrides');
+        error.name = 'validateChannelOverrides.missingOverrides';
         throw error;
     }
 
-    const totalOverrides = channelOverrides.length
+    const totalOverrides = channelOverrides.length;
     if (totalOverrides > MAX_REQUESTS) {
         const error = new Error(`Total item overrides exceeds maximum ${MAX_REQUESTS}: ${totalOverrides}.  Use LargeBatch instead.`);
-        error.name = "validateChannelOverrides.tooManyOverrides";
+        error.name = 'validateChannelOverrides.tooManyOverrides';
         throw error;
     }
 
@@ -190,17 +191,17 @@ export function validateChannelOverrides(channelOverrides: ChannelOverride[])
 function validateOneChannelOverride(override: ChannelOverride) {
     if (hasForeignKeys(override, ChannelOverride.fields)) {
         const error = new Error('selector: foreign keys detected');
-        error.name = "validateChannelOverrides.foreignKeys";
+        error.name = 'validateChannelOverrides.foreignKeys';
         throw error;
     }
 
     if (hasForeignKeys(override.replacements, ItemReplacements.fields)) {
         const error = new Error('selector: foreign keys detected');
-        error.name = "validateChannelOverrides.foreignKeys";
+        error.name = 'validateChannelOverrides.foreignKeys';
         throw error;
     }
 
-    let isValid: boolean = false;
+    let isValid = false;
     const tester: ChannelOverride = { ...override };
     const isSelectorValid =
         !!tester.dscoItemId ||
@@ -223,18 +224,18 @@ function validateOneChannelOverride(override: ChannelOverride) {
     }
 
     if (tester.replacements.partnerSku) {
-        isValid = isValid && (typeof tester.replacements?.partnerSku === 'string')
+        isValid = isValid && (typeof tester.replacements?.partnerSku === 'string');
     }
 
     if (!isValid) {
         const error = new Error('invalid channelOverride');
-        error.name = "validateChannelOverrides.invalidChannelOverride";
+        error.name = 'validateChannelOverrides.invalidChannelOverride';
         throw error;
     }
 }
 
-function hasForeignKeys(obj: {}, validKeys: Set<string>): boolean {
-    for (let k in obj) {
+function hasForeignKeys(obj: Record<string, unknown>, validKeys: Set<string>): boolean {
+    for (const k in obj) {
         if (!validKeys.has(k)) {
             return true;
         }
@@ -251,24 +252,24 @@ function belongsToEnumOrUndefined<T extends { [key: number]: string | number }>(
 }
 
 async function getAllActiveTradingPartners(retailerId: number): Promise<TradingPartner[]> {
-    const account = await getAccount(retailerId)
+    const account = await getAccount(retailerId);
 	const tradingPartnerList = (account.connections || [])
 		.filter((connection) => {
-			return isSupplierActive(connection)
+			return isSupplierActive(connection);
 		})
 		.map((connection) => {
 			return {
 				accountId: connection.account_id_string,
 				status: getTradingPartnerStatusFromConnectionStatus(connection.status), // because it is required
 				tradingPartnerId: connection.trading_partner_id
-			} as TradingPartner
-		})
-	return tradingPartnerList
+			} as TradingPartner;
+		});
+	return tradingPartnerList;
 }
 async function getAccount(accountId: number): Promise<AccountElasticsearch> {
     const result = await getAccounts([accountId]);
     return result[accountId];
-};
+}
 
 async function getAccounts(accountIds: number[]): Promise<{[accountId: number]: AccountElasticsearch}> {
     if (accountIds.length === 0) {
@@ -277,14 +278,14 @@ async function getAccounts(accountIds: number[]): Promise<{[accountId: number]: 
     }
 
     if (client === null) {
-		console.error(`config: `, config);
+		console.error('config: ', config);
         client = getElasticsearchClient(config.elasticsearch.AccountDomainEndpoint, config.region);
     }
-    let response: Record<number, AccountElasticsearch> = {};
+    const response: Record<number, AccountElasticsearch> = {};
 
     // loop each accountId and see which (if any) of them are cached
     const nonCachedIds: (string | number)[] = [];
-    for (let accountId of accountIds) {
+    for (const accountId of accountIds) {
         //check the cache
         const data: AccountElasticsearch = cacheGet(`accountId_${accountId}`);
         if (data) {
@@ -347,13 +348,12 @@ async function getAccounts(accountIds: number[]): Promise<{[accountId: number]: 
 
 // logz.info(`>>> response (new): ${JSON.stringify(response)}`);
         return response;
-    } finally {
     }
-};
+}
 
 function getElasticsearchClient(host: string, region: string, options = {}): es.Client {
 	// console.log(`host: '${host}, region: '${region}`);
-    let elasticsearchConfig = Object.assign({
+    const elasticsearchConfig = Object.assign({
         awsConfig: new AWS.Config({
             region: region
         }),
@@ -389,15 +389,15 @@ function cacheGet(key: string): any|undefined {
     // return cache[key] ? cache[key].payload : undefined;
 
     // return undefined;
-};
+}
 
 function cacheSet(key: string, payload: any) {
     // console.log(`XXX adding ${key} to the cache`);
     cache[key] = {
         payload: payload,
         expiresAt: getExpiresAt()
-    }
-};
+    };
+}
 
 function cacheClearItem(key: string) {
     // console.log(`XXX removing ${key} from the cache`);
@@ -410,13 +410,13 @@ function cacheClear() {
 
 function getExpiresAt(): Date {
   return new Date((new Date()).getTime() + (1000 * 60 * 5));
-};
+}
 
 function getTradingPartnerStatusFromConnectionStatus(cStatus : ConnectionStatus) : TradingPartnerStatus {
     switch (cStatus){
-        case "terminated": return TradingPartnerStatus.terminated;
-        case "on-hold": return TradingPartnerStatus.onboarding;
-        case "stopped": return TradingPartnerStatus.paused;
+        case 'terminated': return TradingPartnerStatus.terminated;
+        case 'on-hold': return TradingPartnerStatus.onboarding;
+        case 'stopped': return TradingPartnerStatus.paused;
         default: return TradingPartnerStatus.active;
     }
 }
@@ -445,45 +445,45 @@ function createItemOverride(
 function addSupplierId(tradingPartnerIdDictionary: Map<string, string>, retailerId: number, override: ChannelOverride): ChannelOverride {
     if (!override.tradingPartnerId) {
         console.info({
-            message: `addSupplierId called without override.tradingPartnerId`, 
+            message: 'addSupplierId called without override.tradingPartnerId', 
             retailerId: retailerId, 
             channelOverride: override
         });
-        const error = new Error("Missing required override.tradingPartnerId");
-        error.name = "addSupplierId.tradingPartnerId.missing";
+        const error = new Error('Missing required override.tradingPartnerId');
+        error.name = 'addSupplierId.tradingPartnerId.missing';
 		Object.assign(error, {override});
         throw error;
     }
 	const tradingPartnerId = override.tradingPartnerId;
-    const newOverride = JSON.parse(JSON.stringify(override)) as ChannelOverride
+    const newOverride = JSON.parse(JSON.stringify(override)) as ChannelOverride;
 	console.info({
 		message: 'searching for',
 		tradingPartnerId: tradingPartnerId,
 		tradingPartnerIdDictionary: tradingPartnerIdDictionary}
 	);
-    const supplierId = tradingPartnerIdDictionary.get(tradingPartnerId)
+    const supplierId = tradingPartnerIdDictionary.get(tradingPartnerId);
     if (!supplierId) {
 		console.error({
             message: 'SupplierId not found', 
             retailerId: retailerId, 
             tradingPartnerId: tradingPartnerId
         });
-        const error = new Error(`SupplierId not found for [${retailerId}, ${tradingPartnerId}]`)
-        error.name = "addSupplierId.tradingPartnerId.notFound"
+        const error = new Error(`SupplierId not found for [${retailerId}, ${tradingPartnerId}]`);
+        error.name = 'addSupplierId.tradingPartnerId.notFound';
 		Object.assign(error, {override});
-        throw error
+        throw error;
     }
-    newOverride.supplierId = supplierId
+    newOverride.supplierId = supplierId;
 	console.info({
         message: 'updated ChannelOverride', 
         newOverride: newOverride
     });
-    return newOverride
+    return newOverride;
 }
 
 const excludedStatus: Set<ConnectionStatus> = new Set([
-    "terminated"
-])
+    'terminated'
+]);
 
 function isSupplierActive(
 	connection: { // because AccountElasticSearch.connection doesn't have a type
@@ -501,5 +501,5 @@ function isSupplierActive(
 		trading_partner_name?: string;
 		trading_partner_parent_id?: string; }
 	): boolean {
-    return !excludedStatus.has(connection.status)
+    return !excludedStatus.has(connection.status);
 }
