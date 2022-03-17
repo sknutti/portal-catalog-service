@@ -132,3 +132,4 @@ functions:
     - ${file(./api/get-content-exceptions-spreadsheet/serverless.yml)}
     - ${file(./api/get-channel-overrides-upload-url/serverless.yml)}
     - ${file(./bot/copy-channel-override-spreadsheet-to-apiv3/serverless.yml)}
+    - ${file(./api/get-all-assortments/serverless.yml)}

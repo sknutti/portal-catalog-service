@@ -10,6 +10,7 @@ export interface GetAssortmentsGearmanRequest {
     params?: {
         fresh?: boolean;
         include_deleted?: boolean;
+        account_ids?: string[];
     };
 }
 
