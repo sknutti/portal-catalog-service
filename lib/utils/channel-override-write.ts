@@ -144,7 +144,7 @@ export async function overridesSmallBatch(
         }
     }
     
-
+    targetStream.end(); //flush stream
 
 }
 
