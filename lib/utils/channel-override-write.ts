@@ -1,6 +1,6 @@
 'use strict';
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable  @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-var-requires */ //This is for config
+
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { ChannelOverride, ListingStatus, ItemSkuOverrideLeoEvent, ItemReplacements } from '@dsco/bus-models';
 import { Writable } from 'stream';
@@ -30,7 +30,7 @@ config.bootstrap(require('../../leo_config'));
 const leo = require('leo-sdk')(expandConfig(leosdk_source));
 
 type SQLTimestamp = string;
-export type IsoString = string;
+type IsoString = string;
 
 interface LruObject {
     payload: any;
@@ -38,28 +38,31 @@ interface LruObject {
 }
 
 interface AccountElasticsearchConnection {
-    
-        
-        account_id?: number;
-        account_id_string?: string;
-        active_date?: string;
-        commission_percentage?: number;
-        comm_pct_cost_field_name?: string;
-        hold: any;
-        initiator_id?: number;
-        status: any;
-        stopped?: boolean;
-        terminate_date?: string;
-        trading_partner_id?: string;
-        trading_partner_name?: string;
-        trading_partner_parent_id?: string;
-    
+    account_id?: number;
+    account_id_string?: string;
+    active_date?: string;
+    commission_percentage?: number;
+    comm_pct_cost_field_name?: string;
+    hold: any;
+    initiator_id?: number;
+    status: any;
+    stopped?: boolean;
+    terminate_date?: string;
+    trading_partner_id?: string;
+    trading_partner_name?: string;
+    trading_partner_parent_id?: string;
 }
 
 const cache: {
     [key: string]: LruObject;
 } = {};
 
+interface ValidateResults {
+    validated: boolean;
+    message?: string;
+    overrides: ChannelOverride[];
+    extras?: any[];
+}
 interface TradingPartner {
     accountId: OauthAccessToken['account_id'];
     activeDate?: IsoString;
@@ -106,6 +109,9 @@ const queues = {
     CATALOG_OVERRIDE: 'catalog-item-overrides',
 };
 
+/**
+ *
+ */
 export async function overridesSmallBatch(
     channelOverrides: ChannelOverride[],
     sourceIpAddress: string,
@@ -118,7 +124,7 @@ export async function overridesSmallBatch(
     validateChannelOverrides(channelOverrides, awsRequestId);
     const tradingPartnerIdDictionary = await getTradingPartnerIdDictionary(retailerId);
     const targetStream = getWritableStream(botId, queues.CATALOG_OVERRIDE);
-    console.log('targetStream is ', targetStream);
+
     const metaData: s3MetaData = {
         correlationId,
         sourceIpAddress,
@@ -151,13 +157,13 @@ function generateNewUUIDv4() {
 }
 
 // catalog_item_overrides utilities
-export function validateChannelOverrides(overrides: any[], clUuid: string): boolean {
+function validateChannelOverrides(overrides: any[], clUuid: string): boolean {
     return overrides
         .map((override) => validateOneChannelOverride(override, clUuid))
         .reduce((lastResult, currentValue) => lastResult && currentValue);
 }
 
-export function validateOneChannelOverride(override: ChannelOverride, clUuid: string): boolean {
+function validateOneChannelOverride(override: ChannelOverride, clUuid: string): boolean {
     if (hasForeignKeys(override, ChannelOverride.fields)) {
         return false;
     }
@@ -167,7 +173,6 @@ export function validateOneChannelOverride(override: ChannelOverride, clUuid: st
     }
 
     let isValid = false;
-    //const tester: ChannelOverride = { ...override };
 
     if (isItemSelectorValid(override)) {
         // since ItemReplacements is just a TS "interface" - it doesn't cause anything to fail if they stick random stuff in the replacements collection
@@ -187,14 +192,7 @@ export function validateOneChannelOverride(override: ChannelOverride, clUuid: st
     return isValid;
 }
 
-interface ValidateResults {
-    validated: boolean;
-    message?: string;
-    overrides: ChannelOverride[];
-    extras?: any[];
-}
-
-export function validateEvent(event: APIGatewayProxyEvent, clUuid: string, maxRequests = 10): ValidateResults {
+function validateEvent(event: APIGatewayProxyEvent, clUuid: string, maxRequests = 10): ValidateResults {
     const validationResults: ValidateResults = {
         validated: false,
         extras: [],
@@ -234,7 +232,7 @@ export function validateEvent(event: APIGatewayProxyEvent, clUuid: string, maxRe
     return validationResults;
 }
 
-export function addSupplierId(
+function addSupplierId(
     tradingPartnerIdDictionary: Map<string, string>,
     retailerId: number,
     override: ChannelOverride,
@@ -291,12 +289,10 @@ export function createItemOverride(
 }
 
 async function write(stream: any, payload: any): Promise<void> {
-    
     console.log('starting to write');
     if (
         !stream.write(payload, (e: any) => (e === undefined ? console.log('no callback error') : console.log('cb', e)))
     ) {
-        
         console.log('stream needs to drain');
         return new Promise((resolve) => {
             stream.once('drain', () => {
@@ -304,7 +300,6 @@ async function write(stream: any, payload: any): Promise<void> {
             });
         });
     } else {
-        
         console.log('write to GTG');
         return new Promise((resolve) => {
             resolve();
@@ -312,7 +307,7 @@ async function write(stream: any, payload: any): Promise<void> {
     }
 }
 
-export async function toItemOverridesStream(
+async function toItemOverridesStream(
     channelOverride: ChannelOverride,
     retailerContext: RetailerContext,
     targetStream: Writable,
@@ -324,7 +319,6 @@ export async function toItemOverridesStream(
         await write(targetStream, itemOverride);
         thereWasAnError = false;
     } catch (e) {
-        
         console.log('error in toItemOverridesStream', e);
     }
     return thereWasAnError;
@@ -338,6 +332,9 @@ function isSupplierActive(connection: AccountElasticsearchConnection): boolean {
 
 async function getAllActiveTradingPartners(retailerId: number): Promise<TradingPartner[]> {
     const account = await getAccount(retailerId);
+    if (account === undefined) {
+        throw new Error(`Unable to find account for ${retailerId}`);
+    }
     const tradingPartnerList = (account?.connections || [])
         .filter((connection: any) => {
             return isSupplierActive(connection);
@@ -352,7 +349,7 @@ async function getAllActiveTradingPartners(retailerId: number): Promise<TradingP
     return tradingPartnerList;
 }
 
-export async function getTradingPartnerIdDictionary(retailerId: number): Promise<Map<string, string>> {
+async function getTradingPartnerIdDictionary(retailerId: number): Promise<Map<string, string>> {
     const tradingPartners = await getAllActiveTradingPartners(retailerId);
     console.log(`Got trading partners ${JSON.stringify(tradingPartners)}`);
     const tradingPartnerIdDictionary = new Map();
@@ -366,7 +363,7 @@ export async function getTradingPartnerIdDictionary(retailerId: number): Promise
     return tradingPartnerIdDictionary;
 }
 
-export function mapReplacer(key: any, value: any): { dataType: string; value: any } | any {
+function mapReplacer(key: any, value: any): { dataType: string; value: any } | any {
     if (value instanceof Map) {
         return {
             dataType: 'Map',
@@ -412,13 +409,11 @@ async function getAccounts(accountIds: number[]): Promise<{ [accountId: number]:
         if (data) {
             response[accountId] = data;
         } else {
-
             nonCachedIds.push(accountId);
         }
     }
 
     if (nonCachedIds.length === 0) {
-
         return response;
     }
 
@@ -505,7 +500,6 @@ function hasForeignKeys(obj: Record<string, unknown>, validKeys: Set<string>): b
 function cacheGet(key: string): any | undefined {
     const obj = cache[key];
     if (obj && obj.expiresAt >= new Date()) {
-
         return obj.payload;
     } else {
         return undefined;
@@ -533,7 +527,7 @@ function cacheSet(key: string, payload: any) {
 function getExpiresAt(): Date {
     return new Date(new Date().getTime() + 1000 * 60 * 5);
 }
-export function getWritableStream(botId: string, destination: string, writeConfig = {}): Writable {
+function getWritableStream(botId: string, destination: string, writeConfig = {}): Writable {
     return leo.load(botId, destination, writeConfig);
 }
 
