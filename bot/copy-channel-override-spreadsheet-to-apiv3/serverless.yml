@@ -1,0 +1,16 @@
+# If you change this lambda name, update the root serverless.yml
+copy-channel-override-spreadsheet-bot:
+    handler: bot/copy-channel-override-spreadsheet-to-apiv3/copy-channel-override-spreadsheet-to-apiv3.copyChannelOverrideSpreadsheetToApiV3
+    memorySize: 128
+    timeout: 900
+    vpc: ${self:custom.environment.gearman-and-mongo-vpc}
+    layers:
+        - ${cf:layer-leo-${self:provider.stage}.LeoLambdaLayerQualifiedArn}
+    events:
+        - leo:
+              register: true
+        - s3:
+              bucket: CatalogItemBucket
+              event: s3:ObjectCreated:*
+              rules:
+                  - prefix: channel-overrides/

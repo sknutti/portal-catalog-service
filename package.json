@@ -1,6 +1,6 @@
 {
     "name": "portal-catalog-service",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -21,14 +21,14 @@
     "license": "ISC",
     "dependencies": {
         "@dsco/aws-auth": "^1.0.14",
-        "@dsco/bus-models": "^0.1.76",
+        "@dsco/bus-models": "^0.1.67",
         "@dsco/eslint-config": "0.0.4",
         "@dsco/gearman-apis": "^0.0.24",
         "@dsco/search-apis": "^1.0.40",
         "@dsco/service-utils": "^0.0.24",
         "@dsco/ts-models": "^1.0.106",
         "@sheet/image": "^1.20201004.1",
-        "aws-sdk": "^2.1094.0",
+        "aws-sdk": "^2.1086.0",
         "axios": "^0.19.2",
         "crypto-js": "^3.1.9-1",
         "csv-parse": "^4.16.3",
