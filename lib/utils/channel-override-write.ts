@@ -10,24 +10,9 @@ import * as AWS from 'aws-sdk';
 import * as es from 'elasticsearch';
 import { AccountElasticsearch, ConnectionStatus } from '@dsco/ts-models';
 
-const leosdk_source = {
-    //place in config
-
-    LeoArchive: 'TestBus-LeoArchive-WUWG7N8OXG97',
-    LeoCron: 'TestBus-LeoCron-OJ8ZNCEBL8GM',
-    LeoEvent: 'TestBus-LeoEvent-FNSO733D68CR',
-    LeoFirehoseStream: 'TestBus-LeoFirehoseStream-1M8BJL0I5HQ34',
-    LeoKinesisStream: 'TestBus-LeoKinesisStream-1XY97YYPDLVQS',
-    LeoS3: 'testbus-leos3-1erchsf3l53le',
-    LeoSettings: 'TestBus-LeoSettings-YHQHOKWR337E',
-    LeoStream: 'TestBus-LeoStream-R2VV0EJ6FRI9',
-    LeoSystem: 'TestBus-LeoSystem-L9OY6AV8E954',
-    Region: 'us-east-1',
-};
-
 const config = require('leo-config');
 config.bootstrap(require('../../leo_config'));
-const leo = require('leo-sdk')(expandConfig(leosdk_source));
+const leo = require('leo-sdk')(expandConfig(config.leosdk));
 
 type SQLTimestamp = string;
 type IsoString = string;
