@@ -1,9 +1,7 @@
 import { CognitoIdentityClient } from '@aws-sdk/client-cognito-identity/';
 import { CognitoIdentityCredentials, fromCognitoIdentity } from '@aws-sdk/credential-provider-cognito-identity';
-import { createContext } from '@dsco/service-utils';
 import { getAwsRegion, getDscoEnv } from '@lib/environment';
 import { setApiCredentials } from '@lib/utils';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 import { CognitoIdentity } from 'aws-sdk';
 

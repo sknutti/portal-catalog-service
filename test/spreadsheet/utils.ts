@@ -6,7 +6,7 @@ import { DscoColumn, DscoSpreadsheet, PhysicalSpreadsheet } from '@lib/spreadshe
 const firstWarehouse: TinyWarehouse = { code: '123', warehouseId: '321' };
 const secondWarehouse: TinyWarehouse = { code: 'abc', warehouseId: 'cba' };
 
-export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet) {
+export async function testPhysicalSpreadsheet(spreadsheet: PhysicalSpreadsheet): Promise<void> {
     const supplierId = 1;
     const retailerId = 2;
     const categoryPath = 'My Cool Test||Category!';

@@ -87,7 +87,7 @@ interface S3File {
 /**
  * @param from - The location to copy from - *MUST ALREADY BE URL ENCODED*
  */
-export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata: Metadata) {
+export async function copyS3Object<Metadata>(from: S3File, to: S3File, metadata: Metadata): Promise<void> {
     await getS3Client()
         .copyObject({
             CopySource: `${from.bucket}/${from.path}`,

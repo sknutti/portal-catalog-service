@@ -1,7 +1,5 @@
 import { axiosRequest } from '@dsco/aws-auth';
-import { ItemSearchRequest } from '@dsco/search-apis';
 import { SecretsManagerHelper } from '@dsco/service-utils';
-import { DsError } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { getAwsRegion, getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import { assertUnreachable, getApiCredentials } from '@lib/utils';

@@ -1,6 +1,5 @@
 import { axiosRequest } from '@dsco/aws-auth';
 import {
-    DscoEnv,
     PipelineErrorType,
     PipelineRule,
     PipelineRulePrimaryDataType,
