@@ -11,6 +11,12 @@ export function isFanatics(supplierId: number): boolean {
     return supplierId === getFanaticsAccountForEnv()?.supplierId;
 }
 
+// Try to get retailerId from the path, otherwise use the one passed in
+export function getRetailerIdFromPath(path: string, retailerId: number): number {
+    console.log(path);
+    return retailerId;
+}
+
 /**
  * To prevent timing out, will re-invoke the upload bot on subsets of a very large file.  Currently only enabled for fanatics (as this breaks the websocket communication)
  */
