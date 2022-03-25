@@ -1,5 +1,5 @@
 import { getPortalCatalogS3BucketName } from '@lib/environment';
-import { getFanaticsAccountForEnv } from '@lib/fanatics';
+import { getFanaticsAccountForEnv, getRetailerIdFromPath } from '@lib/fanatics';
 import { CatalogSpreadsheetS3Metadata, copyS3Object, createCatalogItemS3UploadPath } from '@lib/s3';
 import type { S3CreateEvent } from 'aws-lambda';
 
@@ -18,6 +18,8 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     s3Path = s3Path.replace(/\+/g, ' ');
     s3Path = decodeURIComponent(s3Path);
 
+    const retailerId = getRetailerIdFromPath(s3Path, account.retailerId);
+
     const meta: CatalogSpreadsheetS3Metadata = {
         category_path: account.categoryPath,
         source_s3_path: s3Path,
@@ -29,12 +31,7 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     };
     const to = {
         bucket: getPortalCatalogS3BucketName(),
-        path: createCatalogItemS3UploadPath(
-            account.supplierId,
-            account.retailerId,
-            account.userId,
-            account.categoryPath,
-        ),
+        path: createCatalogItemS3UploadPath(account.supplierId, retailerId, account.userId, account.categoryPath),
     };
 
     console.log('Copying s3 file from: ', from);
