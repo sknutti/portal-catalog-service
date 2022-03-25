@@ -12,9 +12,12 @@ export function isFanatics(supplierId: number): boolean {
 }
 
 // Try to get retailerId from the path, otherwise use the one passed in
+// Path should be in the form of {env}/{id}/
+// If no id or id is NaN, then use retailerId passed in
 export function getRetailerIdFromPath(path: string, retailerId: number): number {
-    console.log(path);
-    return retailerId;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [env, id] = path.split('/');
+    return Number(id) ? Number(id) : retailerId;
 }
 
 /**
