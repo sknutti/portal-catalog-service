@@ -176,7 +176,8 @@ export async function sendFanaticsEmail(
 const accounts: Record<DscoEnv, AccountCategoryPath> = {
     dev: {},
     test: {
-        1000012301: { // Aidan Test Retailer
+        // Aidan Test Retailer
+        1000012301: {
             retailerId: 1000012301,
             supplierId: 1000012302, // Aidan Test Supplier
             userId: 26366,
@@ -187,16 +188,18 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
             supplierId: 1000012302,
             userId: 0,
             categoryPath: '',
-        }
+        },
     },
     staging: {
-        1000007723: { // AAFES
+        // AAFES
+        1000007723: {
             retailerId: 1000007723,
             supplierId: 1000007967,
             userId: 1000011189,
             categoryPath: 'Fan Gear',
         },
-        1000007220: { // Dsco Retailer Demo
+        // Dsco Retailer Demo
+        1000007220: {
             retailerId: 1000007220,
             supplierId: 1000007967,
             userId: 1000011189,
@@ -207,16 +210,18 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
             supplierId: 1000007967,
             userId: 0,
             categoryPath: '',
-        }
+        },
     },
     prod: {
-        1000013240: { // AAFES
+        // AAFES
+        1000013240: {
             retailerId: 1000013240,
             supplierId: 1000043924,
             userId: 31615,
             categoryPath: 'Fan Gear',
         },
-        1000003564: { // Nordstrom
+        // Nordstrom
+        1000003564: {
             retailerId: 1000003564,
             supplierId: 1000043924,
             userId: 31615,
@@ -227,8 +232,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
             supplierId: 1000043924,
             userId: 0,
             categoryPath: '',
-        }
-    }
+        },
+    },
 };
 interface Account {
     retailerId: number;
@@ -238,7 +243,7 @@ interface Account {
 }
 interface AccountCategoryPath {
     [retailerId: string]: Account;
-} 
+}
 
 /**
  * Used as an early-exit method from the parent invocation that
