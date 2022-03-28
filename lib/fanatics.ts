@@ -4,7 +4,8 @@ import { getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 
 export function getFanaticsAccountForEnv(): Account | undefined {
-    return accounts[getDscoEnv()];
+    const { retailerId } = accounts[getDscoEnv()].default;
+    return accounts[getDscoEnv()][retailerId];
 }
 
 export function isFanatics(supplierId: number): boolean {
@@ -171,33 +172,77 @@ export async function sendFanaticsEmail(
     await ses.sendEmail(request).promise();
 }
 
-const accounts: Partial<Record<DscoEnv, Account>> = {
-    // // In test we upload to "Aidan Test Supplier"
-    // test: {
-    //     supplierId: 1000012302,
-    //     retailerId: 1000012301,
-    //     userId: 26366,
-    //     categoryPath: 'Catalog'
-    // },
+// The default record is the one we use if there is no retailerId
+const accounts: Record<DscoEnv, AccountCategoryPath> = {
+    dev: {},
+    test: {
+        // // Aidan Test Retailer
+        // 1000012301: {
+        //     retailerId: 1000012301,
+        //     supplierId: 1000012302, // Aidan Test Supplier
+        //     userId: 26366,
+        //     categoryPath: 'Catalog',
+        // },
+        default: {
+            retailerId: 1000012301, // Aidan Test Retailer
+            supplierId: 1000012302,
+            userId: 0,
+            categoryPath: '',
+        },
+    },
     staging: {
-        supplierId: 1000007967,
-        retailerId: 1000007220,
-        userId: 1000011189,
-        categoryPath: 'Fan Gear',
+        // AAFES
+        1000007723: {
+            retailerId: 1000007723,
+            supplierId: 1000007967,
+            userId: 1000011189,
+            categoryPath: 'Fan Gear',
+        },
+        // Dsco Retailer Demo
+        1000007220: {
+            retailerId: 1000007220,
+            supplierId: 1000007967,
+            userId: 1000011189,
+            categoryPath: 'Fan Gear',
+        },
+        default: {
+            retailerId: 1000007220, // Dsco Retailer Demo
+            supplierId: 1000007967,
+            userId: 0,
+            categoryPath: '',
+        },
     },
     prod: {
-        supplierId: 1000043924,
-        retailerId: 1000003564,
-        userId: 31615,
-        categoryPath: 'Fan Gear',
+        // AAFES
+        1000013240: {
+            retailerId: 1000013240,
+            supplierId: 1000043924,
+            userId: 31615,
+            categoryPath: 'Fan Gear',
+        },
+        // Nordstrom
+        1000003564: {
+            retailerId: 1000003564,
+            supplierId: 1000043924,
+            userId: 31615,
+            categoryPath: 'Fan Gear',
+        },
+        default: {
+            retailerId: 1000003564, // Nordstrom
+            supplierId: 1000043924,
+            userId: 0,
+            categoryPath: '',
+        },
     },
 };
-
 interface Account {
-    supplierId: number;
     retailerId: number;
+    supplierId: number;
     userId: number;
     categoryPath: string;
+}
+interface AccountCategoryPath {
+    [retailerId: string]: Account;
 }
 
 /**
