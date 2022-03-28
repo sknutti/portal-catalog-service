@@ -176,13 +176,13 @@ export async function sendFanaticsEmail(
 const accounts: Record<DscoEnv, AccountCategoryPath> = {
     dev: {},
     test: {
-        // Aidan Test Retailer
-        1000012301: {
-            retailerId: 1000012301,
-            supplierId: 1000012302, // Aidan Test Supplier
-            userId: 26366,
-            categoryPath: 'Catalog',
-        },
+        // // Aidan Test Retailer
+        // 1000012301: {
+        //     retailerId: 1000012301,
+        //     supplierId: 1000012302, // Aidan Test Supplier
+        //     userId: 26366,
+        //     categoryPath: 'Catalog',
+        // },
         default: {
             retailerId: 1000012301, // Aidan Test Retailer
             supplierId: 1000012302,
