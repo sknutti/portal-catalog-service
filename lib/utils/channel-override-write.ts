@@ -167,10 +167,10 @@ function validateOneChannelOverride(override: ChannelOverride, clUuid: string): 
             Object.keys(override.replacements).length >= 1 &&
             Object.keys(override.replacements).every((k) => ['partnerSku', 'listingStatus', 'retailModel'].includes(k));
         isValid = isValid && belongsToEnumOrUndefined(override.replacements?.listingStatus, ListingStatus);
-		isValid = isValid && (override.replacements?.retailModels !== undefined);
-		override.replacements?.retailModels?.forEach((retailModel) => {
-			isValid = isValid && belongsToEnumOrUndefined(retailModel, RetailModel);
-		});
+        isValid = isValid && override.replacements?.retailModels !== undefined;
+        override.replacements?.retailModels?.forEach((retailModel) => {
+            isValid = isValid && belongsToEnumOrUndefined(retailModel, RetailModel);
+        });
     }
 
     if (override.replacements.partnerSku) {
