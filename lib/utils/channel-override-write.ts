@@ -167,7 +167,7 @@ function validateOneChannelOverride(override: ChannelOverride, clUuid: string): 
             Object.keys(override.replacements).length >= 1 &&
             Object.keys(override.replacements).every((k) => ['partnerSku', 'listingStatus', 'retailModel'].includes(k));
         isValid = isValid && belongsToEnumOrUndefined(override.replacements?.listingStatus, ListingStatus);
-        isValid = isValid && belongsToEnumOrUndefined(override.replacements?.retailModel, RetailModel);
+        isValid = isValid && belongsToEnumOrUndefined(override.replacements?.retailModels, RetailModel);
     }
 
     if (override.replacements.partnerSku) {

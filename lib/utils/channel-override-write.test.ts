@@ -8,7 +8,7 @@ test('expect overridesSmallBatch to work', async () => {
     const override: ChannelOverride = {
         dscoItemId: '1052110350',
         replacements: {
-            retailModel: RetailModel.marketplace,
+            retailModels: [RetailModel.marketplace],
         },
     };
     const channelOverrides = [override];
