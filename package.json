@@ -21,7 +21,7 @@
     "license": "ISC",
     "dependencies": {
         "@dsco/aws-auth": "^1.0.14",
-        "@dsco/bus-models": "^0.1.67",
+        "@dsco/bus-models": "^0.1.89",
         "@dsco/eslint-config": "0.0.4",
         "@dsco/gearman-apis": "^0.0.24",
         "@dsco/search-apis": "^1.0.40",
