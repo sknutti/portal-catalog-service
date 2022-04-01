@@ -47,9 +47,14 @@ The source for each of the bot lambdas can be found in `/bot/function_name/`
 
 Shared code and helper code can be found under `/lib`
 
-## Running Locally
+## Requirements
 
-_Note: Running locally requires you are connected to the dsco vpn_
+Running locally:
+- requires you are connected to the dsco vpn
+- using kerb-sts:
+    - in the shell: export AWS_PROFILE=dsco-aws-poweruser (or whatever role you're using in kerb-sts)
+
+## Running Locally
 
 There's two methods of running locally:
 
