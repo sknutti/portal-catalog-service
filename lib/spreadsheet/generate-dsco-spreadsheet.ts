@@ -107,19 +107,18 @@ async function generateSpreadsheetCols(
 
         return result;
     };
-
     const dscoFields = [];
     //Keep track of all the required and recommended attributes.
-    for (const dscoRule of allRulesResp.data.dsco || []) {
+    const allRules = allRulesResp?.data?.dsco ?? [];
+    for (const dscoRule of allRules) {
         if (dscoRule.objectType === 'catalog') {
-
-            if(dscoRule.type === 'required' || dscoRule.type === 'catalog_required') {
+            if (dscoRule.type === REQUIRED || dscoRule.type === CATALOG_REQUIRED) {
                 REQUIRED_COLS.add(dscoRule.field[0]);
             }
         }
     }
     for (const rule of catalogRulesResp.data.rules) {
-        if(rule.type === 'required' || rule.type === 'catalog_required') {
+        if (rule.type === REQUIRED || rule.type === CATALOG_REQUIRED) {
             REQUIRED_COLS.add(rule.field[0]);
         }
     }
@@ -208,29 +207,21 @@ function parsePipelineRule(
 
     if (rule.attrType === 'custom') {
         //custom attributes already taken care of
-    } else if(rule.attrType === 'core' ){
+    } else if (rule.attrType === 'core') {
         // Only the core attributes that are marked default by the retailer end up here
-        let field='';
-        for (const f of rule.field) {
-            field+=f;
-        }
-        let flag = false;
-        // we filter out any required or recommended attributes as they are handled further below
-        REQUIRED_COLS.forEach((entry)=>{
-            if(entry === field){
-                flag=true;
-            }
-        });
-        if(!flag) {
-            setValidation(field, 'required', PipelineErrorType.info);
+        const field = rule.field.toString();
+        // dont need any erroneous attributes concatenated with commas and
+        // we ignore required or recommended attributes as they are handled further below
+        if (!REQUIRED_COLS.has(field) && !field.includes(',')) {
+            setValidation(field, REQUIRED, PipelineErrorType.info);
         }
     }
-    if (rule.type === 'required' || rule.type === 'catalog_required' ) {
+    if (rule.type === REQUIRED || rule.type === CATALOG_REQUIRED) {
         for (const field of rule.field) {
             if (shouldSkipCol(field)) {
                 return;
             }
-            setValidation(field, 'required', rule.severity);
+            setValidation(field, REQUIRED, rule.severity);
         }
     } else if (rule.type === 'enum_match' || rule.type === 'catalog_enum_match') {
         const col = ensureCol(rule.field, rule);
@@ -308,6 +299,8 @@ function parsePipelineRule(
 }
 
 const REQUIRED_COLS = new Set();
+const REQUIRED = 'required';
+const CATALOG_REQUIRED = 'catalog_required';
 
 /**
  * These are columns that we don't want to show up in the final spreadsheet
