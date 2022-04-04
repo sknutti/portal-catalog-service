@@ -109,6 +109,20 @@ async function generateSpreadsheetCols(
     };
 
     const dscoFields = [];
+    //Keep track of all the required and recommended attributes.
+    for (const dscoRule of allRulesResp.data.dsco || []) {
+        if (dscoRule.objectType === 'catalog') {
+
+            if(dscoRule.type === 'required' || dscoRule.type === 'catalog_required') {
+                REQUIRED_COLS.add(dscoRule.field[0]);
+            }
+        }
+    }
+    for (const rule of catalogRulesResp.data.rules) {
+        if(rule.type === 'required' || rule.type === 'catalog_required') {
+            REQUIRED_COLS.add(rule.field[0]);
+        }
+    }
     for (const dscoRule of allRulesResp.data.dsco || []) {
         if (dscoRule.objectType === 'catalog') {
             dscoFields.push(dscoRule.field);
@@ -192,12 +206,30 @@ function parsePipelineRule(
         col.validation[key] = value;
     }
 
-    if (rule.type === 'required' || rule.type === 'catalog_required') {
+    if (rule.attrType === 'custom') {
+        //custom attributes already taken care of
+    } else if(rule.attrType === 'core' ){
+        // Only the core attributes that are marked default by the retailer end up here
+        let field='';
+        for (const f of rule.field) {
+            field+=f;
+        }
+        let flag = false;
+        // we filter out any required or recommended attributes as they are handled further below
+        REQUIRED_COLS.forEach((entry)=>{
+            if(entry === field){
+                flag=true;
+            }
+        });
+        if(!flag) {
+            setValidation(field, 'required', PipelineErrorType.info);
+        }
+    }
+    if (rule.type === 'required' || rule.type === 'catalog_required' ) {
         for (const field of rule.field) {
             if (shouldSkipCol(field)) {
                 return;
             }
-
             setValidation(field, 'required', rule.severity);
         }
     } else if (rule.type === 'enum_match' || rule.type === 'catalog_enum_match') {
@@ -274,6 +306,8 @@ function parsePipelineRule(
         col.validation.minHeight = rule.minHeight;
     }
 }
+
+const REQUIRED_COLS = new Set();
 
 /**
  * These are columns that we don't want to show up in the final spreadsheet
