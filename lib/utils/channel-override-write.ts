@@ -104,8 +104,6 @@ export async function overridesSmallBatch(
     awsRequestId: string,
     correlationId: string,
 ): Promise<void> {
-    console.log('overridesSmallBatch called (temp marker 1)');
-
     const botId = 'api_channel-override-write';
     const retailerId = parseInt(retailerId_s);
     validateChannelOverrides(channelOverrides, awsRequestId);

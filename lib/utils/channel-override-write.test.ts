@@ -6,7 +6,7 @@ import { RetailModel } from '@dsco/bus-models/dist/retail-model';
  */
 test('expect overridesSmallBatch to work', async () => {
     const override: ChannelOverride = {
-        dscoItemId: '1052110402',
+        dscoItemId: '1052110350',
         replacements: {
             retailModels: [RetailModel.marketplace],
         },
