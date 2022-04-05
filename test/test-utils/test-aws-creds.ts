@@ -45,6 +45,7 @@ export const getAuth = async (
         credentials: {
             accessKeyId: AWS.config.credentials!.accessKeyId,
             secretAccessKey: AWS.config.credentials!.secretAccessKey,
+            sessionToken: AWS.config.credentials!.sessionToken,
         },
     });
 
