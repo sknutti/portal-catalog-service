@@ -2,7 +2,7 @@ import { overridesSmallBatch } from '@lib/utils/channel-override-write';
 import { ChannelOverride } from '@dsco/bus-models/dist/item';
 import { RetailModel } from '@dsco/bus-models/dist/retail-model';
 /**
- * Test will only send to data stream queue if forceExit: is not false in jest config
+ * Test will only send to data stream queue if forceExit: is set to false in jest config
  */
 test('expect overridesSmallBatch to work', async () => {
     const override: ChannelOverride = {

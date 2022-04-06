@@ -119,7 +119,9 @@ Bamboo builds run automatically when changes are pushed to the master branch. Ne
 
 Build it as in Building above, although to make it faster you can run `npm run build:lib`.
 
-Then cd build/lib and run `npm publish` or if it's an alpha build run `npm publish --tag alpha`.
+Then cd build/lib and run `npm publish`.
+
+To publish an alpha build, change the version string in `api/package.json` to something like "7.1.3-alpha.3" before building, then run `npm publish --tag alpha` to publish.
 
 #### Typedoc Document
 

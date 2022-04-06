@@ -5,3 +5,5 @@ export * from './get-category-spreadsheet-upload-url/get-category-spreadsheet-up
 export * from './get-content-exceptions-spreadsheet/get-content-exceptions-spreadsheet.request';
 export * from './get-channel-overrides-upload-url/get-channel-overrides-upload-url.request';
 export * from './get-all-assortments/get-all-assortments.request';
+
+export * as OverrideUtils from '../lib/utils/channel-override-write';
