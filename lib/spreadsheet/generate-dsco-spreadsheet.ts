@@ -111,7 +111,7 @@ async function generateSpreadsheetCols(
     //Keep track of all the required and recommended attributes.
     const allRules = allRulesResp?.data?.dsco ?? [];
     for (const dscoRule of allRules) {
-        if (dscoRule.objectType === 'catalog') {
+        if (dscoRule.objectType === CATALOG) {
             if (dscoRule.type === REQUIRED || dscoRule.type === CATALOG_REQUIRED) {
                 REQUIRED_COLS.add(dscoRule.field[0]);
             }
@@ -301,7 +301,7 @@ function parsePipelineRule(
 const REQUIRED_COLS = new Set();
 const REQUIRED = 'required';
 const CATALOG_REQUIRED = 'catalog_required';
-
+const CATALOG = 'catalog';
 /**
  * These are columns that we don't want to show up in the final spreadsheet
  */
