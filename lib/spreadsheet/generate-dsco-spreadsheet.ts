@@ -205,9 +205,7 @@ function parsePipelineRule(
         col.validation[key] = value;
     }
 
-    if (rule.attrType === 'custom') {
-        //custom attributes already taken care of
-    } else if (rule.attrType === 'core') {
+    if ((rule.attrType as string) === 'core') {
         // Only the core attributes that are marked default by the retailer end up here
         const field = rule.field.toString();
         // dont need any erroneous attributes concatenated with commas and
