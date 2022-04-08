@@ -49,6 +49,9 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         let curRowIdx = 1;
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
+            if (cellData && col.validation.format === 'string') {
+                cellData.z = '@';   // set the number as text format on any column with a string format
+            }
 
             if (cellData) {
                 const cell = utils.encode_cell({ r: curRowIdx, c: curColIdx });
