@@ -50,7 +50,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         for (const row of spreadsheet.rowData) {
             const cellData = getCellData(row.catalog, col, retailerId);
             if (cellData && col.validation.format === 'string') {
-                cellData.z = '@';   // set the number as text format on any column with a string format
+                cellData.z = '@'; // set the number as text format on any column with a string format
             }
 
             if (cellData) {
@@ -419,7 +419,7 @@ function removeDuplicateMessages(messages: string[]): string[] {
  * function adds to conditional formatting as a way of highlighting a list of select cells of interest
  * Note that conditional formatting takes priorty over cell styling so this must be used if conditional formatting is used for other stylings
  * @param sheet - sheetJS object that will be modified
- * @param cellAddressList - This relys on the array of celladdresses being built in the scope above this funciton
+ * @param cellAddresses - This relys on the array of celladdresses being built in the scope above this funciton
  * @param fontColorHex - hexadecimal value for rgb font color value
  * @param cellFillColorHex - hexadecimal value for rgb cell fill color value
  */
