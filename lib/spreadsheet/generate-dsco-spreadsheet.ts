@@ -89,6 +89,9 @@ async function generateSpreadsheetCols(
 
     const ensureCol = (fieldXPath: string, rule: PipelineRule): DscoColumn => {
         const type = rule.attrType === 'custom' ? 'extended' : 'core';
+        console.log(`The attribute type of the consitionally required rule is ${rule.attrType}`);
+        console.log(`The required fields for a conditionally required rule is ${rule.field}`);
+        console.log(`The fieldXpath is ${fieldXPath}`);
 
         let result = cols[type][fieldXPath];
         if (!result) {
@@ -102,6 +105,7 @@ async function generateSpreadsheetCols(
 
         // If there is both a core and extended attribute of the same name, prefix the core with "Dsco: "
         if (cols.core[fieldXPath] && cols.extended[fieldXPath]) {
+            console.log(fieldXPath);
             cols.core[fieldXPath].shouldHaveDscoPrefix = true;
         }
 
