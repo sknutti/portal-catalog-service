@@ -16,6 +16,6 @@ export class CatalogItemOverridesSmallBatchRequest extends DsRequest<
     DsError
 > {
     constructor(env: DscoEnv, body: CatalogItemOverridesSmallBatchRequestBody) {
-        super('POST', '/portal/channel/overrides/batch/small', DsRequest.getHost(env, 'micro'), body);
+        super('POST', '/portal-catalog/channel/overrides/batch/small', DsRequest.getHost(env, 'micro'), body);
     }
 }
