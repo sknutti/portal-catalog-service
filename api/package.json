@@ -1,7 +1,7 @@
 {
     "name": "@dsco/portal-catalog-service",
     "description": "Set of apis used by the portal for interacting with catalog data.",
-    "version": "0.1.1-alpha.13",
+    "version": "0.1.1-alpha.15",
     "main": "api/index.js",
     "module": "./fesm2015/api/index.js",
     "fesm2015": "./fesm2015/api/index.js",
@@ -14,20 +14,6 @@
     "author": "Aidan Grant",
     "homepage": "https://bitbucket.org/dscodsco/portal-catalog-service#readme",
     "readme": "README.md",
-    "dependencies": {
-        "elasticsearch": "^15.5.0",
-        "http-aws-es": "^6.0.0",
-        "leo-config": "^1.1.0",
-        "leo-sdk": "^5.0.18"
-    },
-    "devDependencies": {
-        "@types/aws-lambda": "^8.10.53",
-        "@types/elasticsearch": "5.0.36",
-        "@types/node": "^14.0.11",
-        "aws-sdk": "^2.1086.0",
-        "leo-connector-elasticsearch": "^2.0.4",
-        "uuid": "^8.3.2"
-    },
     "peerDependencies": {
         "@dsco/bus-models": "^0.1.89",
         "@dsco/ts-models": "^1.0.106"
