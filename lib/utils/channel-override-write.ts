@@ -281,7 +281,7 @@ export function createItemOverride(
 async function write(stream: any, payload: any): Promise<void> {
     if (
         !stream.write(payload, (e: any) => {
-            if (e !== undefined) console.log('cb', e);
+            if (e !== undefined) console.log('callback error message:', e);
         })
     ) {
         console.log('stream needs to drain');
@@ -291,7 +291,7 @@ async function write(stream: any, payload: any): Promise<void> {
             });
         });
     } else {
-        console.log('write to GTG');
+        console.log('writing to stream');
         return new Promise((resolve) => {
             resolve();
         });
