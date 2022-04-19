@@ -26,7 +26,7 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
     await axios.put(uploadUrl, generatedSpreadsheet);
 
     await locallyInvokePublishBot(uploadUrl);
-}, 60_000);
+}, 120_000);
 
 async function getRandomCategoryPath() {
     const categoryPaths = await getTopLevelCategoryNames(retailerId);
