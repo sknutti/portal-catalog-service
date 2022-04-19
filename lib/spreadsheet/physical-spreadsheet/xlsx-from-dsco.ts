@@ -77,7 +77,7 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
         if (col.validation.format === 'string') {
             const cellData = { t: 's', v: '', z: '@' } as CellObject;
             for (let row = curRowIdx; row <= FORMATTING_MAX_ROW; row++) {
-                sheet[utils.encode_cell({r: row, c: curColIdx})] = cellData;
+                sheet[utils.encode_cell({ r: row, c: curColIdx })] = cellData;
             }
         }
     }
