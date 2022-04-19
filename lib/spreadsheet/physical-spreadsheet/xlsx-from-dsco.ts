@@ -6,6 +6,9 @@ import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 
 const EXCEL_MAX_ROW = 1048575;
+// We are using a hard limit of 100k due to the time for processing.  At 100k, it takes about 20-30 seconds to prepare
+// the spreadsheet.  At 300k, it takes about 15+ minutes.  This is a limitation that will need to be addressed again
+// at a later date.
 const FORMATTING_MAX_ROW = 100000;
 // const EXCEL_MAX_COLS = 16383;
 

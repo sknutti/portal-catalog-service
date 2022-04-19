@@ -23,10 +23,10 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
     const uploadUrl = await locallyInvokeGetSpreadsheetUploadUrlApi(randomCategory, retailerId, identityId);
 
     // Write the generated spreadsheet to the s3 bucket
-    await axios.put(uploadUrl, generatedSpreadsheet);
+    await axios.put(uploadUrl, generatedSpreadsheet, {maxContentLength: Infinity});
 
     await locallyInvokePublishBot(uploadUrl);
-}, 120_000);
+}, 240_000);
 
 async function getRandomCategoryPath() {
     const categoryPaths = await getTopLevelCategoryNames(retailerId);
