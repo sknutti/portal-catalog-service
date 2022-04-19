@@ -94,9 +94,6 @@ const queues = {
     CATALOG_OVERRIDE: 'catalog-item-overrides',
 };
 
-/**
- *
- */
 export async function overridesSmallBatch(
     channelOverrides: ChannelOverride[],
     sourceIpAddress: string,
@@ -106,7 +103,9 @@ export async function overridesSmallBatch(
 ): Promise<void> {
     const botId = 'api_channel-override-write';
     const retailerId = parseInt(retailerId_s);
-    validateChannelOverrides(channelOverrides, awsRequestId);
+    if (!validateChannelOverrides(channelOverrides, awsRequestId)) {
+        throw new Error('INVALID CHANNEL OVERRIDES');
+    }
     const tradingPartnerIdDictionary = await getTradingPartnerIdDictionary(retailerId);
     const targetStream = getWritableStream(botId, queues.CATALOG_OVERRIDE);
 
@@ -126,14 +125,17 @@ export async function overridesSmallBatch(
         metaData: metaData,
     };
 
-    for (const channelOverride of channelOverrides) {
-        if (await toItemOverridesStream(channelOverride, retailerContext, targetStream)) {
+    console.log('Starting uploads...');
+    channelOverrides.forEach(async (channelOverride) => {
+        if (!(await toItemOverridesStream(channelOverride, retailerContext, targetStream))) {
+            console.log(`Upload complete (1/${channelOverrides.length})`);
+        } else {
             const error = new Error(`error sending to stream '${queues.CATALOG_OVERRIDE}'`);
             error.name = 'overridesSmallBatch.errorSendingToStream';
             throw error;
         }
-    }
-
+    });
+    console.log('Process complete, ending stream...');
     targetStream.end();
 }
 
@@ -277,9 +279,10 @@ export function createItemOverride(
 }
 
 async function write(stream: any, payload: any): Promise<void> {
-    console.log('starting to write');
     if (
-        !stream.write(payload, (e: any) => (e === undefined ? console.log('no callback error') : console.log('cb', e)))
+        !stream.write(payload, (e: any) => {
+            if (e !== undefined) console.log('callback error message:', e);
+        })
     ) {
         console.log('stream needs to drain');
         return new Promise((resolve) => {
@@ -288,7 +291,7 @@ async function write(stream: any, payload: any): Promise<void> {
             });
         });
     } else {
-        console.log('write to GTG');
+        console.log('writing to stream');
         return new Promise((resolve) => {
             resolve();
         });
@@ -303,7 +306,6 @@ async function toItemOverridesStream(
     let thereWasAnError = true;
     try {
         const itemOverride = createItemOverride(channelOverride, retailerContext);
-        console.log('itemOverride is ', itemOverride);
         await write(targetStream, itemOverride);
         thereWasAnError = false;
     } catch (e) {
@@ -334,12 +336,12 @@ async function getAllActiveTradingPartners(retailerId: number): Promise<TradingP
                 tradingPartnerId: connection.trading_partner_id,
             } as TradingPartner;
         });
+    console.log(`${JSON.stringify({ message: 'tradingPartnerList', tradingPartnerList: tradingPartnerList })}`);
     return tradingPartnerList;
 }
 
 async function getTradingPartnerIdDictionary(retailerId: number): Promise<Map<string, string>> {
     const tradingPartners = await getAllActiveTradingPartners(retailerId);
-    console.log(`Got trading partners ${JSON.stringify(tradingPartners)}`);
     const tradingPartnerIdDictionary = new Map();
     tradingPartners.forEach((tradingPartner: any) => {
         if (tradingPartner?.tradingPartnerId) {
@@ -384,27 +386,24 @@ async function getAccounts(accountIds: number[]): Promise<{ [accountId: number]:
     if (accountIds.length === 0) {
         return {};
     }
-
     const client = getElasticsearchClient(config.elasticsearch.AccountDomainEndpoint, config.region);
-    //CLIENT IS GOOD GOING TO TEST
+    console.log('got getElasticsearchClient');
     const response: Record<number, AccountElasticsearch> = {};
 
     // loop each accountId and see which (if any) of them are cached
     const nonCachedIds: (string | number)[] = [];
     for (const accountId of accountIds) {
-        //check the cache
         const data: AccountElasticsearch = cacheGet(`accountId_${accountId}`);
         if (data) {
+            console.log(`${JSON.stringify({ message: 'cache hit', accountId: accountId })}`);
             response[accountId] = data;
         } else {
             nonCachedIds.push(accountId);
         }
     }
-
     if (nonCachedIds.length === 0) {
         return response;
     }
-
     try {
         let data;
         let lastEsError;
@@ -445,8 +444,9 @@ async function getAccounts(accountIds: number[]): Promise<{ [accountId: number]:
         });
 
         return response;
-        // eslint-disable-next-line no-empty
-    } finally {
+    } catch (ex) {
+        console.log(`ES:getAccount error : ${ex}`);
+        throw ex;
     }
 }
 
@@ -505,7 +505,6 @@ function expandConfig(sdk: any) {
 }
 
 function cacheSet(key: string, payload: any) {
-    // console.log(`XXX adding ${key} to the cache`);
     cache[key] = {
         payload: payload,
         expiresAt: getExpiresAt(),
