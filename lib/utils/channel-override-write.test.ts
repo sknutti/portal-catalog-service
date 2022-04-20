@@ -4,7 +4,7 @@ import { RetailModel } from '@dsco/bus-models/dist/retail-model';
 /**
  * Test will only send to data stream queue if forceExit: is set to false in jest config
  */
-test('expect overridesSmallBatch to work', async () => {
+test.skip('expect overridesSmallBatch to work', async () => {
     const override: ChannelOverride = {
         dscoItemId: '1052110350',
         replacements: {

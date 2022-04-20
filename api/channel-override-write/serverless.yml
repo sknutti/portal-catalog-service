@@ -1,0 +1,12 @@
+channel-override-write:
+    handler: api/channel-override-write/channel-override-write.channelOverrideWrite
+    memorySize: 512
+    timeout: 30
+    vpc: ${self:custom.environment.gearman-and-mongo-vpc}
+    events:
+        - http:
+              path: channel/overrides/batch/small
+              method: post
+              integration: lambda-proxy
+              authorizer: aws_iam
+              cors: true

@@ -9,12 +9,22 @@ const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
 
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
+    const colDefs = [];
+    for (const col of spreadsheet) {
+        if (col.validation.format === 'string') {
+            colDefs.push({ auto: 2, z: '@' });
+        } else {
+            colDefs.push({ auto: 2 });
+        }
+    }
+
     const workBook = utils.book_new();
     const sheet: WorkSheet = {
         '!ref': utils.encode_range({
             s: { c: 0, r: 0 },
             e: { c: spreadsheet.numColumns, r: spreadsheet.rowData.length },
         }),
+        '!cols': colDefs,
         '!condfmt': [],
         '!validations': [],
     };

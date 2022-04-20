@@ -196,7 +196,7 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
             retailerId: 1000007723,
             supplierId: 1000007967,
             userId: 1000011189,
-            categoryPath: 'Fan Gear cat1560015',
+            categoryPath: 'Fan Shop cat1760001hqs',
         },
         // Dsco Retailer Demo
         1000007220: {
@@ -218,7 +218,7 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
             retailerId: 1000013240,
             supplierId: 1000043924,
             userId: 31615,
-            categoryPath: 'Fan Gear cat1560015',
+            categoryPath: 'Fan Shop cat1760001hqs',
         },
         // Nordstrom
         1000003564: {
