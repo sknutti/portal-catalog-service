@@ -6,20 +6,25 @@ import { DscoColumn, DscoSpreadsheet, XlsxSpreadsheet } from '@lib/spreadsheet';
 import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@sheet/image';
 
 const EXCEL_MAX_ROW = 1048575;
-// We are using a hard limit of 100k due to the time for processing.  At 100k, it takes about 20-30 seconds to prepare
-// the spreadsheet.  At 300k, it takes about 15+ minutes.  This is a limitation that will need to be addressed again
-// at a later date.
-// const FORMATTING_MAX_ROW = 100000;
 // const EXCEL_MAX_COLS = 16383;
 
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
+    const colDefs = [];
+    for (const col of spreadsheet) {
+        if (col.validation.format === 'string') {
+            colDefs.push({ auto: 2, z: '@' });
+        } else {
+            colDefs.push({ auto: 2 });
+        }
+    }
+
     const workBook = utils.book_new();
     const sheet: WorkSheet = {
         '!ref': utils.encode_range({
             s: { c: 0, r: 0 },
-            // e: { c: spreadsheet.numColumns, r: FORMATTING_MAX_ROW },
             e: { c: spreadsheet.numColumns, r: spreadsheet.rowData.length },
         }),
+        '!cols': colDefs,
         '!condfmt': [],
         '!validations': [],
     };
@@ -77,13 +82,6 @@ export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): 
 
             curRowIdx++;
         }
-        // after all of the row data is added, finish creating row cells up to FORMATTING_MAX_ROW and format them to TEXT.
-        // if (col.validation.format === 'string') {
-        //     const cellData = { t: 's', v: '', z: '@' } as CellObject;
-        //     for (let row = curRowIdx; row <= FORMATTING_MAX_ROW; row++) {
-        //         sheet[utils.encode_cell({ r: row, c: curColIdx })] = cellData;
-        //     }
-        // }
     }
 
     highlightBanded(highlightStart, curColIdx, cur, sheet);
