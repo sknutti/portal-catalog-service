@@ -7,14 +7,15 @@ import { CellObject, Comments, DataValidation, Style, utils, WorkSheet } from '@
 
 const EXCEL_MAX_ROW = 1048575;
 // const EXCEL_MAX_COLS = 16383;
+const STANDARD_COLUMN_WIDTH = 10.17;
 
 export function xlsxFromDsco(spreadsheet: DscoSpreadsheet, retailerId: number): XlsxSpreadsheet {
     const colDefs = [];
     for (const col of spreadsheet) {
         if (col.validation.format === 'string') {
-            colDefs.push({ auto: 2, z: '@' });
+            colDefs.push({ wch: STANDARD_COLUMN_WIDTH, z: '@' });
         } else {
-            colDefs.push({ auto: 2 });
+            colDefs.push({ wch: STANDARD_COLUMN_WIDTH });
         }
     }
 
