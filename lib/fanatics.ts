@@ -173,7 +173,7 @@ export async function sendFanaticsEmail(
 }
 
 // The default record is the one we use if there is no retailerId
-export const accounts: Record<DscoEnv, AccountCategoryPath> = {
+const accounts: Record<DscoEnv, AccountCategoryPath> = {
     dev: {},
     test: {
         // // Aidan Test Retailer
