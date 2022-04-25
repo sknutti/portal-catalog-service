@@ -9,17 +9,16 @@ import type { S3CreateEvent } from 'aws-lambda';
 export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void> {
     const record = event.Records[0].s3;
 
-    const account = getFanaticsAccountForEnv();
-    if (!account) {
-        throw new Error(`No fanatics account for dsco env: ${process.env.ENVIRONMENT}`);
-    }
-
     let s3Path = record.object.key;
     s3Path = s3Path.replace(/\+/g, ' ');
     s3Path = decodeURIComponent(s3Path);
 
-    const retailerId = getRetailerIdFromPath(s3Path, account.retailerId);
-
+    const retailerId = getRetailerIdFromPath(s3Path);
+    const account = getFanaticsAccountForEnv(retailerId);
+    if (!account) {
+        throw new Error(`No fanatics account for dsco env: ${process.env.ENVIRONMENT}`);
+    }
+    
     const meta: CatalogSpreadsheetS3Metadata = {
         category_path: account.categoryPath,
         source_s3_path: s3Path,
@@ -31,7 +30,7 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     };
     const to = {
         bucket: getPortalCatalogS3BucketName(),
-        path: createCatalogItemS3UploadPath(account.supplierId, retailerId, account.userId, account.categoryPath),
+        path: createCatalogItemS3UploadPath(account.supplierId, account.retailerId, account.userId, account.categoryPath),
     };
 
     console.log('Copying s3 file from: ', from);
