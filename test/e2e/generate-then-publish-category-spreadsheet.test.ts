@@ -29,8 +29,8 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
 });
 
 async function getRandomCategoryPath() {
-//    const categoryPaths = await getTopLevelCategoryNames(retailerId);
+    //    const categoryPaths = await getTopLevelCategoryNames(retailerId);
 
     return 'Shoes';
-//    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
+    //    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
 }
