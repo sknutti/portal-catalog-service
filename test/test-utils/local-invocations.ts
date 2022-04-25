@@ -89,12 +89,15 @@ export async function locallyInvokePublishBot(uploadUrl: string): Promise<void> 
         ],
     } as S3CreateEvent;
 
-    let websocketSuccess = false;
-    waitForWebsocketSuccess().then(() => (websocketSuccess = true));
+    //let websocketSuccess = false;
+
+    //waitForWebsocketSuccess().then(() => (websocketSuccess = true));
+
+    const socketResult = waitForWebsocketSuccess();
 
     await publishCategorySpreadsheet(event);
 
-    expect(websocketSuccess).toBe(true);
+    await socketResult;
 }
 
 export async function locallyInvokeGenerateSpreadsheetApi(
