@@ -4,7 +4,7 @@ import { getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 
 export function getFanaticsAccountForEnv(rId = 0): Account | undefined {
-    const id = (rId === 0) ? 'default' : rId;
+    const id = rId === 0 ? 'default' : rId;
     return accounts[getDscoEnv()][id];
 }
 

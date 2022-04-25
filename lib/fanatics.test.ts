@@ -1,7 +1,7 @@
-import { sendFanaticsEmail, getFanaticsAccountForEnv, getRetailerIdFromPath  } from '@lib/fanatics';
+import { sendFanaticsEmail, getFanaticsAccountForEnv, getRetailerIdFromPath } from '@lib/fanatics';
 import * as env from './environment';
 
-jest.spyOn(env, 'getDscoEnv').mockImplementation(() => 'prod' );
+jest.spyOn(env, 'getDscoEnv').mockImplementation(() => 'prod');
 
 test('Can send email via ses', async () => {
     process.env.SEND_EMAIL_TEST = 'true';
@@ -22,7 +22,7 @@ test('getFanaticsAccountForEnv', () => {
     const rId = 1000013240;
     const account = getFanaticsAccountForEnv(rId);
 
-    expect(account).toMatchObject({ 
+    expect(account).toMatchObject({
         categoryPath: 'Fan Shop cat1760001hqs',
         retailerId: 1000013240,
         supplierId: 1000043924,

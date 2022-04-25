@@ -18,7 +18,7 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     if (!account) {
         throw new Error(`No fanatics account for dsco env: ${process.env.ENVIRONMENT}`);
     }
-    
+
     const meta: CatalogSpreadsheetS3Metadata = {
         category_path: account.categoryPath,
         source_s3_path: s3Path,
@@ -30,7 +30,12 @@ export async function fanaticsUploadHandler(event: S3CreateEvent): Promise<void>
     };
     const to = {
         bucket: getPortalCatalogS3BucketName(),
-        path: createCatalogItemS3UploadPath(account.supplierId, account.retailerId, account.userId, account.categoryPath),
+        path: createCatalogItemS3UploadPath(
+            account.supplierId,
+            account.retailerId,
+            account.userId,
+            account.categoryPath,
+        ),
     };
 
     console.log('Copying s3 file from: ', from);
