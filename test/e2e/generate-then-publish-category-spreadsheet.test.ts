@@ -26,10 +26,11 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
     await axios.put(uploadUrl, generatedSpreadsheet, { maxRedirects: 0, maxContentLength: Infinity });
 
     await locallyInvokePublishBot(uploadUrl);
-}, 360_000);
+});
 
 async function getRandomCategoryPath() {
-    const categoryPaths = await getTopLevelCategoryNames(retailerId);
+//    const categoryPaths = await getTopLevelCategoryNames(retailerId);
 
-    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
+    return 'Shoes';
+//    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
 }
