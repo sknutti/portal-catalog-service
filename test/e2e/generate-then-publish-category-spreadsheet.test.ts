@@ -15,6 +15,8 @@ const userId = 26366;
 
 // Note: This test requires the dsco vpn to run as it uses both Mongo and Gearman
 test('it successfully generates a catalog spreadsheet that can be re-uploaded', async () => {
+    console.info(Object.keys(process.env).map(k => `${k} = ${process.env[k]}`))
+    
     const identityId = await initAWSCredentials(userId);
 
     const randomCategory = await getRandomCategoryPath();
@@ -29,8 +31,6 @@ test('it successfully generates a catalog spreadsheet that can be re-uploaded', 
 });
 
 async function getRandomCategoryPath() {
-    //    const categoryPaths = await getTopLevelCategoryNames(retailerId);
-
-    return 'Shoes';
-    //    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
+    const categoryPaths = await getTopLevelCategoryNames(retailerId);
+    return categoryPaths[randomInt(0, categoryPaths.length - 1)];
 }
