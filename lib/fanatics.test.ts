@@ -1,6 +1,18 @@
 import { sendFanaticsEmail, getFanaticsAccountForEnv, getRetailerIdFromPath } from '@lib/fanatics';
 import * as env from './environment';
 
+let processEnv: NodeJS.ProcessEnv;
+
+beforeAll(() => {
+    processEnv = process.env;
+
+    process.env.SEND_EMAIL_TEST = 'true';
+    process.env.ENVIRONMENT = 'test';
+});
+afterAll(() => {
+    process.env = processEnv;
+});
+
 beforeEach(() => {
     jest.spyOn(env, 'getDscoEnv').mockImplementation(() => 'prod');
 });
@@ -10,9 +22,6 @@ afterEach(() => {
 });
 
 test('Can send email via ses', async () => {
-    process.env.SEND_EMAIL_TEST = 'true';
-    process.env.ENVIRONMENT = 'test';
-
     await sendFanaticsEmail(
         { supplierId: 1312312, s3Path: 'staging/my-upload.csv', uploadTime: new Date() },
         {
