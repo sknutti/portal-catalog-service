@@ -1,15 +1,14 @@
 import { sendFanaticsEmail, getFanaticsAccountForEnv, getRetailerIdFromPath } from '@lib/fanatics';
 import * as env from './environment';
 
-
-beforeEach(() => {    
+beforeEach(() => {
     jest.spyOn(env, 'getDscoEnv').mockImplementation(() => 'prod');
 });
-  
-afterEach(() => {    
+
+afterEach(() => {
     jest.clearAllMocks();
 });
-  
+
 test('Can send email via ses', async () => {
     process.env.SEND_EMAIL_TEST = 'true';
     process.env.ENVIRONMENT = 'test';
