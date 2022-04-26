@@ -216,7 +216,7 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         // AAFES
         1000013240: {
             retailerId: 1000013240,
-            supplierId: 1000043924,
+            supplierId: 1000045472,
             userId: 31615,
             categoryPath: 'Fan Shop cat1760001hqs',
         },
