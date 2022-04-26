@@ -3,9 +3,9 @@ import { DscoEnv } from '@dsco/ts-models';
 import { getDscoEnv, getIsRunningLocally } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 
-export function getFanaticsAccountForEnv(): Account | undefined {
-    const { retailerId } = accounts[getDscoEnv()].default;
-    return accounts[getDscoEnv()][retailerId];
+export function getFanaticsAccountForEnv(rId = 0): Account | undefined {
+    const id = rId === 0 ? 'default' : rId;
+    return accounts[getDscoEnv()][id];
 }
 
 export function isFanatics(supplierId: number): boolean {
@@ -14,11 +14,11 @@ export function isFanatics(supplierId: number): boolean {
 
 // Try to get retailerId from the path, otherwise use the one passed in
 // Path should be in the form of {env}/{id}/
-// If no id or id is NaN, then use retailerId passed in
-export function getRetailerIdFromPath(path: string, retailerId: number): number {
+// If no id or id is NaN, then use 0 for not existent
+export function getRetailerIdFromPath(path: string): number {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [env, id] = path.split('/');
-    return Number(id) ? Number(id) : retailerId;
+    return Number(id) ? Number(id) : 0;
 }
 
 /**
