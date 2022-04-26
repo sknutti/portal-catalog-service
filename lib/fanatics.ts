@@ -186,8 +186,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         default: {
             retailerId: 1000012301, // Aidan Test Retailer
             supplierId: 1000012302,
-            userId: 0,
-            categoryPath: '',
+            userId: 26366,
+            categoryPath: 'Catalog',
         },
     },
     staging: {
@@ -208,8 +208,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         default: {
             retailerId: 1000007220, // Dsco Retailer Demo
             supplierId: 1000007967,
-            userId: 0,
-            categoryPath: '',
+            userId: 1000011189,
+            categoryPath: 'Fan Gear',
         },
     },
     prod: {
@@ -230,8 +230,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         default: {
             retailerId: 1000003564, // Nordstrom
             supplierId: 1000043924,
-            userId: 0,
-            categoryPath: '',
+            userId: 31615,
+            categoryPath: 'Fan Gear',
         },
     },
 };
