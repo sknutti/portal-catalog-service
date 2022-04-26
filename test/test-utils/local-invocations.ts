@@ -90,7 +90,6 @@ export async function locallyInvokePublishBot(uploadUrl: string): Promise<void> 
     } as S3CreateEvent;
 
     let websocketSuccess = false;
-
     waitForWebsocketSuccess().then(() => (websocketSuccess = true));
 
     await publishCategorySpreadsheet(event);
