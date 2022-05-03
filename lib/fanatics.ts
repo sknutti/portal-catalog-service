@@ -32,7 +32,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(
     // prod is faster and can handle much larger invocations
     const MAX_ROWS_PER_INVOCATION = getDscoEnv() === 'prod' ? 25_000 : 10_000;
 
-    if (!isFanatics(event.supplierId) || dataRowCount < MAX_ROWS_PER_INVOCATION || event.fromRowIdx || event.toRowIdx) {
+    if (dataRowCount < MAX_ROWS_PER_INVOCATION || event.fromRowIdx || event.toRowIdx) {
         return;
     }
 
@@ -79,7 +79,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(
 
     await Promise.all(childInvocations);
 
-    throw new FanaticsFanoutError(dataRowCount);
+    throw new FanoutError(dataRowCount);
 }
 
 interface FanaticsErrors {
@@ -200,8 +200,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         },
         // Dsco Retailer Demo
         1000007220: {
-            retailerId: 1000007220,
-            supplierId: 1000007967,
+            retailerId: 1000007220, // Dsco Retailer Demo
+            supplierId: 1000007967, // Fanatics Test account NRD
             userId: 1000011189,
             categoryPath: 'Fan Gear',
         },
@@ -222,8 +222,8 @@ const accounts: Record<DscoEnv, AccountCategoryPath> = {
         },
         // Nordstrom
         1000003564: {
-            retailerId: 1000003564,
-            supplierId: 1000043924,
+            retailerId: 1000003564, // Nordstrom
+            supplierId: 1000043924, // FANATICS - NRD
             userId: 31615,
             categoryPath: 'Fan Gear',
         },
@@ -248,8 +248,8 @@ interface AccountCategoryPath {
 /**
  * Used as an early-exit method from the parent invocation that
  */
-export class FanaticsFanoutError extends Error {
+export class FanoutError extends Error {
     constructor(dataRowCount: number) {
-        super(`Detected fanatics upload of ${dataRowCount} rows - split up into smaller invocations`);
+        super(`Detected large upload of ${dataRowCount} rows - split up into smaller invocations`);
     }
 }

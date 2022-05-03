@@ -14,4 +14,6 @@ staging: {
     },
 ```
 
-So by Fanatics uploading to the path above would trigger setting the metadata from the environments settings and be copied over to the correct place to trigger items being uploaded against the retailer's catalog.
+So Fanatics uploading to the path above would trigger setting the metadata from the environments settings and be copied over to the `portal-catalog-{env}` bucket. Once there, the `publish-category-spreadsheet-bot` bot will process the items against the category set in `categoryPath` in the retailer's catalog
+
+*Note Well* The supplier Ids can be different for each block. I.E. fanatics has one supplierId for dealing with Nordstrom and another for dealing with AAFES.

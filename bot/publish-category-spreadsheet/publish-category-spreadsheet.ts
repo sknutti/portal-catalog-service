@@ -2,7 +2,7 @@ import { CatalogResolver } from '@bot/publish-category-spreadsheet/catalog-resol
 import { keyWith, UnexpectedError } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 import { getIsRunningLocally } from '@lib/environment';
-import { FanaticsFanoutError, fanoutIfLargeSpreadsheetAndFanatics, sendFanaticsEmail } from '@lib/fanatics';
+import { FanoutError, fanoutIfLargeSpreadsheetAndFanatics, sendFanaticsEmail } from '@lib/fanatics';
 import {
     CatalogSpreadsheetS3Metadata,
     downloadS3Bucket,
@@ -75,7 +75,7 @@ export async function publishCategorySpreadsheet(
             );
         }
     } catch (error: any) {
-        if (error instanceof FanaticsFanoutError) {
+        if (error instanceof FanoutError) {
             console.warn(error.message);
             return;
         }
