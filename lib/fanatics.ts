@@ -114,7 +114,10 @@ export async function sendFanaticsEmail(
     event: Pick<PublishCategorySpreadsheetEvent, 'supplierId' | 's3Path' | 'sourceS3Path' | 'uploadTime'>,
     errors: FanaticsErrors,
 ): Promise<void> {
-    let toAddresses = ['agrant@commercehub.com', 'jkerr@fanatics.com', 'dboles@fanatics.com'];
+    let toAddresses = ['ajoshi@commercehub.com', 'jkerr@fanatics.com', 'dboles@fanatics.com',
+        'jpruskowski@commercehub.com','spedicini@commercehub.com','rmitra@commercehub.com',
+        'tfenner@commercehub.com','cshovlin@commercehub.com','rbaker@commercehub.com',
+        'aliscomb@commercehub.com'];
 
     if (process.env.SEND_EMAIL_TEST === 'true') {
         toAddresses = ['success@simulator.amazonses.com'];
