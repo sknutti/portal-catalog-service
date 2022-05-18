@@ -23,14 +23,14 @@ pipelines:
                   - build/artifact/**
                   - build/lib/**
         - step:
-            name: Test Deploy Branch
-            deployment: test
-            trigger: manual
-            script:
-              - cd build/artifact
-              - aws-init.sh
-              - npm install
-              - npx sls deploy --stage test
+              name: Test Deploy Branch
+              deployment: test
+              trigger: manual
+              script:
+                  - cd build/artifact
+                  - aws-init.sh
+                  - npm install
+                  - npx sls deploy --stage test
 
     branches:
         master: #Override, Runs for master branch
