@@ -205,7 +205,7 @@ async function getAssortments(identityId: string) {
 
 async function getContentExceptions(categoryPath: string, retailerId: number, identityId: string) {
     const resp = await locallyInvokeGetContentExceptionsApi(categoryPath, retailerId, identityId);
-    await fs.writeFile('test-get-content-exceptions-output-file.xlsx', resp);
+    await fs.writeFile('./test-get-content-exceptions-output-file.xlsx', resp);
     console.log('\nSuccessfully saved content exceptions to file.');
 }
 

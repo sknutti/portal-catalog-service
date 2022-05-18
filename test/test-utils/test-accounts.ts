@@ -21,6 +21,14 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             userId: 1000011261,
         },
     },
+    'CatalogAttributionDevs': {
+        test: {
+            isRealCustomer: true,
+            supplierId: 1000040469,
+            userId: 26384,
+            retailerId: 1000040468,
+        },
+    },
     Fanatics: {
         staging: {
             isRealCustomer: true,
@@ -50,6 +58,22 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             supplierId: 1000044156,
             retailerId: 1000043588,
             userId: 17844,
+        },
+    },
+    'brandX x Safah International Inc.': {
+        prod: {
+            isRealCustomer: true,
+            supplierId: 1000046359,
+            retailerId: 1000045955,
+            userId: 10581,
+        },
+    },
+    'Bass Pro x Gamin Test': {
+        staging: {
+            isRealCustomer: true,
+            supplierId: 1000007633,
+            retailerId: 1000007591,
+            userId: 1000010190,
         },
     },
 };
