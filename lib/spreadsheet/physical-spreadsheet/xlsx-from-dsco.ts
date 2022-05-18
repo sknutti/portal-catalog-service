@@ -403,7 +403,12 @@ export function getValidationErrorsForAColumnFromCatalogData(
         allComplianceErrors
             .filter((e) => {
                 return (
-                    e.attribute === column.fieldXPath &&
+                    (e.attribute === column.fieldXPath ||
+                        // Check conditionally required field in error message
+                        (e.error_code === 'CONDREQ' &&
+                            (e.error_message?.split(' ')?.includes(column.fieldXPath) ||
+                                e.error_message?.split(' ')?.includes(`dsco.${column.fieldXPath}`) ||
+                                e.error_message?.split(' ')?.includes(`${column.fieldXPath.split('dsco.')[1]}`)))) &&
                     (column.type === 'extended') === (e.error_type === ComplianceType.EXTENDED_ATTRIBUTE) // XNOR
                 );
             })
