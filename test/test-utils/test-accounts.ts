@@ -21,7 +21,7 @@ export const TEST_ACCOUNTS: Record<string, TestAccount> = {
             userId: 1000011261,
         },
     },
-    'CatalogAttributionDevs': {
+    CatalogAttributionDevs: {
         test: {
             isRealCustomer: true,
             supplierId: 1000040469,

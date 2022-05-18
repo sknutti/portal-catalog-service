@@ -91,10 +91,10 @@ async function generateSpreadsheetCols(
         let type: keyof typeof cols = rule.attrType === 'custom' ? 'extended' : 'core';
 
         if (rule.type === 'catalog_conditionally_required') {
-            if(fieldXPath.startsWith('dsco')) {
-                type = 'core'
+            if (fieldXPath.startsWith('dsco')) {
+                type = 'core';
             } else {
-                type = 'extended'
+                type = 'extended';
             }
         }
 
