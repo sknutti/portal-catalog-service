@@ -114,7 +114,7 @@ export async function sendFanaticsEmail(
     event: Pick<PublishCategorySpreadsheetEvent, 'supplierId' | 's3Path' | 'sourceS3Path' | 'uploadTime'>,
     errors: FanaticsErrors,
 ): Promise<void> {
-    let toAddresses = ['agrant@commercehub.com', 'jkerr@fanatics.com', 'dboles@fanatics.com'];
+    let toAddresses = ['jkerr@fanatics.com', 'dboles@fanatics.com', 'catalog-tester@commercehub.com'];
 
     if (process.env.SEND_EMAIL_TEST === 'true') {
         toAddresses = ['success@simulator.amazonses.com'];
@@ -129,7 +129,7 @@ export async function sendFanaticsEmail(
     const request: AWS.SES.SendEmailRequest = {
         Source: 'notifications@dsco.io',
         Destination: {
-            ToAddresses: toAddresses,
+            BccAddresses: toAddresses,
         },
         Message: {
             Subject: {
