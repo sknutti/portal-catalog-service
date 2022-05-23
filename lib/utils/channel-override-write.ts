@@ -1,5 +1,5 @@
 'use strict';
-/* eslint-disable @typescript-eslint/no-var-requires */ //This is for config
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */ //First disabled rule is for config...
 
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { ChannelOverride, ListingStatus, ItemSkuOverrideLeoEvent, ItemReplacements } from '@dsco/bus-models';

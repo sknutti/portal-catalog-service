@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/naming-convention: 0, camelcase: 0 */
 import { GearmanApi } from '@dsco/gearman-apis';
 import { DsError, DsResponse } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';

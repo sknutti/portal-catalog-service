@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/no-explicit-any: 0 */
 import { DscoImage, ComplianceMap } from '@dsco/bus-models/dist/item';
 import { Catalog, ProductStatus, SnakeCase } from '@dsco/ts-models';
 

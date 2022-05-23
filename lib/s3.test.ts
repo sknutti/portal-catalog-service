@@ -43,6 +43,7 @@ test('Signed upload and download url works', async () => {
     // Also download via signed url
     const downloadUrl = await getSignedS3DownloadUrl(path, 'test 😋 \'it".txt');
     const resp = await axios.get(downloadUrl);
+    /* eslint-disable-next-line @typescript-eslint/no-unsafe-member-access */
     expect(resp.headers['content-disposition']).toEqual('attachment; filename ="test%20%F0%9F%98%8B%20\'it%22.txt"');
     expect(resp.data).toEqual(id);
 });

@@ -1,3 +1,9 @@
+/* eslint
+@typescript-eslint/no-explicit-any: 0,
+@typescript-eslint/no-unsafe-return: 0,
+@typescript-eslint/no-unsafe-member-access: 0,
+@typescript-eslint/no-unsafe-assignment: 0
+ */
 import { camelToSnakeCase } from '@dsco/ts-models';
 import { CoreCatalog } from '@lib/core-catalog';
 
@@ -107,11 +113,13 @@ export function extractFieldFromCoreCatalog(
  */
 export function writeValueToCatalog(
     fieldPath: string,
+    /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
     valueToSave: any,
     catalog: CoreCatalog,
     retailerId: number,
     fieldType: 'core' | 'extended',
-) {
+): void {
+    /* eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion */
     let current: any = fieldType === 'core' ? catalog : catalog.extended_attributes![retailerId];
 
     const fields = fieldPath.split('/');
@@ -126,11 +134,13 @@ export function writeValueToCatalog(
         if (last) {
             // The core automatically uppercases all skus.  This mimics that behavior, ensuring the sku doesn't get marked as changed incorrectly
             if (fieldType === 'core' && current === catalog && field === 'sku' && typeof valueToSave === 'string') {
+                // eslint-disable-next-line no-param-reassign
                 valueToSave = valueToSave.toUpperCase();
             }
 
             current[field] = valueToSave;
         } else {
+            /* eslint-disable-next-line no-multi-assign */
             current = current[field] = current[field] ?? {};
         }
     }
@@ -140,6 +150,7 @@ export function writeValueToCatalog(
  * Parses the field and converts it to a DSF field if it's a MSF field.
  */
 export function getDSFField(field: string): string {
+    /* eslint-disable-next-line no-param-reassign */
     field = camelToSnakeCase(field);
 
     return MSF_TO_DSF[field] || field;
