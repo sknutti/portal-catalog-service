@@ -21,13 +21,11 @@ module.exports = {
     overrides: [
         {
             files: ['lib/*.ts', 'lib/*.tsx'],
-            extends: [
-                '@dsco/eslint-config'
-            ],
+            extends: ['@dsco/eslint-config'],
             rules: {
                 '@typescript-eslint/naming-convention': 'off',
-                camelcase: 'off'
-            }
-        }
-    ]
+                camelcase: 'off',
+            },
+        },
+    ],
 };
