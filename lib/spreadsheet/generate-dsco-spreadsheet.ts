@@ -89,12 +89,14 @@ async function generateSpreadsheetCols(
 
     const ensureCol = (fieldXPath: string, rule: PipelineRule): DscoColumn => {
         let type: keyof typeof cols = rule.attrType === 'custom' ? 'extended' : 'core';
-        type =
-            rule.type === 'catalog_conditionally_required'
-                ? fieldXPath.startsWith('dsco')
-                    ? 'core'
-                    : 'extended'
-                : type;
+
+        if (rule.type === 'catalog_conditionally_required') {
+            if (fieldXPath.startsWith('dsco')) {
+                type = 'core';
+            } else {
+                type = 'extended';
+            }
+        }
 
         let result = cols[type][fieldXPath];
         if (!result) {
