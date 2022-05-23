@@ -40,6 +40,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(
 
     const lambda = new AWS.Lambda({ apiVersion: '2015-03-31' });
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const childInvocations: Promise<any>[] = [];
 
     let from = 0;
@@ -61,6 +62,7 @@ export async function fanoutIfLargeSpreadsheetAndFanatics(
         childInvocations.push(
             lambda
                 .invoke({
+                    /* eslint-disable @typescript-eslint/no-non-null-assertion */
                     FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME!,
                     InvocationType: 'Event',
                     Payload: JSON.stringify(newEvent),

@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/naming-convention: 0, camelcase: 0 */
 import { GearmanApi } from '@dsco/gearman-apis';
 import { AccountType, DsError, DsResponse } from '@dsco/ts-models';
 

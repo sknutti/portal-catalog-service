@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/prefer-nullish-coalescing: 0 */
 import { getAwsRegion, getPortalCatalogS3BucketName } from '@lib/environment';
 import * as AWS from 'aws-sdk';
 import * as uuid from 'uuid';
@@ -57,6 +58,7 @@ function prepareMetadata<M>(metadata: M): Record<string, string> {
             continue;
         }
 
+        /* eslint-disable-next-line @typescript-eslint/prefer-regexp-exec */
         if (key.match(/[A-Z]/)) {
             throw new Error('Tried storing capitalized s3 metadata key - these must be lowercase only');
         } else if (typeof value !== 'string') {
@@ -115,6 +117,7 @@ export async function downloadS3Metadata<Metadata>(path: string): Promise<[Metad
         meta[key] = decodeURIComponent(val);
     }
 
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     return [meta as any as Metadata, resp.LastModified || new Date()];
 }
 
@@ -174,6 +177,7 @@ export function createCatalogChannelOverridesS3DownloadPath(
 export function parseCatalogItemS3UploadUrl(
     url: string,
 ): { supplierId: number; retailerId: number; userId: number } | 'error' {
+    /* eslint-disable-next-line no-param-reassign */
     url = url.split('?')[0];
     const regex = /uploads\/(\d+)\/(\d+)\/(\d+)\/.*$/;
     const match = regex.exec(url);
